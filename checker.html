@@ -967,7 +967,7 @@ Dinner: Baked salmon with roasted sweet potato, broccoli, and a squeeze of lemon
     // Add
     if (!hasProtein) add('ask', 'Add a lysine-rich protein', isSweet
       ? 'Stir in 2 tbsp cream cheese or ½ cup plain whole yogurt, or eat it next to a little salmon or sardines. Your plan pairs every carb with protein.'
-      : 'Add fish, chicken, beef, lamb, or fresh cheese. Your plan pairs every carb with protein, and it keeps beans and seeds in balance.');
+      : 'Add fish, chicken, beef, lamb, or fresh cheese. Your plan pairs every carb with protein, and it balances the arginine in beans and seeds.');
     if (!CAT.fiber.test(text)) add('ask', 'Add fiber', 'Stir in 1 tbsp chia or 1 tsp psyllium (with a glass of water), or add ½ cup berries or artichoke hearts.');
     if (!isSweet && !CAT.veg.test(text)) add('ask', 'Add a non-starchy vegetable', 'Spinach, zucchini, asparagus, snap peas, or artichoke. Eat it first; the meal raises blood sugar less that way.');
     if (isSweet && !/stevia/i.test(text) && !groups.size) add('note', 'Sweeten with stevia if needed', 'Skip cinnamon and vanilla; try cardamom, ginger, or cloves.');
