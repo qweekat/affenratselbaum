@@ -162,8 +162,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.18.0";
+const APP_VERSION = "1.18.1";
 const CHANGES = [
+  {v:"1.18.1", date:"2026-10-22", items:["Fix: an old window or a phone left open could write older data over your newer changes on the laptop. Now it picks up the newer changes instead."]},
   {v:"1.18.0", date:"2026-10-22", items:["Backups: new Combine with a backup file, to bring your phone and laptop copies together without losing either."]},
   {v:"1.17.1", date:"2026-10-22", items:["Installing an update on the laptop now saves a copy of your data first. Find it under More, then Backups."]},
   {v:"1.17.0", date:"2026-10-22", items:["New name: all systems you. Your data, settings and phone link stay the same."]},
@@ -883,7 +884,7 @@ async function load(){
     try{
       const r = await fetch("/api/state",{cache:"no-store"});
       const j = await r.json();
-      if(j && j.server){ SERVER = true; LAPTOP = !!j.laptop; S = merge(j.state || local); return; }
+      if(j && j.server){ SERVER = true; LAPTOP = !!j.laptop; SERVER_REV = j.rev ?? null; S = merge(j.state || local); return; }
     }catch(e){}
   }
   S = merge(local);
@@ -897,7 +898,7 @@ function rollCook(){
   if(moved){ S.nextCook.date = ymd(d); }
   return moved;
 }
-let saveTimer = null;
+let saveTimer = null, SERVER_REV = null;
 function save(){
   pruneLog();
   try{ const cd = nextCookDate(parseYmd(ymd(new Date()))); if(cd) S.cookNext = {date:ymd(cd), items:cookPlanFor(cd).map(x=>({id:x.id==="r_grain"?(x.grain==="buckwheat"?"r_buckwheat":"r_quinoa"):x.id, batches:x.batches}))}; }catch(e){}
@@ -906,7 +907,14 @@ function save(){
   saveTimer = setTimeout(async ()=>{
     if(!SERVER) return;
     try{
-      await fetch("/api/state",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({state:S, reminders:buildReminders(60)})});
+      const r = await fetch("/api/state",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({state:S, reminders:buildReminders(60), rev:SERVER_REV})});
+      const j = await r.json().catch(()=>({}));
+      if(r.status===409 && j.state){
+        SERVER_REV = j.rev; S = merge(j.state); lsSet(S); render();
+        toast("Updated with changes from your other window or phone. If your last change is missing, please make it again.");
+        return;
+      }
+      if(j.rev!=null) SERVER_REV = j.rev;
       setSync();
     }catch(e){ setSync("Could not reach the reminder service. Changes are saved in this browser."); }
   }, 400);
@@ -2201,7 +2209,7 @@ setInterval(()=>{
 document.addEventListener("visibilitychange", async ()=>{
   if(document.visibilityState!=="visible" || !SERVER) return;
   if(view.contains(document.activeElement) && document.activeElement.matches("input[type=text],textarea")) return;
-  try{ const j = await (await fetch("/api/state",{cache:"no-store"})).json(); if(j && j.state){ S = merge(j.state); render(); } }catch(e){}
+  try{ const j = await (await fetch("/api/state",{cache:"no-store"})).json(); if(j && j.state){ S = merge(j.state); SERVER_REV = j.rev ?? SERVER_REV; render(); } }catch(e){}
 });
 let lastDay = ymd(new Date());
 setInterval(()=>{ if(checkFlare()){ save(); render(); } if(sweepMissed()){ save(); if(TAB==="notes") return; } if(TAB==="today"||TAB==="tomorrow"){ if(ymd(new Date())!==lastDay){ lastDay=ymd(new Date()); } if(!view.contains(document.activeElement)||document.activeElement===document.body) render(); } }, 60000);
@@ -2226,6 +2234,13 @@ const PHX = {
 
 
 const TOUCH = matchMedia("(pointer: coarse)").matches;
+
+const STANDALONE = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+function whereHtml(){
+  return STANDALONE
+    ? `<div class="warnbox"><b>You're in the home-screen app.</b> On iPhone it keeps its own copy of your data, separate from Safari, and the one-tap shortcuts write to Safari's copy. Pick one place to use: Safari is the one that works with shortcuts. Deleting this icon deletes this copy, so save a backup first.</div>`
+    : `<p class="muted" style="margin:0">You're in Safari. Shortcuts write here too. If you add a home-screen icon, turn off <b>Open as Web App</b> so it opens this same copy.</p>`;
+}
 let QUICK_FLASH = "";
 function pGet(k){ try{ return localStorage.getItem(k); }catch(_){ return null; } }
 function pSet(k,v){ try{ localStorage.setItem(k,v); }catch(_){} }
@@ -2293,7 +2308,7 @@ function welcomeHtml(){
 function backupNudge(){
   if(needsSetup()) return "";
   const n = daysSinceBackup();
-  if(n!==null && n<7) return "";
+  if(n!==null && n<2) return "";
   return `<section class="panel"><b>${n===null?"Save your first backup":"Last backup was "+n+" days ago"}</b>
     <small class="muted">Your data is only on this phone. A backup in Files or iCloud keeps it safe if the phone is lost or reset.</small>
     <div><button class="btn ghost" ${PHX.backupAttr}>Save a backup now</button></div></section>`;
@@ -2310,6 +2325,7 @@ function renderQuick(){
   view.innerHTML = `<div class="stack">
     ${QUICK_FLASH?`<div class="next" role="status"><b>${esc(QUICK_FLASH)}</b></div>`:""}
     ${welcomeHtml()}
+    ${STANDALONE?whereHtml():""}
     ${PHX.waterHtml(lg)}
     <section class="panel"><h2>Meals</h2>${meals.length?`<div class="qlist">${meals.map(i=>qRow(i,key,lg)).join("")}</div>`:`<p class="muted" style="margin:0">No meals planned for today.</p>`}</section>
     <section class="panel"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><h2>Supplements</h2>${dueNow?`<button class="btn" data-qsupps="1">Took all due now (${dueNow})</button>`:""}</div>
@@ -2329,6 +2345,7 @@ const SHORTCUTS = [
 function renderPhone(){
   const n = daysSinceBackup();
   view.innerHTML = `<div class="stack">
+  <section class="panel"><h2>Where your data lives</h2>${whereHtml()}</section>
   <section class="panel"><h2>One-tap buttons</h2>
     <p style="margin:0">Each link below does one thing, like adding 4 oz of water. Put them in the iPhone Shortcuts app and you get buttons on your home screen or lock screen. They work anywhere, with no computer.</p>
     <ol class="day">${SHORTCUTS.map(([n,q],i)=>`<li style="grid-template-columns:1fr auto"><span><b>${esc(n)}</b><br><code style="font-size:.8rem;word-break:break-all;color:var(--muted)">${esc(appUrl(q))}</code></span><button class="btn ghost" data-copylink="${i}">Copy</button></li>`).join("")}</ol>
@@ -2348,7 +2365,7 @@ function renderPhone(){
     <p style="margin:0">A web app can't pop up reminders on its own while it's closed. Add your schedule to the iPhone Calendar instead: More, then Times &amp; reminders, then the calendar file. Calendar alerts work offline.</p>
   </section>
   <section class="panel"><h2>Backups</h2>
-    <p style="margin:0">Your data is only on this phone. ${n===null?"You haven't saved a backup yet.":"Your last backup was "+(n===0?"today":n+" day"+(n===1?"":"s")+" ago")+"."} Save one to Files or iCloud once a week. To move your data to another device, open the same file there.</p>
+    <p style="margin:0">Your data is only on this phone. ${n===null?"You haven't saved a backup yet.":"Your last backup was "+(n===0?"today":n+" day"+(n===1?"":"s")+" ago")+"."} Save one to Files or iCloud every few days, and always before you delete the home-screen icon, clear Safari's website data or switch phones. Those wipe the copy on this phone. To move your data to another device, open the same file there.</p>
     <div class="chips" style="gap:8px"><button class="btn" ${PHX.backupAttr}>Save a backup now</button><label class="btn ghost">Open a backup file<input type="file" accept=".json,application/json" ${PHX.restoreAttr} hidden></label></div>
   </section></div>`;
 }
