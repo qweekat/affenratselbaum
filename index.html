@@ -162,8 +162,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.17.0";
+const APP_VERSION = "1.17.1";
 const CHANGES = [
+  {v:"1.17.1", date:"2026-10-22", items:["Installing an update on the laptop now saves a copy of your data first. Find it under More, then Backups."]},
   {v:"1.17.0", date:"2026-10-22", items:["New name: all systems you. Your data, settings and phone link stay the same."]},
   {v:"1.16.0", date:"2026-10-22", items:["Meal checker has a new \"Fix a meal\" tab: type a meal's ingredients and it suggests what to swap, trim and add."]},
   {v:"1.15.0", date:"2026-10-22", items:["Asks kindly about a supplement or routine step you haven't ticked off in a while: keep it, change how often, pause it or remove it.","Version number and this What's new list."]},
@@ -1430,7 +1431,7 @@ function renderBackup(){
     <label class="btn ghost">Restore from a backup file<input type="file" accept=".json,application/json" data-restorefile="1" hidden></label></div>
   </section>
   <section class="panel"><h2>Daily copies</h2>
-    ${auto.length?`<ol class="day">${auto.map(d=>`<li style="grid-template-columns:1fr auto"><span><b>${esc(DAYS_LONG[parseYmd(d).getDay()])} ${esc(d.slice(5).replace("-","/"))}</b><br><small class="muted">Your data as it was at the start of that day</small></span>
+    ${auto.length?`<ol class="day">${auto.map(d=>`<li style="grid-template-columns:1fr auto"><span><b>${esc(DAYS_LONG[parseYmd(d.slice(0,10)).getDay()])} ${esc(d.slice(5,10).replace("-","/"))}${d.length>10?" "+esc(d.slice(-6,-4)+":"+d.slice(-4,-2)):""}</b><br><small class="muted">${d.length>10?"Your data just before an update was installed":"Your data as it was at the start of that day"}</small></span>
       ${RESTORE_ASK===d?`<span class="chips" style="gap:6px"><button class="btn" data-restoreday="${esc(d)}">Yes, go back to this</button><button class="btn ghost" data-restorecancel="1">Cancel</button></span>`:`<button class="btn ghost" data-restoreask="${esc(d)}">Restore</button>`}</li>`).join("")}</ol>
       <small class="muted">Restoring replaces what's in the app now. Download a backup first if you might want today's data back.</small>`:`<p class="muted" style="margin:0">No daily copies yet. The first one is made tomorrow.</p>`}
   </section></div>`;
