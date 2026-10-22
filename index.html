@@ -68,6 +68,8 @@ a{color:var(--juniper);font-weight:700}
 .feelrow{display:grid;gap:4px;margin-top:8px}
 .scale{display:flex;gap:6px}.pip{font:inherit;font-weight:700;flex:1;min-width:0;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);cursor:pointer}
 .pip.on{background:var(--juniper);color:var(--surface);border-color:var(--juniper)}
+.nudge{border-left:4px solid var(--dusk)}
+.nudge select{width:auto}
 .menu{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
 .menu a,.menu button{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;min-height:64px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:700;text-align:left;text-decoration:none;cursor:pointer}
 .menu small{display:block;font-weight:400;color:var(--muted)}
@@ -159,6 +161,15 @@ table.rep th{color:var(--muted);font-weight:700}
 <script>
 "use strict";
 const LS_KEY = "dh-me-v1";
+
+const APP_VERSION = "1.15.0";
+const CHANGES = [
+  {v:"1.15.0", date:"2026-10-22", items:["Asks kindly about a supplement or routine step you haven't ticked off in a while: keep it, change how often, pause it or remove it.","Version number and this What's new list."]},
+  {v:"1.14.0", date:"2026-10-21", items:["Bottom bar on every page (Today, Grocery, Pantry, Checker, More), so the iPhone home-screen app can always get back.","Meal tip reworded for mixed bowls."]},
+  {v:"1.13.0", date:"2026-10-21", items:["Evening \"How did today feel?\" check-in.","Week look-back and Doctor visit pages you can print, save as PDF or download.","Daily backups with download and restore.","Grocery mode: tap items into your pantry at the store."]},
+  {v:"1.12.0", date:"2026-10-21", items:["Tap +4 oz or +8 oz for water, with undo.","Simpler home: Today, Tomorrow, More.","Take a label photo straight from the phone."]},
+  {v:"1.0 to 1.11", date:"2026-10-21", items:["First versions: reminders, supplements, meals, freezer pulls, cook day, notes, labs, my rules, missed items, daily clock, flare-up mode, one-day changes."]}
+];
 
 
 var HH = (function(){
@@ -750,7 +761,7 @@ function defaultDoctor(){ return []; }
 
 function defaults(){
   return {
-    version: 13, clinicQs: true, flare: {on:false, until:"", started:"", saved:null},
+    version: 14, nudge: {on:true, days:7, snooze:{}}, clinicQs: true, flare: {on:false, until:"", started:"", saved:null},
     clock: defaultClock(),
     stock: {}, stockAsOf: "", lastGrain: "",
     miss: defaultMiss(),
@@ -846,6 +857,7 @@ function merge(saved){
     out.version = 12;
   }
   if(out.version<13){ out.on = Object.assign({feel:true}, out.on); out.version = 13; }
+  if(out.version<14){ out.nudge = Object.assign({on:true, days:7, snooze:{}}, out.nudge); out.version = 14; }
   out.clock = Object.assign(defaultClock(), out.clock||{});
   out.flare = Object.assign({on:false, until:"", started:"", saved:null}, out.flare||{});
   if(!out.clinicQs){ 
@@ -1286,6 +1298,7 @@ function renderDay(offset){
     <small class="muted">This week: ${esc(f.adds)}. Stop raising fiber if bloating or cramping gets worse.</small>
     <small class="muted">This week: ${esc(f.adds)}. Stop raising fiber if bloating or cramping gets worse.</small>
   </details>`;
+  if(offset===0) h += nudgeHtml();
   if(flareOn(d)) h += `<div class="warnbox"><b>Flare-up mode through ${esc(DAYS_LONG[parseYmd(S.flare.until).getDay()])} ${esc(S.flare.until.slice(5).replace("-","/"))}.</b> No nuts, seeds, chia, flax, beans, chickpeas, edamame, soy, legume noodles, chocolate or oats. Keep quinoa and buckwheat small. Lean on ${LYSINE_FOODS}. <button class="linkbtn" data-goflare="1">Change or end it</button></div>`;
   else if(offset===0) h += `<div><button class="linkbtn" data-goflare="1">Need a food break? Turn off some foods for a while</button></div>`;
   if(next) h += `<div class="next"><b>Next: ${niceTime(next.time)}</b> · ${esc(next.title)}</div>`;
@@ -1339,7 +1352,7 @@ function renderDay(offset){
     }
     h += `</ol></section>`;
   }
-  h += `</div>`;
+  h += `<small class="muted noprint" style="text-align:center">Daily Helper ${esc(APP_VERSION)}</small></div>`;
   view.innerHTML = h;
 }
 
@@ -1371,10 +1384,13 @@ function mountHousehold(){
     appUrl:()=> location.protocol.startsWith("http") && !/^(localhost|127\.|\[::1\])/.test(location.hostname) ? location.origin+location.pathname : null});
 }
 function renderMore(){
-  view.innerHTML = `<div class="stack"><section class="panel"><h2>Everything else</h2><div class="menu">
+  view.innerHTML = `<div class="stack"><section class="panel"><h2>Everything else</h2><small class="muted">Version ${esc(APP_VERSION)} · <a href="#whatsNew" data-whatsnew="1">What's new</a></small><div class="menu">
     ${MENU.map(([id,n,sub])=>`<button data-goto="${id}">${esc(n)}<small>${esc(sub)}</small></button>`).join("")}
     ${true?`<a href="pantry.html#grocery">Grocery mode<small>Big tap list for the store</small></a><a href="pantry.html">Pantry and shopping list<small>Label photos, meals, shopping</small></a><a href="checker.html">Meal checker<small>Check a meal or recipe</small></a>`:""}
-  </div></section></div>`;
+  </div></section>
+  <details class="panel" id="whatsNew" ${WHATSNEW?"open":""}><summary><b>Version ${esc(APP_VERSION)}</b> · What's new</summary>
+    ${CHANGES.slice(0,3).map(c=>`<div><b>${esc(c.v)}</b> <small class="muted">${esc(c.date.slice(5).replace("-","/"))}</small><ul style="margin:4px 0 0;padding-left:20px">${c.items.map(i=>`<li>${esc(i)}</li>`).join("")}</ul></div>`).join("")}
+  </details></div>`;
 }
 function backToMore(){ return TAB!=="more"&&TAB!=="today"&&TAB!=="quick"&&TAB!=="tomorrow" ? `<button class="linkbtn" data-goto="more">← Everything else</button>` : ""; }
 
@@ -1389,7 +1405,7 @@ async function saveFile(name, text, type){
 }
 const LOCAL_BACKUPS = "dailyhelper.backups";
 function localBackups(){ try{ return JSON.parse(localStorage.getItem(LOCAL_BACKUPS)||"[]"); }catch(_){ return []; } }
-function snapshot(){ let kv = null; try{ kv = localStorage.getItem("pantryplanner.v1"); }catch(_){} return {day:ymd(new Date()), state:JSON.parse(JSON.stringify(S)), kv:{"pantryplanner.v1":kv}}; }
+function snapshot(){ let kv = null; try{ kv = localStorage.getItem("pantryplanner.v1"); }catch(_){} return {day:ymd(new Date()), appVersion:APP_VERSION, state:JSON.parse(JSON.stringify(S)), kv:{"pantryplanner.v1":kv}}; }
 function dailyLocalBackup(){
   try{ const list = localBackups(); if(list.some(b=>b.day===ymd(new Date()))) return;
     list.push(snapshot()); while(list.length>7) list.shift(); localStorage.setItem(LOCAL_BACKUPS, JSON.stringify(list)); }catch(_){}
@@ -1487,7 +1503,7 @@ function renderLookback(){
 }
 function lookbackText(){
   const rows = lookbackRows(), sm = summary(rows);
-  return [`Daily Helper week look-back, ${dLabel(rows[0].d)} to ${dLabel(rows[6].d)}`, "", ...sumLines(sm).map(l=>"- "+l), "", "By day:",
+  return [`Daily Helper week look-back, ${dLabel(rows[0].d)} to ${dLabel(rows[6].d)} (app version ${APP_VERSION})`, "", ...sumLines(sm).map(l=>"- "+l), "", "By day:",
     ...rows.map(r=>`- ${dLabel(r.d)}: checklist ${r.pct==null?"-":r.pct+"%"}, water ${r.oz==null?"-":r.oz+" oz"}, felt ${r.feel.overall?FEEL_WORD[r.feel.overall]:"-"}, bowel check ${r.bm?"yes":"no"}${r.flare?", flare-up mode":""}${r.feel.note?". "+r.feel.note:""}`),
     "", "Notes and missed items:", ...(notesText(rows).length?notesText(rows):["- none"])].join("\n");
 }
@@ -1519,11 +1535,46 @@ function renderVisit(){
 }
 function visitText(){
   const v = visitData();
-  return [`For my doctor visit, ${new Date().toLocaleDateString(undefined,{month:"long",day:"numeric",year:"numeric"})}`, "", "Questions:", ...(v.open.length?v.open.map((q,i)=>`${i+1}. ${q.text}`):["- none"]),
+  return [`For my doctor visit, ${new Date().toLocaleDateString(undefined,{month:"long",day:"numeric",year:"numeric"})} (Daily Helper ${APP_VERSION})`, "", "Questions:", ...(v.open.length?v.open.map((q,i)=>`${i+1}. ${q.text}`):["- none"]),
     "", "Last 2 weeks:", ...sumLines(v.sm).map(l=>"- "+l), "", "Supplements and medicine:", ...v.supps.map(x=>`- ${x.n}${x.dose?", "+x.dose:""}${x.times?", "+x.times:""}${x.pending?" (timing to confirm)":""}`),
     "", "Recent labs:", ...(v.labs.length?v.labs.map(l=>`- ${l.name}: ${l.value} ${l.unit} (${l.date})${l.flag?" "+l.flag.toUpperCase():""}${l.check?" (check digits)":""}`):["- none"]),
     "", "Notes from the last 2 weeks:", ...(notesText(v.rows).length?notesText(v.rows):["- none"])].join("\n");
 }
+
+
+function nudgeList(){
+  const N = S.nudge||{}, today = parseYmd(ymd(new Date()));
+  if(N.on===false) return [];
+  const used = Object.keys(S.log).filter(k=>Object.keys((S.log[k]||{}).done||{}).length || (S.log[k]||{}).oz).sort();
+  if(!used.length) return [];
+  const first = parseYmd(used[0]), out = [];
+  const lastDone = (kind,id)=>{ const re = new RegExp("(^|:)"+kind+":"+id.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"(:|$)");
+    let best = null; for(const [k,lg] of Object.entries(S.log)) if(Object.keys(lg.done||{}).some(x=>re.test(x)) && (!best||k>best)) best = k; return best; };
+  const check = (x, kind, what)=>{
+    if(!x.active) return;
+    const n = x.nudgeDays==null ? Number(N.days)||7 : Number(x.nudgeDays); if(!n) return;
+    const key = kind+":"+x.id; if((N.snooze||{})[key] && N.snooze[key] > ymd(today)) return;
+    const ld = lastDone(kind, x.id), from = ld ? parseYmd(ld) : first;
+    const gap = Math.round((today - from)/86400000); if(gap < n) return;
+    let due = 0; for(let i=1;i<=gap;i++) if(dueOn(x, addDays(from,i))) due++;
+    if(due < 2) return;
+    out.push({key, x, kind, what, gap, never:!ld});
+  };
+  for(const r of S.routine||[]) check(r, "rt", "routine");
+  for(const s of S.supplements||[]) check(s, "supp", "supplement");
+  return out.sort((a,b)=>b.gap-a.gap);
+}
+function nudgeHtml(){
+  const list = nudgeList(); if(!list.length) return "";
+  return list.slice(0,1).map(n=>{ const nm = n.x.name;
+    return `<section class="panel nudge"><b>${n.never?`You haven't ticked off ${esc(nm)} since you started the app (${n.gap} days).`:`It's been ${n.gap} days since you ticked off ${esc(nm)}.`}</b>
+      <span class="muted">That's fine. Life happens. Does it still fit your days, or should it change?</span>
+      <div class="chips" style="gap:8px"><button class="btn" data-nkeep="${esc(n.key)}">Keep it as is</button><button class="btn ghost" data-ngo="${esc(n.key)}">Change how often</button><button class="btn ghost" data-npause="${esc(n.key)}">Pause it</button>${NREMOVE===n.key?`<button class="btn" data-nremove="${esc(n.key)}">Yes, remove it</button><button class="btn ghost" data-nremovecancel="1">Cancel</button>`:`<button class="btn ghost" data-nremoveask="${esc(n.key)}">Remove it</button>`}</div>
+      <label class="inline" style="font-weight:400">Ask about this after <select data-ndays="${esc(n.key)}">${[[7,"7 days"],[14,"14 days"],[30,"30 days"],[0,"never"]].map(([v,l])=>`<option value="${v}" ${(n.x.nudgeDays==null?Number((S.nudge||{}).days)||7:Number(n.x.nudgeDays))===v?"selected":""}>${l}</option>`).join("")}</select></label>
+    </section>`; }).join("") + (list.length>1?`<small class="muted">${list.length-1} more to look at after this one.</small>`:"");
+}
+let NREMOVE = null, WHATSNEW = false;
+function nudgeItem(key){ const [kind,id] = [key.slice(0,key.indexOf(":")), key.slice(key.indexOf(":")+1)]; return {kind, x:(kind==="rt"?S.routine:S.supplements).find(v=>v.id===id)}; }
 
 function renderSupps(){
   let h = `<div class="stack"><section class="panel"><h2>Supplements and medicine</h2>
@@ -1639,6 +1690,7 @@ function renderSettings(){
   <section class="panel"><h2>Plan settings</h2><div class="grid2">
     <label>Fiber ramp started<input type="date" id="p-fiber" data-p="fiberStart" value="${esc(S.fiberStart)}"></label>
     <label>Water goal (oz)<input type="number" id="p-water" data-p="waterGoal" min="8" value="${esc(S.waterGoal)}"></label>
+    <label>Ask about things not done after (days)<input type="number" id="p-nudge" data-nudgedays="1" min="2" max="60" value="${esc((S.nudge||{}).days||7)}"><span class="inline" style="font-weight:400;display:flex;gap:6px;align-items:center"><input type="checkbox" data-nudgeon="1" ${(S.nudge||{}).on!==false?"checked":""}> Ask me</span></label>
     <label>Water buttons (oz)<input type="text" id="p-sizes" data-sizes="1" value="${esc((S.waterSizes||[4,8]).join(", "))}" placeholder="4, 8"><small class="muted" style="font-weight:400">One button for each size, like 4, 8, 16</small></label>
     <label>Cook day<select id="p-cookday" data-p="cookDay">${DAYS_LONG.map((n,i)=>`<option value="${i}" ${Number(S.cookDay)===i?"selected":""}>${n}</option>`).join("")}</select></label>
   </div><small class="muted">What to cook is worked out from your week and freezer on the Meals &amp; freezer tab.</small></section>
@@ -1953,6 +2005,9 @@ view.addEventListener("change",e=>{
   if(t.dataset.clock){ S.clock[t.dataset.clock] = t.type==="checkbox" ? t.checked : t.value; save(); renderSettings(); if(LAPTOP) loadPhones(); return; }
   if(t.dataset.t){ S.times[t.dataset.t]=t.value; save(); return; }
   if(t.dataset.on){ S.on[t.dataset.on]=t.checked; save(); return; }
+  if(t.dataset.ndays){ const it=nudgeItem(t.dataset.ndays); if(it.x){ it.x.nudgeDays = Number(t.value); save(); render(); } return; }
+  if(t.dataset.nudgeon!==undefined){ S.nudge.on = t.checked; save(); return; }
+  if(t.dataset.nudgedays!==undefined){ S.nudge.days = Math.max(2, Math.min(60, Number(t.value)||7)); save(); return; }
   if(t.dataset.restorefile && t.files[0]){ const f=t.files[0]; t.value=""; f.text().then(x=>{ let b; try{ b=JSON.parse(x); }catch(_){ toast("That isn't a Daily Helper backup"); return; } restoreFrom(b.state?b:{state:b}); }); return; }
   if(t.dataset.feelnote){ const lg=dayLog(t.dataset.day); lg.feel=lg.feel||{}; lg.feel.note=t.value.trim(); save(); return; }
   if(t.dataset.sizes){ const v=t.value.split(/[,\s]+/).map(Number).filter(n=>n>0&&n<=64).slice(0,6); S.waterSizes = v.length?v:[4,8]; save(); toast("Water buttons: "+S.waterSizes.join(", ")+" oz"); return; }
@@ -2007,6 +2062,15 @@ view.addEventListener("click",async e=>{
   if(t.dataset.restoreday){ const d=t.dataset.restoreday;
     if(SERVER){ try{ restoreFrom(await (await fetch("/api/backups/"+d,{cache:"no-store"})).json()); }catch(_){ toast("Couldn't read that copy"); } }
     else restoreFrom(localBackups().find(b=>b.day===d)); return; }
+  if(t.dataset.nkeep){ const it=nudgeItem(t.dataset.nkeep); const n = it.x && it.x.nudgeDays!=null ? Number(it.x.nudgeDays) : Number(S.nudge.days)||7;
+    S.nudge.snooze = S.nudge.snooze||{}; S.nudge.snooze[t.dataset.nkeep] = ymd(addDays(new Date(), n||7)); save(); render(); toast("Kept. I'll ask again in "+(n||7)+" days if it's still not ticked off."); return; }
+  if(t.dataset.ngo){ const it=nudgeItem(t.dataset.ngo); S.nudge.snooze = S.nudge.snooze||{}; S.nudge.snooze[t.dataset.ngo] = ymd(addDays(new Date(), 3)); save(); TAB="supps"; render(); window.scrollTo(0,0);
+    const el = it.x && [...document.querySelectorAll("#view input[type=text]")].find(i=>i.value===it.x.name); if(el){ el.scrollIntoView({block:"center"}); el.focus(); } return; }
+  if(t.dataset.whatsnew){ e.preventDefault(); WHATSNEW = true; render(); document.getElementById("whatsNew").scrollIntoView(); return; }
+  if(t.dataset.nremoveask){ NREMOVE = t.dataset.nremoveask; render(); return; }
+  if(t.dataset.nremovecancel){ NREMOVE = null; render(); return; }
+  if(t.dataset.nremove){ const it=nudgeItem(t.dataset.nremove); if(it.x){ const list = it.kind==="rt"?S.routine:S.supplements; list.splice(list.indexOf(it.x),1); NREMOVE=null; save(); render(); toast("Removed "+it.x.name+". You can add it back under More, then Supplements & routine."); } return; }
+  if(t.dataset.npause){ const it=nudgeItem(t.dataset.npause); if(it.x){ it.x.active=false; save(); render(); toast("Paused "+it.x.name+". Turn it back on under More, then Supplements & routine."); } return; }
   if(t.dataset.sip){ const lg=dayLog(ymd(new Date())); const n=Number(t.dataset.sip)||0; lg.sips=lg.sips||[]; lg.sips.push(n); lg.oz=(Number(lg.oz)||0)+n; save(); render(); return; }
   if(t.dataset.unsip){ const lg=dayLog(ymd(new Date())); const n=(lg.sips||[]).pop(); if(n!=null) lg.oz=Math.max(0,(Number(lg.oz)||0)-n); save(); render(); toast("Took off "+n+" oz"); return; }
   if(t.dataset.glass!==undefined){ const lg=dayLog(ymd(new Date())); const n=+t.dataset.glass+1; lg.water = lg.water===n? n-1 : n; save(); render(); return; }
