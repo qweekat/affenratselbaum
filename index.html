@@ -162,8 +162,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.17.1";
+const APP_VERSION = "1.18.0";
 const CHANGES = [
+  {v:"1.18.0", date:"2026-10-22", items:["Backups: new Combine with a backup file, to bring your phone and laptop copies together without losing either."]},
   {v:"1.17.1", date:"2026-10-22", items:["Installing an update on the laptop now saves a copy of your data first. Find it under More, then Backups."]},
   {v:"1.17.0", date:"2026-10-22", items:["New name: all systems you. Your data, settings and phone link stay the same."]},
   {v:"1.16.0", date:"2026-10-22", items:["Meal checker has a new \"Fix a meal\" tab: type a meal's ingredients and it suggests what to swap, trim and add."]},
@@ -1415,12 +1416,42 @@ function dailyLocalBackup(){
 }
 let RESTORE_ASK = null, SERVER_DAYS = null;
 async function restoreFrom(b){
-  if(!b || !b.state || typeof b.state!=="object") { toast("That isn't a all systems you backup"); return; }
+  if(!b || !b.state || typeof b.state!=="object") { toast("That isn't an all systems you backup"); return; }
   S = merge(b.state); save();
   const pv = b.kv && b.kv["pantryplanner.v1"];
   if(pv){ try{ localStorage.setItem("pantryplanner.v1", pv); }catch(_){}
     if(SERVER) try{ await fetch("/api/kv/pantryplanner.v1",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({value:pv})}); }catch(_){} }
   RESTORE_ASK = null; toast("Restored your data from "+(b.day||"the file")); TAB="today"; render();
+}
+
+async function combineFrom(b){
+  if(!b || !b.state || typeof b.state!=="object") { toast("That isn't an all systems you backup"); return; }
+  const o = merge(b.state); let days = 0, items = 0;
+  for(const [k,ol] of Object.entries(o.log||{})){
+    const sl = S.log[k];
+    if(!sl){ S.log[k] = ol; days++; continue; }
+    sl.done = Object.assign({}, ol.done||{}, sl.done||{});
+    if((Number(ol.oz)||0) > (Number(sl.oz)||0)){ sl.oz = ol.oz; sl.sips = ol.sips||[]; }
+    if(ol.feel) sl.feel = Object.assign({}, ol.feel, sl.feel||{});
+    if(ol.missed) sl.missed = Object.assign({}, ol.missed, sl.missed||{});
+    if(ol.cooked && !sl.cooked) sl.cooked = ol.cooked;
+    days++;
+  }
+  for(const f of ["notes","doctor","labs","visits","moved","supplements","routine"]){
+    const have = new Set((S[f]||[]).map(x=>x.id));
+    for(const x of (o[f]||[])) if(x && x.id && !have.has(x.id)){ (S[f]=S[f]||[]).push(x); items++; }
+  }
+  for(const [k,v] of Object.entries(o.dayOver||{})) if(!(S.dayOver||{})[k]) (S.dayOver=S.dayOver||{})[k] = v;
+  save();
+  const pv = b.kv && b.kv["pantryplanner.v1"];
+  if(pv){ try{ const a = JSON.parse(pv), cur = JSON.parse(localStorage.getItem("pantryplanner.v1")||"null");
+    let out = a;
+    if(cur){ out = Object.assign({}, cur); out.pantry = Object.assign({}, a.pantry||{}, cur.pantry||{}); out.got = Object.assign({}, a.got||{}, cur.got||{});
+      const ids = new Set((cur.custom||[]).map(x=>x.id)); out.custom = [...(cur.custom||[]), ...(a.custom||[]).filter(x=>!ids.has(x.id))]; }
+    const v = JSON.stringify(out); localStorage.setItem("pantryplanner.v1", v);
+    if(SERVER) await fetch("/api/kv/pantryplanner.v1",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({value:v})});
+  }catch(_){} }
+  toast(`Combined: ${days} day${days===1?"":"s"} and ${items} note${items===1?"":"s"}, questions or items added`); TAB="today"; render();
 }
 function renderBackup(){
   if(SERVER && SERVER_DAYS===null){ SERVER_DAYS=[]; fetch("/api/backups",{cache:"no-store"}).then(r=>r.json()).then(j=>{ SERVER_DAYS=j.days||[]; if(TAB==="backup") render(); }).catch(()=>{}); }
@@ -1428,7 +1459,9 @@ function renderBackup(){
   view.innerHTML = `<div class="stack"><section class="panel"><h2>Backups</h2>
     <p class="muted" style="margin:0">${SERVER?"The laptop saves a copy of everything once a day and keeps the last 7, in the DailyHelper data folder.":"This browser saves a copy once a day and keeps the last 7."} Download one now and then to keep it somewhere safe, like your email or a USB stick.</p>
     <div class="chips" style="gap:8px"><button class="btn" data-backupdl="1">Download a backup now</button>
-    <label class="btn ghost">Restore from a backup file<input type="file" accept=".json,application/json" data-restorefile="1" hidden></label></div>
+    <label class="btn">Combine with a backup file<input type="file" accept=".json,application/json" data-combinefile="1" hidden></label>
+    <label class="btn ghost">Replace with a backup file<input type="file" accept=".json,application/json" data-restorefile="1" hidden></label></div>
+    <small class="muted"><b>Combine</b> adds the other copy's days, ticks, water, check-ins and notes to what's here and keeps your settings. Use it to bring your phone and laptop together. <b>Replace</b> swaps everything here for the file.</small>
   </section>
   <section class="panel"><h2>Daily copies</h2>
     ${auto.length?`<ol class="day">${auto.map(d=>`<li style="grid-template-columns:1fr auto"><span><b>${esc(DAYS_LONG[parseYmd(d.slice(0,10)).getDay()])} ${esc(d.slice(5,10).replace("-","/"))}${d.length>10?" "+esc(d.slice(-6,-4)+":"+d.slice(-4,-2)):""}</b><br><small class="muted">${d.length>10?"Your data just before an update was installed":"Your data as it was at the start of that day"}</small></span>
@@ -2011,7 +2044,8 @@ view.addEventListener("change",e=>{
   if(t.dataset.ndays){ const it=nudgeItem(t.dataset.ndays); if(it.x){ it.x.nudgeDays = Number(t.value); save(); render(); } return; }
   if(t.dataset.nudgeon!==undefined){ S.nudge.on = t.checked; save(); return; }
   if(t.dataset.nudgedays!==undefined){ S.nudge.days = Math.max(2, Math.min(60, Number(t.value)||7)); save(); return; }
-  if(t.dataset.restorefile && t.files[0]){ const f=t.files[0]; t.value=""; f.text().then(x=>{ let b; try{ b=JSON.parse(x); }catch(_){ toast("That isn't a all systems you backup"); return; } restoreFrom(b.state?b:{state:b}); }); return; }
+  if(t.dataset.combinefile && t.files[0]){ const f=t.files[0]; t.value=""; f.text().then(x=>{ let b; try{ b=JSON.parse(x); }catch(_){ toast("That isn't an all systems you backup"); return; } combineFrom(b.state?b:{state:b}); }); return; }
+  if(t.dataset.restorefile && t.files[0]){ const f=t.files[0]; t.value=""; f.text().then(x=>{ let b; try{ b=JSON.parse(x); }catch(_){ toast("That isn't an all systems you backup"); return; } restoreFrom(b.state?b:{state:b}); }); return; }
   if(t.dataset.feelnote){ const lg=dayLog(t.dataset.day); lg.feel=lg.feel||{}; lg.feel.note=t.value.trim(); save(); return; }
   if(t.dataset.sizes){ const v=t.value.split(/[,\s]+/).map(Number).filter(n=>n>0&&n<=64).slice(0,6); S.waterSizes = v.length?v:[4,8]; save(); toast("Water buttons: "+S.waterSizes.join(", ")+" oz"); return; }
   if(t.dataset.p){ S[t.dataset.p] = t.type==="number"||t.tagName==="SELECT" ? Number(t.value) : t.value; save(); return; }
