@@ -4,7 +4,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <meta name="theme-color" content="#2f6b57">
-<meta name="apple-mobile-web-app-title" content="Daily Helper">
+<meta name="apple-mobile-web-app-title" content="all systems you">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pantry Meal Planner</title>
@@ -129,7 +129,7 @@ footer { color: var(--muted); font-size: 0.85rem; display: flex; flex-direction:
 <body>
 <div class="wrap">
   <header>
-    <div class="row spread"><h1>Pantry Meal Planner</h1><a id="helper-link" class="btn sm" href="index.html">Daily Helper</a></div>
+    <div class="row spread"><h1>Pantry Meal Planner</h1><a id="helper-link" class="btn sm" href="index.html">all systems you</a></div>
     <p class="lede">Tick what you have. The app shows which meals from your eating plan and batch-cook routine you can make, then builds a shopping list for the rest. Every meal follows your plan's food rules, and shared bases stay chili-free for your husband.</p>
   </header>
 
@@ -179,7 +179,7 @@ footer { color: var(--muted); font-size: 0.85rem; display: flex; flex-direction:
           <label for="days">Days</label>
           <input type="number" id="days" min="1" max="14" value="7" style="width: 5em">
           <button class="btn primary" id="btn-fill">Fill these days from my pantry</button>
-          <button class="btn" id="btn-helper" hidden>Use my Daily Helper week</button>
+          <button class="btn" id="btn-helper" hidden>Use my week from all systems you</button>
         </div>
         <p class="small muted">Fill picks a breakfast, lunch, dinner, snack and evening treat for each day, favoring what you already have. It keeps to your bean servings per day.</p>
         <div id="plan-stats" class="row"></div>
@@ -320,7 +320,7 @@ async function readLabelOnPhone(blob, el){
 <script>
 (() => {
   // ---------- Food rules, copied from the Meal Plan Checker so both apps flag foods the same way ----------
-  // ---------- Your rules, set on the Daily Helper's "My rules" page. Built-in values fill anything missing. ----------
+  // ---------- Your rules, set on all systems you's "My rules" page. Built-in values fill anything missing. ----------
   const USER_RULES = (() => { try { const h = JSON.parse(localStorage.getItem('dh-me-v1') || 'null'); return h && h.rules && typeof h.rules === 'object' ? h.rules : null; } catch (e) { return null; } })();
   const DEFAULTS = { carbsPerDay: null, carbsPerMeal: null, glLow: 10, glHigh: 20, fiberGoal: 30, ramp: [15, 20, 25, 30], beansPerDay: 1, nutsSeedsTbsp: 2, oilTspPerMeal: 2, spacingMin: 120 };
   const R = { ...DEFAULTS };
@@ -335,7 +335,7 @@ async function readLabelOnPhone(blob, el){
   const USER_OK = ((USER_RULES && USER_RULES.ok) || []).map(x => userRule('ok', x)).filter(Boolean);
   const USER_EXTRA = ((USER_RULES && USER_RULES.extra) || []).filter(x => x && ['avoid', 'limit', 'ask', 'note'].includes(x.level)).map(x => userRule(x.level, x)).filter(Boolean);
   const spacingText = R.spacingMin % 60 === 0 ? `${R.spacingMin / 60} hour${R.spacingMin === 60 ? '' : 's'}` : `${R.spacingMin} minutes`;
-  const RULES_SOURCE = USER_RULES ? 'Using your rules from Daily Helper.' : 'Using built-in rules.';
+  const RULES_SOURCE = USER_RULES ? 'Using your rules from all systems you.' : 'Using built-in rules.';
   const BUILTIN_RULES = [
     ['ok', 'pacha(?: sprouted)?(?: buckwheat)?(?: bread| toast)?|sprouted buckwheat (?:bread|toast)', 'Pacha bread', ''],
     ['note', 'jalape[nñ]os?|serranos?|cayenne|habaneros?|chipotles?|chil(?:e|i|ies|is|es)(?! powder)', 'Chili', 'Fine on your plate. Keep it out of shared pots for his tongue.'],
@@ -426,7 +426,7 @@ async function readLabelOnPhone(blob, el){
 /* ---------- Household (source: shared-app/src/household/hh-core.js, copied into each page by the build) ----------
    People you share meals with. Their food rules stay on this device; nothing goes online.
    A food card carries one person's food rules, never conditions, medicines or labs, from phone to phone,
-   locked with a passcode. Same code in the Daily Helper, the Pantry and the Checker. */
+   locked with a passcode. Same code in all systems you, the Pantry and the Checker. */
 var HH = (function(){
   "use strict";
   // Starter lists, filled in at build time from the checker: {id:{name, avoid:[...], ok:[...]}}
@@ -491,7 +491,7 @@ var HH = (function(){
     if(!b.me.id) b.me.id = "p"+Math.random().toString(36).slice(2,10)+Date.now().toString(36);
     return b;
   }
-  // People who eat shared meals, from the Daily Helper's saved data (the Pantry and Checker read it this way).
+  // People who eat shared meals, from all systems you's saved data (the Pantry and Checker read it this way).
   function atTable(h){ return (h && h.people || []).filter(function(p){ return p.shared!==false; }); }
   function fromStorage(key){ try{ var s = JSON.parse(localStorage.getItem(key)||"null"); return s && s.household ? fix(s.household) : blank(); }catch(e){ return blank(); } }
   // One line per person for a dish everyone shares: what clashes, and what they add on their own plate.
@@ -1080,7 +1080,7 @@ var HH = (function(){
   document.getElementById('btn-add-custom').addEventListener('click', addCustom);
   customName.addEventListener('keydown', e => { if (e.key === 'Enter') addCustom(); });
 
-  // ---------- Nutrition label photo (only when served by the Daily Helper, which reads the photo offline) ----------
+  // ---------- Nutrition label photo (only when served by all systems you, which reads the photo offline) ----------
   const LABEL_FIELDS = [['serving', 'Serving size', 'text'], ['servings', 'Servings per container', 'text'], ['calories', 'Calories', 'num'],
     ['carbs', 'Total carbs (g)', 'num'], ['fiber', 'Fiber (g)', 'num'], ['sugar', 'Total sugars (g)', 'num'], ['addedSugar', 'Added sugars (g)', 'num'],
     ['protein', 'Protein (g)', 'num'], ['fat', 'Fat (g)', 'num'], ['sodium', 'Sodium (mg)', 'num']];
@@ -1410,7 +1410,7 @@ var HH = (function(){
     save(); renderGrocery();
   });
   document.getElementById('btn-grocery').addEventListener('click', openGrocery);
-  // The Daily Helper's "Grocery mode" link opens straight into it.
+  // all systems you's "Grocery mode" link opens straight into it.
   if (location.hash === '#grocery') setTimeout(() => { history.replaceState(null, '', location.pathname); openGrocery(); }, 400);
 
   document.getElementById('shop-list').addEventListener('change', e => {
@@ -1455,7 +1455,7 @@ var HH = (function(){
     toast(`Planned ${days} days`);
   });
 
-  // Daily Helper week: the Daily Helper app (same origin) stores the week's meals by day and the next cook session.
+  // all systems you week: all systems you app (same origin) stores the week's meals by day and the next cook session.
   const HELPER_KEY = 'dh-me-v1';
   const SESSION_BATCH = {
     A: ['r_chickenstew', 'r_bison', 'r_beans', 'r_patties', 'r_quinoa', 'r_roastveg', 'r_chiajam'],
@@ -1467,7 +1467,7 @@ var HH = (function(){
   document.getElementById('btn-helper').hidden = !readHelper();
   document.getElementById('btn-helper').addEventListener('click', () => {
     const h = readHelper();
-    if (!h) { toast('No Daily Helper week found'); return; }
+    if (!h) { toast('No week found in all systems you'); return; }
     const plan = {};
     let skipped = 0;
     for (let d = 0; d < 7; d++) {
@@ -1478,7 +1478,7 @@ var HH = (function(){
         if (RECIPE[id]) plan[id] = (plan[id] || 0) + 1; else skipped++;
       }
     }
-    // Cook day: the Daily Helper's own list (cookNext.items, possibly empty) wins; the fixed A/B sessions are the fallback.
+    // Cook day: all systems you's own list (cookNext.items, possibly empty) wins; the fixed A/B sessions are the fallback.
     const cook = h.cookNext && Array.isArray(h.cookNext.items) ? h.cookNext.items : null;
     const sess = !cook && h.nextCook && SESSION_BATCH[h.nextCook.session];
     if (cook) cook.forEach(it => {
@@ -1489,7 +1489,7 @@ var HH = (function(){
     else if (sess) sess.forEach(id => plan[id] = (plan[id] || 0) + 1);
     state.plan = plan; state.days = 7; state.got = {}; save(); render();
     const cookNote = cook ? ' and your cook day list' : sess ? ` and cook session ${h.nextCook.session}` : '';
-    toast(`Loaded your Daily Helper week${cookNote}${skipped ? ` (${skipped} unknown meal${skipped > 1 ? 's' : ''} skipped)` : ''}`);
+    toast(`Loaded your week from all systems you${cookNote}${skipped ? ` (${skipped} unknown meal${skipped > 1 ? 's' : ''} skipped)` : ''}`);
   });
 
   // Adds up amounts like "1/2" x7 and "1" x2 when they share a unit; anything else is listed as written.
@@ -1845,7 +1845,7 @@ var HH = (function(){
 
   document.getElementById('rules-src').textContent = RULES_SOURCE;
   if (R.carbsPerMeal != null || R.carbsPerDay != null) document.getElementById('carb-note').textContent = `Carb target from your rules: ${[R.carbsPerMeal != null && r1(R.carbsPerMeal) + ' g per meal', R.carbsPerDay != null && r1(R.carbsPerDay) + ' g per day'].filter(Boolean).join(', ')}.`;
-  // Served by the Daily Helper app (http), not opened as a file: link back to it.
+  // Served by all systems you app (http), not opened as a file: link back to it.
   
 
   // ---------- Render ----------
@@ -1867,7 +1867,7 @@ var HH = (function(){
 <script>
 (function(){
   var links = [["index.html#today","Today"],["pantry.html#grocery","Grocery"],["pantry.html","Pantry"],["checker.html","Checker"],["index.html#more","More"]];
-  var nav = document.createElement("nav"); nav.className = "dh-bar"; nav.setAttribute("aria-label", "Daily Helper");
+  var nav = document.createElement("nav"); nav.className = "dh-bar"; nav.setAttribute("aria-label", "all systems you");
   var here = location.pathname.split("/").pop() || "index.html";
   links.forEach(function(l){
     var a = document.createElement("a"); a.href = l[0]; a.textContent = l[1];

@@ -6,7 +6,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <meta name="theme-color" content="#2f6b57">
-<meta name="apple-mobile-web-app-title" content="Daily Helper">
+<meta name="apple-mobile-web-app-title" content="all systems you">
 <title>Meal Plan Checker</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -237,7 +237,7 @@ footer a, .lede a { color: var(--accent); }
 (() => {
   // ---------- Rules: [level, pattern, label, why]. Earlier rules win where matches overlap. ----------
   // level: avoid | ask | limit | note | ok (ok consumes the words so later rules skip them)
-  // ---------- Your rules, set on the Daily Helper's "My rules" page. Built-in values fill anything missing. ----------
+  // ---------- Your rules, set on all systems you's "My rules" page. Built-in values fill anything missing. ----------
   const USER_RULES = (() => { try { const h = JSON.parse(localStorage.getItem('dh-me-v1') || 'null'); return h && h.rules && typeof h.rules === 'object' ? h.rules : null; } catch (e) { return null; } })();
   const DEFAULTS = { carbsPerDay: null, carbsPerMeal: null, glLow: 10, glHigh: 20, fiberGoal: 30, ramp: [15, 20, 25, 30], beansPerDay: 1, nutsSeedsTbsp: 2, oilTspPerMeal: 2, spacingMin: 120 };
   const R = { ...DEFAULTS };
@@ -252,7 +252,7 @@ footer a, .lede a { color: var(--accent); }
   const USER_OK = ((USER_RULES && USER_RULES.ok) || []).map(x => userRule('ok', x)).filter(Boolean);
   const USER_EXTRA = ((USER_RULES && USER_RULES.extra) || []).filter(x => x && ['avoid', 'limit', 'ask', 'note'].includes(x.level)).map(x => userRule(x.level, x)).filter(Boolean);
   const spacingText = R.spacingMin % 60 === 0 ? `${R.spacingMin / 60} hour${R.spacingMin === 60 ? '' : 's'}` : `${R.spacingMin} minutes`;
-  const RULES_SOURCE = USER_RULES ? 'Using your rules from Daily Helper.' : 'Using built-in rules.';
+  const RULES_SOURCE = USER_RULES ? 'Using your rules from all systems you.' : 'Using built-in rules.';
   const BUILTIN_RULES = [
     ['ok', 'agave inulin|inulin', 'Inulin', ''],
     ['ok', 'oat bran|rice bran', 'Bran', ''],
@@ -339,7 +339,7 @@ footer a, .lede a { color: var(--accent); }
 /* ---------- Household (source: shared-app/src/household/hh-core.js, copied into each page by the build) ----------
    People you share meals with. Their food rules stay on this device; nothing goes online.
    A food card carries one person's food rules, never conditions, medicines or labs, from phone to phone,
-   locked with a passcode. Same code in the Daily Helper, the Pantry and the Checker. */
+   locked with a passcode. Same code in all systems you, the Pantry and the Checker. */
 var HH = (function(){
   "use strict";
   // Starter lists, filled in at build time from the checker: {id:{name, avoid:[...], ok:[...]}}
@@ -404,7 +404,7 @@ var HH = (function(){
     if(!b.me.id) b.me.id = "p"+Math.random().toString(36).slice(2,10)+Date.now().toString(36);
     return b;
   }
-  // People who eat shared meals, from the Daily Helper's saved data (the Pantry and Checker read it this way).
+  // People who eat shared meals, from all systems you's saved data (the Pantry and Checker read it this way).
   function atTable(h){ return (h && h.people || []).filter(function(p){ return p.shared!==false; }); }
   function fromStorage(key){ try{ var s = JSON.parse(localStorage.getItem(key)||"null"); return s && s.household ? fix(s.household) : blank(); }catch(e){ return blank(); } }
   // One line per person for a dish everyone shares: what clashes, and what they add on their own plate.
@@ -638,7 +638,7 @@ Dinner: Baked salmon with roasted sweet potato, broccoli, and a squeeze of lemon
         <div class="why">${esc(g.rule.why)}</div>
         <div class="w">Found: ${[...g.words].map(([w, n]) => esc(w) + (n > 1 ? ' ×' + n : '')).join(', ')}</div>
       </div></div>`).join('');
-    // Household: the same text checked for each person who eats shared meals (Daily Helper, Household page).
+    // Household: the same text checked for each person who eats shared meals (all systems you, Household page).
     if (text.trim() && HH.atTable(HHH).length) hitsEl.insertAdjacentHTML('beforeend', HH.tableHtml(text, HHH, { title: 'At the table (shared dishes)' }));
     let out = '', i = 0;
     for (const h of hits) {
@@ -1001,7 +1001,7 @@ Dinner: Baked salmon with roasted sweet potato, broccoli, and a squeeze of lemon
 <script>
 (function(){
   var links = [["index.html#today","Today"],["pantry.html#grocery","Grocery"],["pantry.html","Pantry"],["checker.html","Checker"],["index.html#more","More"]];
-  var nav = document.createElement("nav"); nav.className = "dh-bar"; nav.setAttribute("aria-label", "Daily Helper");
+  var nav = document.createElement("nav"); nav.className = "dh-bar"; nav.setAttribute("aria-label", "all systems you");
   var here = location.pathname.split("/").pop() || "index.html";
   links.forEach(function(l){
     var a = document.createElement("a"); a.href = l[0]; a.textContent = l[1];

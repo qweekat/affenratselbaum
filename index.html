@@ -6,8 +6,8 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <meta name="theme-color" content="#2f6b57">
-<meta name="apple-mobile-web-app-title" content="Daily Helper">
-<title>Daily Helper</title>
+<meta name="apple-mobile-web-app-title" content="all systems you">
+<title>all systems you</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Literata:opsz,wght@7..72,500;7..72,700&display=swap">
@@ -145,7 +145,7 @@ table.rep th{color:var(--muted);font-weight:700}
 
 <div class="wrap">
   <header class="top">
-    <h1>Daily Helper</h1>
+    <h1>all systems you</h1>
     <span class="muted" id="syncNote"></span>
   </header>
   <nav class="tabs" role="tablist">
@@ -162,8 +162,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.16.0";
+const APP_VERSION = "1.17.0";
 const CHANGES = [
+  {v:"1.17.0", date:"2026-10-22", items:["New name: all systems you. Your data, settings and phone link stay the same."]},
   {v:"1.16.0", date:"2026-10-22", items:["Meal checker has a new \"Fix a meal\" tab: type a meal's ingredients and it suggests what to swap, trim and add."]},
   {v:"1.15.0", date:"2026-10-22", items:["Asks kindly about a supplement or routine step you haven't ticked off in a while: keep it, change how often, pause it or remove it.","Version number and this What's new list."]},
   {v:"1.14.0", date:"2026-10-21", items:["Bottom bar on every page (Today, Grocery, Pantry, Checker, More), so the iPhone home-screen app can always get back.","Meal tip reworded for mixed bowls."]},
@@ -467,7 +468,7 @@ var HHUI = (function(){
     var res = '';
     if(made){
       res = '<div class="hh-made">'
-        +(made.qr ? '<div class="hh-qr">'+made.qr+'</div><small class="muted">Have them point their phone\'s camera at this. It opens Daily Helper with your card.</small>'
+        +(made.qr ? '<div class="hh-qr">'+made.qr+'</div><small class="muted">Have them point their phone\'s camera at this. It opens all systems you with your card.</small>'
                   : '<small class="muted">'+(made.url?"The QR code couldn't load here.":"This page has no web address phones can open, so there's no QR code.")+' Share the card file or copy the text instead.</small>')
         +'<div class="hh-pass"><small>Passcode</small><b>'+esc(made.pass)+'</b><small>Tell them in person or on a call. Don\'t send it with the card.</small></div>'
         +'<div class="chips"><button class="btn ghost" data-hh-share>Share card file</button><button class="btn ghost" data-hh-copy>Copy card text</button><button class="btn ghost" data-hh-done>Done</button></div>'
@@ -494,7 +495,7 @@ var HHUI = (function(){
       +'<section class="panel"><h2>Household</h2><p class="muted" style="margin:0">People you share meals with. Their food rules stay on this device and are never sent online.</p>'
       +(h.people.length ? h.people.map(personCard).join("") : '<small class="muted">No one added yet.</small>')
       +'<div class="chips"><button class="btn" data-hh-mode="open">Add from a food card</button><button class="btn ghost" data-hh-mode="type">Type someone in</button></div>'
-      +'<small class="muted">Best: each person makes their own card in their own Daily Helper, so they choose what\'s on it.</small></section>'
+      +'<small class="muted">Best: each person makes their own card in their own all systems you, so they choose what\'s on it.</small></section>'
       +tablePanel(h) + cardPanel(h)
       +(h.given.length ? '<section class="panel"><h2>Cards you\'ve made</h2><ul class="hh-ul">'+h.given.slice().reverse().slice(0,10).map(function(g){ return '<li>'+esc(nice(g.date))+": "+g.n+" line"+(g.n===1?"":"s")+(g.until?", could be opened until "+esc(nice(g.until)):", no end date")+'</li>'; }).join("")+'</ul><small class="muted">A card can\'t be taken back once opened. To change what someone has, send them a new card. It replaces the old one.</small></section>' : '')
       +'<section class="panel"><details><summary><b>How sharing stays private</b></summary><ul class="hh-ul">'
@@ -516,7 +517,7 @@ var HHUI = (function(){
     render();
   }
   function cardFile(){
-    return "Daily Helper food card from "+(made.name||"someone")+".\nOpen Daily Helper, go to More, then Household, then Add from a food card.\n"
+    return "all systems you food card from "+(made.name||"someone")+".\nOpen all systems you, go to More, then Household, then Add from a food card.\n"
       +(made.until?"It can be opened until "+nice(made.until)+".\n":"")+"\n"+(made.url||made.text)+"\n";
   }
   async function open(text, pass){
@@ -1353,7 +1354,7 @@ function renderDay(offset){
     }
     h += `</ol></section>`;
   }
-  h += `<small class="muted noprint" style="text-align:center">Daily Helper ${esc(APP_VERSION)}</small></div>`;
+  h += `<small class="muted noprint" style="text-align:center">all systems you ${esc(APP_VERSION)}</small></div>`;
   view.innerHTML = h;
 }
 
@@ -1413,7 +1414,7 @@ function dailyLocalBackup(){
 }
 let RESTORE_ASK = null, SERVER_DAYS = null;
 async function restoreFrom(b){
-  if(!b || !b.state || typeof b.state!=="object") { toast("That isn't a Daily Helper backup"); return; }
+  if(!b || !b.state || typeof b.state!=="object") { toast("That isn't a all systems you backup"); return; }
   S = merge(b.state); save();
   const pv = b.kv && b.kv["pantryplanner.v1"];
   if(pv){ try{ localStorage.setItem("pantryplanner.v1", pv); }catch(_){}
@@ -1504,7 +1505,7 @@ function renderLookback(){
 }
 function lookbackText(){
   const rows = lookbackRows(), sm = summary(rows);
-  return [`Daily Helper week look-back, ${dLabel(rows[0].d)} to ${dLabel(rows[6].d)} (app version ${APP_VERSION})`, "", ...sumLines(sm).map(l=>"- "+l), "", "By day:",
+  return [`all systems you week look-back, ${dLabel(rows[0].d)} to ${dLabel(rows[6].d)} (app version ${APP_VERSION})`, "", ...sumLines(sm).map(l=>"- "+l), "", "By day:",
     ...rows.map(r=>`- ${dLabel(r.d)}: checklist ${r.pct==null?"-":r.pct+"%"}, water ${r.oz==null?"-":r.oz+" oz"}, felt ${r.feel.overall?FEEL_WORD[r.feel.overall]:"-"}, bowel check ${r.bm?"yes":"no"}${r.flare?", flare-up mode":""}${r.feel.note?". "+r.feel.note:""}`),
     "", "Notes and missed items:", ...(notesText(rows).length?notesText(rows):["- none"])].join("\n");
 }
@@ -1536,7 +1537,7 @@ function renderVisit(){
 }
 function visitText(){
   const v = visitData();
-  return [`For my doctor visit, ${new Date().toLocaleDateString(undefined,{month:"long",day:"numeric",year:"numeric"})} (Daily Helper ${APP_VERSION})`, "", "Questions:", ...(v.open.length?v.open.map((q,i)=>`${i+1}. ${q.text}`):["- none"]),
+  return [`For my doctor visit, ${new Date().toLocaleDateString(undefined,{month:"long",day:"numeric",year:"numeric"})} (all systems you ${APP_VERSION})`, "", "Questions:", ...(v.open.length?v.open.map((q,i)=>`${i+1}. ${q.text}`):["- none"]),
     "", "Last 2 weeks:", ...sumLines(v.sm).map(l=>"- "+l), "", "Supplements and medicine:", ...v.supps.map(x=>`- ${x.n}${x.dose?", "+x.dose:""}${x.times?", "+x.times:""}${x.pending?" (timing to confirm)":""}`),
     "", "Recent labs:", ...(v.labs.length?v.labs.map(l=>`- ${l.name}: ${l.value} ${l.unit} (${l.date})${l.flag?" "+l.flag.toUpperCase():""}${l.check?" (check digits)":""}`):["- none"]),
     "", "Notes from the last 2 weeks:", ...(notesText(v.rows).length?notesText(v.rows):["- none"])].join("\n");
@@ -1707,10 +1708,10 @@ function renderSettings(){
     <div class="chips" style="gap:8px">${SERVER?`<button class="btn" id="icsBtn">Save calendar file</button>`:""}<button class="btn ghost" id="icsCopy">Show calendar text</button></div>
     <textarea id="icsText" hidden readonly></textarea>
     <ol style="margin:0;padding-left:20px;display:grid;gap:4px">
-      <li>On the laptop, open <b>calendar.google.com</b>. Next to "Other calendars", press <b>+</b> and choose <b>Create new calendar</b>. Name it <b>Daily Helper</b>.</li>
-      <li>Press the gear, then <b>Import &amp; export</b>. Pick <b>daily-helper.ics</b> from Downloads, choose the Daily Helper calendar, and press <b>Import</b>.</li>
+      <li>On the laptop, open <b>calendar.google.com</b>. Next to "Other calendars", press <b>+</b> and choose <b>Create new calendar</b>. Name it <b>all systems you</b>.</li>
+      <li>Press the gear, then <b>Import &amp; export</b>. Pick <b>daily-helper.ics</b> from Downloads, choose all systems you calendar, and press <b>Import</b>.</li>
       <li>Open one imported event and check for a notification. Google doesn't reliably keep the file's alerts or add your default reminders to imported events. If there's none, ask Claude to add the events through the Google Calendar connector instead, which sets the reminders for you.</li>
-      <li>When your times or week change, delete the Daily Helper calendar, create it again, and import a new file. That way you don't get double events.</li>
+      <li>When your times or week change, delete all systems you calendar, create it again, and import a new file. That way you don't get double events.</li>
     </ol>
   </section>
   <section class="panel"><h2>Move settings between devices</h2>
@@ -1733,7 +1734,7 @@ function qrSvg(url){
 }
 async function loadPhones(){
   const box = document.getElementById("phonesBody"); if(!box) return;
-  try{ PH = await (await fetch("/api/phones",{cache:"no-store"})).json(); }catch(e){ box.innerHTML = `<p style="margin:0">Couldn't check phone access. Close and reopen Daily Helper.</p>`; return; }
+  try{ PH = await (await fetch("/api/phones",{cache:"no-store"})).json(); }catch(e){ box.innerHTML = `<p style="margin:0">Couldn't check phone access. Close and reopen all systems you.</p>`; return; }
   await loadQr();
   const iphoneUrl = `http://${PH.local}:${PH.port}/?k=${encodeURIComponent(PH.key)}`;
   const ip = PH.ips[0];
@@ -1742,7 +1743,7 @@ async function loadPhones(){
   box.innerHTML = `<p style="margin:0">Your phones can open this app while they're on the same Wi-Fi as the laptop. Everything stays on the laptop, so both phones always see the same week, pantry and shopping list.</p>
     <label class="inline" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="phonesToggle" ${PH.enabled?"checked":""}> Let our phones in</label>
     ${PH.enabled?`<div class="qrgrid">
-      ${card("iPhone", iphoneUrl, ["Open the Camera and point it at this code. Tap the yellow link.","In Safari, tap the Share button (square with an arrow), then <b>Add to Home Screen</b>, then <b>Add</b>.","Open Daily Helper from the new icon from now on.","If the link won't open, scan the Android code instead. It works on iPhone too."])}
+      ${card("iPhone", iphoneUrl, ["Open the Camera and point it at this code. Tap the yellow link.","In Safari, tap the Share button (square with an arrow), then <b>Add to Home Screen</b>, then <b>Add</b>.","Open all systems you from the new icon from now on.","If the link won't open, scan the Android code instead. It works on iPhone too."])}
       ${androidUrl?card("Android", androidUrl, ["Open the Camera (or Google Lens) and point it at this code. Tap the link.","In Chrome, tap the three dots, then <b>Add to Home screen</b>.","If it stops opening someday, scan this code again. The Wi-Fi can give the laptop a new address."]):`<p class="warnbox">The laptop isn't on a Wi-Fi network right now, so there's no Android code. Connect to Wi-Fi and reopen this tab.</p>`}
     </div>
     <small class="muted">The code has a private key in it, so only phones that scan it can get in. A neighbor on a campground Wi-Fi can't. If a phone is lost, press the button below. The old code stops working, and you scan the new one on the phones you keep.</small>
@@ -1927,7 +1928,7 @@ function render(){
 
 
 function icsText(){
-  const lines = ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Daily Helper//EN","CALSCALE:GREGORIAN","X-WR-CALNAME:Daily Helper"];
+  const lines = ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//all systems you//EN","CALSCALE:GREGORIAN","X-WR-CALNAME:all systems you"];
   const today = new Date(), stamp = ymd(today).replace(/-/g,"")+"T000000Z";
   const escI = s=>String(s).replace(/\\/g,"\\\\").replace(/\n/g,"\\n").replace(/[,;]/g,m=>"\\"+m);
   const ev = (uid, date, time, title, body, rrule, where)=>{
@@ -2009,7 +2010,7 @@ view.addEventListener("change",e=>{
   if(t.dataset.ndays){ const it=nudgeItem(t.dataset.ndays); if(it.x){ it.x.nudgeDays = Number(t.value); save(); render(); } return; }
   if(t.dataset.nudgeon!==undefined){ S.nudge.on = t.checked; save(); return; }
   if(t.dataset.nudgedays!==undefined){ S.nudge.days = Math.max(2, Math.min(60, Number(t.value)||7)); save(); return; }
-  if(t.dataset.restorefile && t.files[0]){ const f=t.files[0]; t.value=""; f.text().then(x=>{ let b; try{ b=JSON.parse(x); }catch(_){ toast("That isn't a Daily Helper backup"); return; } restoreFrom(b.state?b:{state:b}); }); return; }
+  if(t.dataset.restorefile && t.files[0]){ const f=t.files[0]; t.value=""; f.text().then(x=>{ let b; try{ b=JSON.parse(x); }catch(_){ toast("That isn't a all systems you backup"); return; } restoreFrom(b.state?b:{state:b}); }); return; }
   if(t.dataset.feelnote){ const lg=dayLog(t.dataset.day); lg.feel=lg.feel||{}; lg.feel.note=t.value.trim(); save(); return; }
   if(t.dataset.sizes){ const v=t.value.split(/[,\s]+/).map(Number).filter(n=>n>0&&n<=64).slice(0,6); S.waterSizes = v.length?v:[4,8]; save(); toast("Water buttons: "+S.waterSizes.join(", ")+" oz"); return; }
   if(t.dataset.p){ S[t.dataset.p] = t.type==="number"||t.tagName==="SELECT" ? Number(t.value) : t.value; save(); return; }
@@ -2304,9 +2305,9 @@ function renderPhone(){
       <li>Search for <b>Open URLs</b>, add it, and paste the link into it.</li>
       <li>Tap the name at the top to call it something like "+4 oz water", then tap <b>Done</b>.</li>
       <li>For a button on the home screen: press and hold the shortcut, tap <b>Share</b>, then <b>Add to Home Screen</b>.</li>
-      <li>For a box of several buttons: press and hold the home screen, tap <b>Edit</b>, then <b>Add Widget</b>, pick <b>Shortcuts</b>, and choose a folder with your Daily Helper shortcuts.</li>
+      <li>For a box of several buttons: press and hold the home screen, tap <b>Edit</b>, then <b>Add Widget</b>, pick <b>Shortcuts</b>, and choose a folder with your all systems you shortcuts.</li>
     </ol>
-    <small class="muted">Shortcuts opens the app in Safari, so keep using Daily Helper in Safari too. When you add it to the home screen, turn off <b>Open as Web App</b> so the icon and the shortcuts share the same data.</small>
+    <small class="muted">Shortcuts opens the app in Safari, so keep using all systems you in Safari too. When you add it to the home screen, turn off <b>Open as Web App</b> so the icon and the shortcuts share the same data.</small>
   </section>
   <section class="panel"><h2>Reminders without the laptop</h2>
     <p style="margin:0">A web app can't pop up reminders on its own while it's closed. Add your schedule to the iPhone Calendar instead: More, then Times &amp; reminders, then the calendar file. Calendar alerts work offline.</p>
@@ -2356,7 +2357,7 @@ view.addEventListener("change", e=>{ if(PHX.isRestore(e.target)) pSet("dh.welcom
 <script>
 (function(){
   var links = [["index.html#today","Today"],["pantry.html#grocery","Grocery"],["pantry.html","Pantry"],["checker.html","Checker"],["index.html#more","More"]];
-  var nav = document.createElement("nav"); nav.className = "dh-bar"; nav.setAttribute("aria-label", "Daily Helper");
+  var nav = document.createElement("nav"); nav.className = "dh-bar"; nav.setAttribute("aria-label", "all systems you");
   var here = location.pathname.split("/").pop() || "index.html";
   links.forEach(function(l){
     var a = document.createElement("a"); a.href = l[0]; a.textContent = l[1];
