@@ -1,0 +1,2314 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="theme-color" content="#2f6b57">
+<meta name="apple-mobile-web-app-title" content="Daily Helper">
+<title>Daily Helper</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Literata:opsz,wght@7..72,500;7..72,700&display=swap">
+<style>
+:root{
+  --bg:#f3f5f2; --surface:#ffffff; --line:#d9dfd8; --ink:#1d2a24; --muted:#5b6b62;
+  --juniper:#2f6b57; --juniper-soft:#e1eee8; --dusk:#3d4f8a; --dusk-soft:#e6e9f5;
+  --warn:#9a5b00; --warn-soft:#fbf0dc; --done:#8a978f;
+  --display:"Literata",Georgia,"DejaVu Serif",serif;
+  --body:"Atkinson Hyperlegible","Ubuntu","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141a17; --surface:#1c2420; --line:#2f3a34; --ink:#e4ebe6; --muted:#9fb0a6;
+  --juniper:#7cc4a7; --juniper-soft:#203a30; --dusk:#a6b4ee; --dusk-soft:#252c47;
+  --warn:#f0b75c; --warn-soft:#3a2d16; --done:#66746c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141a17; --surface:#1c2420; --line:#2f3a34; --ink:#e4ebe6; --muted:#9fb0a6;
+  --juniper:#7cc4a7; --juniper-soft:#203a30; --dusk:#a6b4ee; --dusk-soft:#252c47;
+  --warn:#f0b75c; --warn-soft:#3a2d16; --done:#66746c; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;margin:0}
+.wrap{max-width:760px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 60px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.2}
+h1{font-size:1.7rem} h2{font-size:1.2rem} h3{font-size:1rem}
+.muted{color:var(--muted)} small{font-size:.85rem}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 16px;margin-bottom:12px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;gap:4px;padding-block:8px;border-bottom:1px solid var(--line);margin-bottom:16px;overflow-x:auto}
+nav.tabs button{font:inherit;font-weight:700;background:none;border:0;padding:8px 12px;border-radius:8px;color:var(--muted);cursor:pointer;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{background:var(--juniper-soft);color:var(--juniper)}
+button,.btn{font:inherit;cursor:pointer}
+a{color:var(--juniper);font-weight:700}
+.btn{background:var(--juniper);color:var(--surface);border:0;border-radius:8px;padding:8px 14px;font-weight:700}
+.btn.ghost{background:none;color:var(--juniper);border:1px solid var(--line)}
+:focus-visible{outline:3px solid var(--dusk);outline-offset:2px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:10px}
+.stack{display:grid;gap:16px}
+[hidden]{display:none !important}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:.85rem;padding:2px 10px;border-radius:999px;background:var(--juniper-soft);color:var(--juniper);font-weight:700}
+.chip.pending{background:var(--warn-soft);color:var(--warn)}
+.chip.dusk{background:var(--dusk-soft);color:var(--dusk)}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.fact{display:grid;gap:2px}
+.fact b{font-variant-numeric:tabular-nums}
+.water{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.water .glasses{display:flex;gap:4px;flex-wrap:wrap}
+.sips{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:10px}
+.sip{font:inherit;font-weight:700;font-size:1.25rem;min-height:64px;border-radius:14px;border:2px solid var(--juniper);background:var(--juniper-soft);color:var(--juniper);cursor:pointer;touch-action:manipulation}
+.sip:active{background:var(--juniper);color:var(--surface)}
+.wbar{height:14px;border-radius:999px;background:var(--juniper-soft);overflow:hidden}
+.wbar>span{display:block;height:100%;background:var(--juniper);border-radius:999px}
+.wtotal{font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums}
+.faces{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:6px}
+.face{font:inherit;display:grid;justify-items:center;gap:2px;padding:8px 2px;min-height:60px;border:1px solid var(--line);border-radius:12px;background:var(--surface);cursor:pointer;touch-action:manipulation}
+.face span{font-size:1.6rem;line-height:1}.face small{font-size:.75rem;color:var(--muted)}
+.face.on{border:2px solid var(--juniper);background:var(--juniper-soft)}
+.feelrow{display:grid;gap:4px;margin-top:8px}
+.scale{display:flex;gap:6px}.pip{font:inherit;font-weight:700;flex:1;min-width:0;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);cursor:pointer}
+.pip.on{background:var(--juniper);color:var(--surface);border-color:var(--juniper)}
+.menu{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.menu a,.menu button{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;min-height:64px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:700;text-align:left;text-decoration:none;cursor:pointer}
+.menu small{display:block;font-weight:400;color:var(--muted)}
+.glass{width:22px;height:28px;border:2px solid var(--juniper);border-radius:3px 3px 6px 6px;background:none;padding:0}
+.glass.full{background:var(--juniper)}
+.next{border-left:4px solid var(--dusk);background:var(--dusk-soft);border-radius:8px;padding:10px 14px}
+ol.day{list-style:none;margin:0;padding:0;display:grid}
+ol.day>li{display:grid;grid-template-columns:76px 24px 1fr;gap:4px 10px;padding:10px 0;border-top:1px solid var(--line);align-items:start}
+ol.day>li:first-child{border-top:0}
+.t{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;color:var(--muted);padding-top:2px}
+li.freezer .t,li.cook .t{color:var(--dusk)}
+.item{min-width:0}
+.item .title{font-weight:700}
+.item .detail{color:var(--muted);font-size:.93rem}
+.item ul{margin:4px 0 0;padding-left:18px}
+li.is-done .title,li.is-done .detail{color:var(--done);text-decoration:line-through}
+input[type="checkbox"]{width:22px;height:22px;accent-color:var(--juniper);margin:2px 0 0}
+.warnbox{background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:8px 12px;font-size:.93rem}
+label{display:grid;gap:4px;font-weight:700;font-size:.93rem}
+input[type="text"],input[type="time"],input[type="date"],input[type="number"],select,textarea{font:inherit;font-weight:400;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 9px;width:100%;min-width:0}
+textarea{min-height:80px;resize:vertical}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.supp{border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:10px}
+.supp .row{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
+.supp .row label.inline{display:flex;gap:6px;align-items:center;font-weight:400}
+.dayedit{border-top:1px solid var(--line);padding-top:12px;display:grid;gap:8px}
+.dayedit:first-of-type{border-top:0;padding-top:0}
+.qrgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.qrcard{border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:8px;min-width:0}
+.qrcard ol{margin:0;padding-left:20px;display:grid;gap:4px}
+.qrcard code{font-size:.8rem;word-break:break-all;color:var(--muted)}
+.qr{background:#ffffff;border-radius:8px;padding:8px;max-width:220px}
+.qr svg{display:block;width:100%;height:auto}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:999px;font-weight:700}
+ol.day>li.is-missed .title{color:var(--warn)}
+.linkbtn{background:none;border:0;padding:4px 0 0;color:var(--juniper);font-weight:700;font-size:.9rem;cursor:pointer}
+.labs{display:grid;gap:0}
+.labrow{display:grid;gap:2px;padding:10px 0;border-top:1px solid var(--line);min-width:0}
+.labrow:first-child{border-top:0}
+.labval b{font-variant-numeric:tabular-nums;font-size:1.1rem}
+.visit{display:grid;gap:4px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+ol.doc{margin:0;padding-left:22px;display:grid;gap:12px}
+ol.doc>li{display:grid;gap:6px}
+ol.doc select{width:auto}
+@media print{
+  body.printing-doc .wrap>header, body.printing-doc nav.tabs, body.printing-doc .noprint, body.printing-doc .toast{display:none!important}
+  body.printing-doc main .stack>section:not(#doctorList){display:none!important}
+  body.printing-doc .panel{border:0;padding:0}
+}
+@media print{
+  body.printing-report .wrap>header, body.printing-report nav.tabs, body.printing-report .noprint, body.printing-report .toast{display:none!important}
+  body.printing-report .panel{border:0;padding:0}
+  body.printing-report{background:#fff;color:#000}
+}
+table.rep{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:.93rem}
+table.rep th,table.rep td{text-align:left;padding:6px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+table.rep th{color:var(--muted);font-weight:700}
+.tablewrap{overflow-x:auto}
+@media (prefers-reduced-motion:no-preference){.glass{transition:background .15s}}
+
+.qlist{display:grid;gap:8px}
+.qrow{font:inherit;display:grid;grid-template-columns:32px 72px 1fr;align-items:center;gap:8px;text-align:left;min-height:56px;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);cursor:pointer;touch-action:manipulation}
+.qrow .qtick{width:28px;height:28px;border-radius:8px;border:2px solid var(--juniper);display:grid;place-items:center;font-weight:700;color:var(--surface)}
+.qrow.on{background:var(--juniper-soft)}
+.qrow.on .qtick{background:var(--juniper)}
+.qrow.on .qn{color:var(--done);text-decoration:line-through}
+.qrow .qt{font-variant-numeric:tabular-nums;font-weight:700;color:var(--muted)}
+.qrow .qn{font-weight:700;min-width:0}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header class="top">
+    <h1>Daily Helper</h1>
+    <span class="muted" id="syncNote"></span>
+  </header>
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="today" aria-selected="true">Today</button>
+    <button role="tab" data-tab="quick" aria-selected="false">Quick</button>
+    <button role="tab" data-tab="tomorrow" aria-selected="false">Tomorrow</button>
+    <button role="tab" data-tab="more" aria-selected="false">More</button>
+  </nav>
+  <main id="view"></main>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+"use strict";
+const LS_KEY = "dh-me-v1";
+
+
+var HH = (function(){
+  "use strict";
+  var PACKS = {"blood_sugar": {"name": "Blood sugar", "avoid": ["sodas?|soft drinks?|sweet tea|energy drinks?|sports drinks?|colas?|lemonade"], "ok": ["sweet potato(?:es)?|blood sugars?|sugar[- ]free|no added sugar|unsweetened"]}, "low_mold": {"name": "Low-mold", "avoid": ["mushrooms?|shiitakes?|portobellos?|cremini|morels?|chanterelles?", "yeast|nutritional yeast|brewer'?s yeast", "vinegar|balsamic|vinaigrettes?|ketchup|bbq sauce|barbecue sauce|hot sauce|sriracha|worcestershire", "pickles?|pickled|relish|capers|sauerkraut|kimchi", "aged cheeses?|cheddar|parmesan|parmigiano|pecorino|romano|gouda|swiss cheese|gruy[e\u00e8]re|brie|camembert|blue cheese|bleu cheese|gorgonzola|roquefort|manchego|provolone|asiago|havarti|colby|monterey jack|pepper jack", "peanuts?(?: butter| oil)?|groundnuts?|pistachios?", "corn(?: tortillas?| chips| syrup| starch| flour| oil)?|cornmeal|cornstarch|polenta|grits|popcorn|masa|hominy|tortilla chips", "dried fruits?|prunes?|raisins?|dates(?! syrup| sugar)|craisins?|fruit leather", "alcohol|wine|beer|liquor|vodka|whiske?y|rum|tequila|cocktails?|sake|hard cider|cider|mead|kombucha|kvass"], "ok": ["cream cheese|fresh mozzarella|black pepper"]}, "gluten_free": {"name": "Gluten-free", "avoid": ["wheat|barley|rye|spelt|farro|semolina|couscous|bulgur|seitan|malt(?:ed)?|durum"], "ok": ["gluten[- ]free|buckwheat"]}, "low_arginine": {"name": "Low-arginine", "avoid": ["nuts?|nut butters?|almonds?|walnuts?|cashews?|pecans?|hazelnuts?|filberts?|pistachios?|brazil nuts?|macadamias?|pine nuts?|peanuts?(?: butter)?|trail mix", "chia(?: seeds?)?|flax(?:seeds?)?|ground flax|linseeds?|sesame(?: seeds?| oil)?|tahini|pumpkin seeds?|pepitas?|sunflower seeds?|hemp(?: seeds?| hearts)?", "beans?|chickpeas?|garbanzos?|hummus|falafel|lentils?|dal|dhal|split peas?|edamame|soy(?:beans?| milk| protein)?|tofu|tempeh|mung(?: beans?| bean noodles?)?|bean noodles?|bean pasta|lentil pasta|chickpea pasta|edamame (?:noodles?|pasta)", "chocolate|cacao|cocoa"], "ok": ["green beans?|string beans?|wax beans?|coffee beans?|vanilla beans?|cocoa butter|nut[- ]free|peanut[- ]free"]}, "medicines": {"name": "Medicine and food warnings", "avoid": [], "ok": []}};
+  var PRESETS = [
+    ["hot","Chili and hot spice","jalape(?:n|ñ)os?|serranos?|habaneros?|poblanos?|anaheims?|cayenne|chipotles?|chil(?:e|i|ies|is|es)(?: powder| flakes| oil| sauce| crisp)?|red pepper flakes|crushed red pepper|pepper flakes|hot sauces?|sriracha|harissa|gochujang|sambal|hot peppers?|hot curry|wasabi|horseradish",[]],
+    ["eggs","Eggs","eggs?|omelets?|omelettes?|frittatas?|quiches?|mayonnaise|mayo|aioli|meringues?|custards?|egg noodles?",["fda-allergens"]],
+    ["dairy","Milk and dairy","(?<!coconut |almond |oat |soy |rice |cashew |hemp )milk|cheeses?|yogh?urts?|(?<!peanut |almond |nut |seed |sunflower |apple |cocoa )butter|cream|kefir|ghee|whey|casein|buttermilk|ricotta|mozzarella|cheddar|parmesan|feta|labneh",["fda-allergens"]],
+    ["wheat","Wheat and gluten","wheat|barley|rye|spelt|farro|semolina|couscous|bulgur|seitan|malt(?:ed)?|durum|(?<!gluten[- ]free )(?:bread|pasta|noodles?|flour tortillas?|crackers?)",["fda-allergens","celiac-sources"]],
+    ["soy","Soy","soy|soya|soybeans?|tofu|tempeh|edamame|miso|soy sauce|tamari|natto",["fda-allergens"]],
+    ["peanuts","Peanuts","peanuts?|peanut butter|groundnuts?",["fda-allergens"]],
+    ["treenuts","Tree nuts","almonds?|walnuts?|cashews?|pecans?|hazelnuts?|filberts?|pistachios?|brazil nuts?|macadamias?|pine nuts?|nut butters?|nuts|marzipan|pralines?|pesto",["fda-allergens"]],
+    ["fish","Fish","fish|salmon|tuna|cod|halibut|trout|sardines?|anchov(?:y|ies)|mackerel|tilapia|haddock|snapper|catfish|sablefish|fish sauce",["fda-allergens"]],
+    ["shellfish","Shellfish","shellfish|shrimps?|prawns?|crabs?|lobsters?|crawfish|crayfish|scallops?|clams?|mussels?|oysters?",["fda-allergens"]],
+    ["sesame","Sesame","sesame|tahini|hummus|halva|za.?atar",["fda-allergens"]]
+  ];
+  var LEVELS = {avoid:"Avoid", limit:"Limit", ask:"Ask first"};
+
+  function ymd(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+  var escRe = function(w){ return w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&").replace(/\s+/g,"\\s+"); };
+  function wordPat(w){ var x = escRe(String(w).trim().toLowerCase()); return x.endsWith("s") ? x+"?" : x+"(?:s|es)?"; }
+  function wordsPat(text){ return String(text||"").split(/[,\n]/).map(function(x){ return x.trim(); }).filter(Boolean).map(wordPat).join("|"); }
+
+  
+  function boundary(p, flags){ return new RegExp("(?<![\\p{L}\\p{N}])(?:"+p+")(?![\\p{L}\\p{N}])", flags||"giu"); }
+  function compile(person){
+    var t = ymd(new Date()), out = [];
+    (person.items||[]).forEach(function(it){
+      if(it.until && it.until < t) return;
+      var level = LEVELS[it.level] ? it.level : "avoid";
+      try{
+        if(it.pack){ var P = PACKS[it.pack]; if(!P || !P.avoid.length) return;
+          out.push({label:it.label||P.name, level:level, ok:P.ok.length? new RegExp("\\b(?:"+P.ok.join("|")+")\\b","gi") : null, re:new RegExp("\\b(?:"+P.avoid.join("|")+")\\b","gi"), src:it.src||[]}); }
+        else if(it.pat) out.push({label:it.label, level:level, ok:null, re:boundary(it.pat), src:it.src||[]});
+      }catch(e){}
+    });
+    return out;
+  }
+  function check(text, person, compiled){
+    var rules = compiled || compile(person), hits = [];
+    text = String(text||"");
+    rules.forEach(function(r){
+      var t = r.ok ? text.replace(r.ok, function(m){ return " ".repeat(m.length); }) : text, m, words = [];
+      r.re.lastIndex = 0;
+      while((m = r.re.exec(t))){ if(!m[0]){ r.re.lastIndex++; continue; } var w = m[0].toLowerCase(); if(words.indexOf(w)<0) words.push(w); }
+      if(words.length) hits.push({label:r.label, level:r.level, words:words, src:r.src});
+    });
+    var order = ["avoid","ask","limit"];
+    return hits.sort(function(a,b){ return order.indexOf(a.level)-order.indexOf(b.level); });
+  }
+  function blank(){ return {me:{id:"", name:"", adds:""}, people:[], given:[], card:{days:7, pick:{}}}; }
+  function fix(h){
+    var b = blank(); h = h && typeof h==="object" ? h : {};
+    b.me = Object.assign(b.me, h.me||{}); b.card = Object.assign(b.card, h.card||{});
+    b.people = Array.isArray(h.people) ? h.people.filter(function(p){ return p && p.id; }) : [];
+    b.given = Array.isArray(h.given) ? h.given.slice(-30) : [];
+    if(!b.me.id) b.me.id = "p"+Math.random().toString(36).slice(2,10)+Date.now().toString(36);
+    return b;
+  }
+  function atTable(h){ return (h && h.people || []).filter(function(p){ return p.shared!==false; }); }
+  function fromStorage(key){ try{ var s = JSON.parse(localStorage.getItem(key)||"null"); return s && s.household ? fix(s.household) : blank(); }catch(e){ return blank(); } }
+  function tableLines(text, h){
+    return atTable(h).map(function(p){ var hits = check(text, p);
+      return {name:p.name, adds:p.adds||"", hits:hits}; });
+  }
+  function tableHtml(text, h, opts){
+    opts = opts || {};
+    var rows = tableLines(text, h); if(!rows.length) return "";
+    return '<div class="hh-table">'+(opts.title?'<b>'+esc(opts.title)+'</b>':'')+rows.map(function(r){
+      return '<div class="hh-row '+(r.hits.length?"hh-bad":"hh-ok")+'"><span>'+(r.hits.length?"⚠":"✓")+'</span><div><b>'+esc(r.name)+'</b>: '
+        +(r.hits.length ? r.hits.map(function(x){ var l = x.label.toLowerCase(), all = x.words.every(function(w){ return l.indexOf(w)>=0; });
+          return esc(LEVELS[x.level]+" "+l+(all?"":" ("+x.words.join(", ")+")")); }).join("; ")+". Take their share out before adding it, or swap it." : "fine for them.")
+        +(r.adds?' <span class="hh-adds">Adds '+esc(r.adds)+' on their plate.</span>':'')+'</div></div>';
+    }).join("")+'</div>';
+  }
+  var CSS = ".hh-table{display:grid;gap:4px;margin-top:6px;font-size:.93rem}.hh-row{display:grid;grid-template-columns:1.2em 1fr;gap:6px;align-items:start}"
+    +".hh-bad span:first-child{color:var(--warn,#9a5b00)}.hh-ok span:first-child{color:var(--accent,var(--juniper,#2f6b57))}.hh-adds{color:var(--muted)}";
+  function style(){ if(typeof document==="undefined" || document.getElementById("hh-css")) return; var s = document.createElement("style"); s.id = "hh-css"; s.textContent = CSS; document.head.appendChild(s); }
+
+  
+  var PR = []; for(var n=2; PR.length<64; n++){ if(PR.every(function(q){ return n%q; })) PR.push(n); }
+  var K = new Uint32Array(PR.map(function(q){ return (Math.cbrt(q)%1)*4294967296; }));
+  var IV0 = PR.slice(0,8).map(function(q){ return ((Math.sqrt(q)%1)*4294967296)|0; });
+  var W = new Uint32Array(64);
+  function block(st, w16){
+    for(var i=0;i<16;i++) W[i]=w16[i];
+    for(i=16;i<64;i++){ var a=W[i-15], b=W[i-2];
+      W[i]=(((a>>>7|a<<25)^(a>>>18|a<<14)^(a>>>3))+W[i-7]+((b>>>17|b<<15)^(b>>>19|b<<13)^(b>>>10))+W[i-16])|0; }
+    var A=st[0],B=st[1],C=st[2],D=st[3],E=st[4],F=st[5],G=st[6],H=st[7];
+    for(i=0;i<64;i++){
+      var t1=(H+((E>>>6|E<<26)^(E>>>11|E<<21)^(E>>>25|E<<7))+((E&F)^(~E&G))+K[i]+W[i])|0;
+      var t2=(((A>>>2|A<<30)^(A>>>13|A<<19)^(A>>>22|A<<10))+((A&B)^(A&C)^(B&C)))|0;
+      H=G;G=F;F=E;E=(D+t1)|0;D=C;C=B;B=A;A=(t1+t2)|0;
+    }
+    st[0]=(st[0]+A)|0;st[1]=(st[1]+B)|0;st[2]=(st[2]+C)|0;st[3]=(st[3]+D)|0;st[4]=(st[4]+E)|0;st[5]=(st[5]+F)|0;st[6]=(st[6]+G)|0;st[7]=(st[7]+H)|0;
+  }
+  function sha256(bytes, state, prefixLen){
+    var st = state ? state.slice() : IV0.slice(), n = bytes.length, total = n + (prefixLen||0);
+    var padded = new Uint8Array(((n+9+63)>>6)<<6); padded.set(bytes); padded[n]=0x80;
+    var bits = total*8, dv = new DataView(padded.buffer);
+    dv.setUint32(padded.length-8, Math.floor(bits/4294967296)); dv.setUint32(padded.length-4, bits>>>0);
+    var w = new Uint32Array(16);
+    for(var o=0;o<padded.length;o+=64){ for(var i=0;i<16;i++) w[i]=dv.getUint32(o+i*4); block(st,w); }
+    var out = new Uint8Array(32), ov = new DataView(out.buffer); for(i=0;i<8;i++) ov.setUint32(i*4, st[i]>>>0); return out;
+  }
+  function cat(){ var n=0,i; for(i=0;i<arguments.length;i++) n+=arguments[i].length; var o=new Uint8Array(n),p=0; for(i=0;i<arguments.length;i++){ o.set(arguments[i],p); p+=arguments[i].length; } return o; }
+  function hmacKey(key){
+    if(key.length>64) key = sha256(key);
+    var k = new Uint8Array(64); k.set(key);
+    var ip = new Uint8Array(64), op = new Uint8Array(64); for(var i=0;i<64;i++){ ip[i]=k[i]^0x36; op[i]=k[i]^0x5c; }
+    function pre(pad){ var st=IV0.slice(), w=new Uint32Array(16), dv=new DataView(pad.buffer); for(var i=0;i<16;i++) w[i]=dv.getUint32(i*4); block(st,w); return st; }
+    return {i:pre(ip), o:pre(op)};
+  }
+  function hmac(hk, msg){ return sha256(sha256(msg, hk.i, 64), hk.o, 64); }
+  async function pbkdf2(pass, salt, rounds, len){
+    var pw = new TextEncoder().encode(pass);
+    try{ if(typeof crypto!=="undefined" && crypto.subtle){
+      var k = await crypto.subtle.importKey("raw", pw, "PBKDF2", false, ["deriveBits"]);
+      return new Uint8Array(await crypto.subtle.deriveBits({name:"PBKDF2", hash:"SHA-256", salt:salt, iterations:rounds}, k, len*8)); } }catch(e){}
+    var hk = hmacKey(pw), out = new Uint8Array(len), dv = new DataView(out.buffer), wi = new Uint32Array(16), wo = new Uint32Array(16), st = new Int32Array(8);
+    wi[8] = wo[8] = 0x80000000; wi[15] = wo[15] = 768;
+    for(var b=1, p=0; p<len; b++){
+      var u0 = hmac(hk, cat(salt, new Uint8Array([b>>>24,b>>>16&255,b>>>8&255,b&255]))), uv = new DataView(u0.buffer), u = new Uint32Array(8), t = new Uint32Array(8), j;
+      for(j=0;j<8;j++) t[j] = u[j] = uv.getUint32(j*4);
+      for(var r=1;r<rounds;r++){
+        for(j=0;j<8;j++){ wi[j]=u[j]; st[j]=hk.i[j]; } block(st, wi);
+        for(j=0;j<8;j++){ wo[j]=st[j]; st[j]=hk.o[j]; } block(st, wo);
+        for(j=0;j<8;j++){ u[j]=st[j]; t[j]^=st[j]; }
+        if(r%50000===0) await new Promise(function(res){ setTimeout(res,0); });
+      }
+      for(j=0;j<8 && p<len;j++,p+=4) dv.setUint32(p, t[j]);
+    }
+    return out;
+  }
+  function stream(hk, iv, data){
+    var out = new Uint8Array(data.length);
+    for(var c=0, p=0; p<data.length; c++){ var ks = hmac(hk, cat(iv, new Uint8Array([c>>>24,c>>>16&255,c>>>8&255,c&255])));
+      for(var j=0;j<32 && p<data.length;j++,p++) out[p]=data[p]^ks[j]; }
+    return out;
+  }
+  var ROUNDS = 600000, MAGIC = "DHC1.";
+  function b64u(bytes){ var s=""; for(var i=0;i<bytes.length;i++) s+=String.fromCharCode(bytes[i]); return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,""); }
+  function unb64u(s){ s=s.replace(/-/g,"+").replace(/_/g,"/"); while(s.length%4) s+="="; var b=atob(s), o=new Uint8Array(b.length); for(var i=0;i<b.length;i++) o[i]=b.charCodeAt(i); return o; }
+  async function squeeze(bytes, back){
+    var C = back ? window.DecompressionStream : window.CompressionStream; if(!C) throw new Error("old browser");
+    var s = new Blob([bytes]).stream().pipeThrough(new C("deflate-raw"));
+    return new Uint8Array(await new Response(s).arrayBuffer());
+  }
+  function rand(n){ var b = new Uint8Array(n); crypto.getRandomValues(b); return b; }
+  function normPass(p){ return String(p||"").trim().toLowerCase().replace(/[\s_.]+/g,"-"); }
+  async function lock(obj, pass){
+    var plain = new TextEncoder().encode(JSON.stringify(obj)), flags = 0;
+    try{ var z = await squeeze(plain); if(z.length < plain.length){ plain = z; flags = 1; } }catch(e){}
+    var salt = rand(16), iv = rand(16), keys = await pbkdf2(normPass(pass), salt, ROUNDS, 64);
+    var head = cat(new Uint8Array([flags]), salt, iv), ct = stream(hmacKey(keys.subarray(0,32)), iv, plain);
+    var tag = hmac(hmacKey(keys.subarray(32)), cat(head, ct));
+    return MAGIC + b64u(cat(head, ct, tag));
+  }
+  function cardText(s){ var m = String(s||"").match(/DHC1\.[A-Za-z0-9_-]+/); return m ? m[0] : ""; }
+  async function unlock(text, pass){
+    var t = cardText(text); if(!t) throw new Error("notcard");
+    var all = unb64u(t.slice(MAGIC.length)); if(all.length < 1+16+16+32+2) throw new Error("notcard");
+    var head = all.subarray(0,33), ct = all.subarray(33, all.length-32), tag = all.subarray(all.length-32);
+    var keys = await pbkdf2(normPass(pass), head.subarray(1,17), ROUNDS, 64);
+    var want = hmac(hmacKey(keys.subarray(32)), cat(head, ct)), diff = 0;
+    for(var i=0;i<32;i++) diff |= want[i]^tag[i];
+    if(diff) throw new Error("passcode");
+    var plain = stream(hmacKey(keys.subarray(0,32)), head.subarray(17,33), ct);
+    if(head[0]&1) plain = await squeeze(plain, true);
+    return JSON.parse(new TextDecoder().decode(plain));
+  }
+  var WORDS = ("acorn amber anchor apple arch arrow aspen autumn badge bagel bamboo banjo barn basil basket beacon beaver bell berry birch bison "
+    +"blanket bloom blue boat bonnet boulder branch brave breeze brick bridge brook bubble bucket buffalo bugle bunny butter button cabin cactus "
+    +"camel candle canoe canyon cape cargo carrot castle cedar cello chalk cherry chess chime cider cinder circle clay cliff clock cloud clover "
+    +"cobalt cocoa comet compass coral cotton cougar cove coyote crane crater creek cricket crow crystal cub cypress daisy dawn deer desert dew "
+    +"dingo dolphin dove dragon drum dune eagle easel echo elk ember emerald falcon fawn feather fern fiddle field finch fire fjord flame flint "
+    +"flute fog forest fossil fox frost garden garnet gecko geyser ginger glacier glade globe goose granite grape grove gull harbor harp hawk "
+    +"hazel heron hickory hill honey horizon hornet iris island ivory ivy jade jaguar jasper jelly juniper kayak kettle kite koala lagoon lake "
+    +"lantern lark lava lemon lilac lily linen lion lizard llama lotus lynx magnet mango maple marble meadow mesa meteor mint mist moon moose "
+    +"moss moth mountain mule nectar nest nickel oak oasis ocean olive onyx opal orbit orchid otter owl panda pebble pecan pelican penny pepper "
+    +"piano pine planet plum pond poppy prairie puffin quail quartz quill rabbit radish rain raven reef ribbon ridge river robin rocket rose "
+    +"ruby saddle sage salmon sand satin sequoia shell sierra silver sky sparrow spruce star stone storm summit sun swan tulip tundra turtle "
+    +"thistle valley velvet violet walnut wave willow wind wren yarrow yucca zebra zinnia").split(" ");
+  function newPass(){ var r = rand(6), w = []; for(var i=0;i<4;i++) w.push(WORDS[r[i]%WORDS.length]); return w.join("-")+"-"+String((r[4]*256+r[5])%90+10); }
+
+  
+  function cardFrom(me, items, days){
+    var t = new Date(), x = days ? ymd(new Date(t.getTime()+days*864e5)) : "";
+    return {v:1, id:me.id, n:String(me.name||"").slice(0,40), a:String(me.adds||"").slice(0,200), m:ymd(t), x:x,
+      i:items.map(function(it){ return [it.pack?"p":"r", String(it.label||"").slice(0,80), it.pack||it.pat, it.level||"avoid", it.until||"", it.src||[]]; })};
+  }
+  function personFrom(c){
+    if(!c || c.v!==1 || !Array.isArray(c.i)) throw new Error("notcard");
+    if(c.x && c.x < ymd(new Date())) { var e = new Error("expired"); e.until = c.x; throw e; }
+    var items = c.i.slice(0,200).map(function(a){
+      if(!Array.isArray(a)) return null;
+      var level = LEVELS[a[3]] ? a[3] : "avoid", until = /^\d{4}-\d{2}-\d{2}$/.test(a[4]||"") ? a[4] : "", src = Array.isArray(a[5]) ? a[5].filter(function(s){ return typeof s==="string"; }).slice(0,5) : [];
+      if(a[0]==="p") return PACKS[a[2]] ? {label:String(a[1]||PACKS[a[2]].name).slice(0,80), pack:a[2], level:level, until:until, src:src} : null;
+      var pat = String(a[2]||"").slice(0,3000); try{ boundary(pat); }catch(e){ return null; }
+      return pat ? {label:String(a[1]||"").slice(0,80), pat:pat, level:level, until:until, src:src} : null;
+    }).filter(Boolean);
+    return {id:String(c.id||"").slice(0,40)||("c"+Date.now()), name:String(c.n||"Someone").slice(0,40), adds:String(c.a||"").slice(0,200),
+      src:"card", made:c.m||"", got:ymd(new Date()), shared:true, items:items};
+  }
+
+  return {PACKS:PACKS, PRESETS:PRESETS, LEVELS:LEVELS, ymd:ymd, esc:esc, wordPat:wordPat, wordsPat:wordsPat,
+    compile:compile, check:check, blank:blank, fix:fix, atTable:atTable, fromStorage:fromStorage, tableLines:tableLines, tableHtml:tableHtml, style:style,
+    lock:lock, unlock:unlock, cardText:cardText, newPass:newPass, normPass:normPass, cardFrom:cardFrom, personFrom:personFrom,
+    _t:{sha256:sha256, hmacKey:hmacKey, hmac:hmac, pbkdf2:pbkdf2}};
+})();
+
+var HHUI = (function(){
+  "use strict";
+  var A = null, el = null, mode = "", made = null, busy = "", msg = "";
+  var PK = "hh-pending-card";
+  var esc = HH.esc;
+  function H(){ var S = A.get(); S.household = HH.fix(S.household); return S.household; }
+  function pending(){ try{ return sessionStorage.getItem(PK)||""; }catch(e){ return ""; } }
+  function setPending(t){ try{ if(t) sessionStorage.setItem(PK, t); else sessionStorage.removeItem(PK); }catch(e){} }
+  function takeHash(){
+    var h = location.hash;
+    if(h.indexOf("#hh-card=")!==0) return false;
+    setPending(HH.cardText(decodeURIComponent(h.slice(9)))); mode = "open";
+    try{ history.replaceState(null, "", location.pathname + location.search); }catch(e){}
+    return true;
+  }
+  function nice(d){ return d ? new Date(d+"T12:00").toLocaleDateString(undefined,{month:"short", day:"numeric", year:"numeric"}) : ""; }
+  function itemText(it){ return (it.level && it.level!=="avoid" ? HH.LEVELS[it.level]+": " : "")+it.label+(it.until?" (until "+nice(it.until)+")":""); }
+  function chips(items){ return items.length ? '<div class="chips">'+items.map(function(it){ return '<span class="chip">'+esc(itemText(it))+'</span>'; }).join("")+'</div>' : '<small class="muted">No food rules yet.</small>'; }
+
+  function personCard(p, i){
+    var from = p.src==="card" ? "From "+esc(p.name)+"'s food card, made "+esc(nice(p.made)) : "Typed in by you"+(p.ok?", with their OK":"");
+    return '<div class="hh-person"><div class="hh-ph"><b>'+esc(p.name)+'</b><label class="inline"><input type="checkbox" data-hh-shared="'+i+'"'+(p.shared!==false?" checked":"")+'> Eats shared meals</label></div>'
+      +chips(p.items||[])
+      +(p.adds?'<small>Adds on their own plate: '+esc(p.adds)+'</small>':'')
+      +'<small class="muted">'+from+'.</small>'
+      +'<div class="chips">'+(p.src==="card"?'':'<button class="linkbtn" data-hh-edit="'+i+'">Edit</button>')+'<button class="linkbtn" data-hh-del="'+i+'">Remove</button></div></div>';
+  }
+  function presetBoxes(form){
+    var pre = form.presets||[], packs = form.packs||[];
+    return '<div class="hh-picks">'+HH.PRESETS.map(function(x){ return '<label class="inline"><input type="checkbox" data-hh-pre="'+x[0]+'"'+(pre.indexOf(x[0])>=0?" checked":"")+'> '+esc(x[1])+'</label>'; }).join("")
+      +Object.keys(HH.PACKS).map(function(id){ return '<label class="inline"><input type="checkbox" data-hh-pack="'+id+'"'+(packs.indexOf(id)>=0?" checked":"")+'> '+esc(HH.PACKS[id].name)+'</label>'; }).join("")+'</div>';
+  }
+  function typeForm(p){
+    var f = (p && p.form) || {};
+    return '<section class="panel" id="hh-type"><h2>'+(p?"Edit "+esc(p.name):"Type someone in")+'</h2>'
+      +'<p class="muted" style="margin:0">For someone who won\'t make their own card. Only add what they agree to. You can change or remove it any time.</p>'
+      +'<div class="grid2"><label>Name<input type="text" id="hh-t-name" maxlength="40" value="'+esc(p?p.name:"")+'" placeholder="e.g. Sam"></label>'
+      +'<label>What they add on their own plate<input type="text" id="hh-t-adds" maxlength="200" value="'+esc(p?p.adds:"")+'" placeholder="e.g. potatoes or rice"></label></div>'
+      +'<div><b>Leave out of shared pots</b>'+presetBoxes(f)+'</div>'
+      +'<label>Other foods to leave out<input type="text" id="hh-t-avoid" value="'+esc(f.avoid||"")+'" placeholder="Commas between, e.g. mushrooms, olives"></label>'
+      +'<label>Foods to keep small<input type="text" id="hh-t-limit" value="'+esc(f.limit||"")+'" placeholder="Commas between"></label>'
+      +'<label class="inline"><input type="checkbox" id="hh-t-ok"'+(p&&p.ok?" checked":"")+'> They said it\'s OK to keep their food rules on this device</label>'
+      +'<div class="chips"><button class="btn" data-hh-tsave="'+(p?p.id:"")+'">Save</button><button class="btn ghost" data-hh-cancel>Cancel</button></div></section>';
+  }
+  function openForm(){
+    var t = pending();
+    return '<section class="panel" id="hh-open"><h2>Open a food card</h2>'
+      +(t ? '<p style="margin:0">A food card is ready to open. Ask the person for its passcode.</p>'
+            +'<small class="muted">Opened in the wrong app? <button class="linkbtn" data-hh-copypending>Copy the card</button>, then paste it under Household in your own app.</small>'
+          : '<p class="muted" style="margin:0">Scan their QR code with your phone\'s camera, or open the card file they sent, or paste the card text here.</p>'
+            +'<label>Card file<input type="file" id="hh-file" accept=".txt,text/plain"></label>'
+            +'<label>Or paste the card<textarea id="hh-paste" rows="3" placeholder="Starts with DHC1."></textarea></label>')
+      +'<label>Passcode<input type="text" id="hh-pass" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="four words and a number"></label>'
+      +'<div class="chips"><button class="btn" data-hh-open'+(busy?" disabled":"")+'>'+(busy==="open"?"Opening…":"Open card")+'</button><button class="btn ghost" data-hh-cancel>Cancel</button></div>'
+      +(msg?'<div class="warnbox">'+esc(msg)+'</div>':'')+'</section>';
+  }
+  function tablePanel(h){
+    var at = HH.atTable(h);
+    if(!at.length) return "";
+    var meals = (A.meals && A.meals()) || [], clash = [];
+    var comp = at.map(function(p){ return HH.compile(p); });
+    meals.forEach(function(m){ at.forEach(function(p, i){ var x = HH.check(m.text, p, comp[i]); if(x.length) clash.push({m:m, p:p, x:x}); }); });
+    return '<section class="panel"><h2>Shared meals</h2>'
+      +'<p style="margin:0">Shared pots leave out everything on your own lists, plus:</p><ul class="hh-ul">'
+      +at.map(function(p){ var its = (p.items||[]).filter(function(it){ return !it.until || it.until >= HH.ymd(new Date()); }); return '<li><b>'+esc(p.name)+'</b>: '+(its.length?esc(its.map(itemText).join(", ")):"nothing extra")+'</li>'; }).join("")+'</ul>'
+      +(at.some(function(p){ return p.adds; }) || h.me.adds ? '<p style="margin:0">On each plate, after serving:</p><ul class="hh-ul">'+(h.me.adds?'<li><b>You</b>: '+esc(h.me.adds)+'</li>':'')
+        +at.filter(function(p){ return p.adds; }).map(function(p){ return '<li><b>'+esc(p.name)+'</b>: '+esc(p.adds)+'</li>'; }).join("")+'</ul>' : '')
+      +(meals.length ? (clash.length ? '<div class="warnbox"><b>This week.</b> '+clash.map(function(c){ return esc(c.m.when+", "+c.m.name+": "+c.p.name+" can\'t have "+c.x.map(function(y){ return y.words.join(", "); }).join(", ")); }).join(". ")+'. Take their share out before adding it, or swap the meal.</div>'
+        : '<small class="muted">Shared meals planned this week look fine for everyone at the table.</small>') : '')
+      +'<small class="muted">The Pantry and the Checker show the same check on shared meals.</small></section>';
+  }
+  function pick(h, it){ return h.card.pick[it.key]!==undefined ? !!h.card.pick[it.key] : !!it.on; }
+  function cardItems(h){
+    var out = (A.myItems() || []).filter(function(it){ return pick(h, it); }).map(function(it){ return it.item; });
+    if(h.card.words && HH.wordsPat(h.card.words)) out.push({label:h.card.words.trim(), pat:HH.wordsPat(h.card.words), level:"avoid"});
+    return out;
+  }
+  function seeHtml(h){ return '<b>They will see</b>: '+esc(h.me.name||"(no name yet)")+(h.me.adds?", adds "+esc(h.me.adds):"")+'.'+chips(cardItems(h)); }
+  function cardPanel(h){
+    var mine = A.myItems() || [];
+    var res = '';
+    if(made){
+      res = '<div class="hh-made">'
+        +(made.qr ? '<div class="hh-qr">'+made.qr+'</div><small class="muted">Have them point their phone\'s camera at this. It opens Daily Helper with your card.</small>'
+                  : '<small class="muted">'+(made.url?"The QR code couldn't load here.":"This page has no web address phones can open, so there's no QR code.")+' Share the card file or copy the text instead.</small>')
+        +'<div class="hh-pass"><small>Passcode</small><b>'+esc(made.pass)+'</b><small>Tell them in person or on a call. Don\'t send it with the card.</small></div>'
+        +'<div class="chips"><button class="btn ghost" data-hh-share>Share card file</button><button class="btn ghost" data-hh-copy>Copy card text</button><button class="btn ghost" data-hh-done>Done</button></div>'
+        +'<small class="muted">AirDrop, Quick Share or Bluetooth keep it phone to phone. Email and texts pass through other companies\' servers. The card is locked, but in person is best.</small></div>';
+    }
+    return '<section class="panel" id="hh-card"><h2>My food card</h2>'
+      +'<p class="muted" style="margin:0">Share your food rules with someone you cook with. You pick each line. Health details like conditions, medicines and labs are never on a card.</p>'
+      +'<div class="grid2"><label>Your name on the card<input type="text" id="hh-me-name" maxlength="40" value="'+esc(h.me.name)+'" placeholder="e.g. Kat"></label>'
+      +'<label>What you add on your own plate<input type="text" id="hh-me-adds" maxlength="200" value="'+esc(h.me.adds)+'" placeholder="e.g. jalapeño and lime"></label></div>'
+      +(mine.length ? '<div><b>On the card</b> <button class="linkbtn" data-hh-all="1">Tick all</button> · <button class="linkbtn" data-hh-all="0">Untick all</button><div class="hh-picks">'+mine.map(function(it){ return '<label class="inline"><input type="checkbox" data-hh-pick="'+esc(it.key)+'"'+(pick(h,it)?" checked":"")+'> '+esc(it.label)+(it.detail?' <small class="muted">'+esc(it.detail)+'</small>':'')+'</label>'; }).join("")+'</div></div>'
+        : '<small class="muted">Your own food lists are empty. Add foods on My rules, or type them below.</small>')
+      +'<label>Also on my card<input type="text" id="hh-me-words" value="'+esc(h.card.words||"")+'" placeholder="Foods to leave out, commas between"></label>'
+      +'<label>Card can be opened until<select id="hh-days">'+[[1,"Tomorrow"],[3,"3 days"],[7,"1 week"],[30,"30 days"],[0,"No end date"]].map(function(o){ return '<option value="'+o[0]+'"'+(+h.card.days===o[0]?" selected":"")+'>'+o[1]+'</option>'; }).join("")+'</select></label>'
+      +'<div id="hh-see">'+seeHtml(h)+'</div>'
+      +'<div><button class="btn" data-hh-make'+(busy?" disabled":"")+'>'+(busy==="make"?"Locking…":made?"Make a new card":"Make my card")+'</button></div>'+res+'</section>';
+  }
+  function render(target){
+    el = target || el; if(!el || !A) return;
+    var h = H(), edit = mode.indexOf("edit:")===0 ? h.people.find(function(p){ return p.id===mode.slice(5); }) : null;
+    if(pending() && !mode) mode = "open";
+    el.innerHTML = '<div class="stack hh">'
+      +(mode==="open" ? openForm() : "")
+      +(mode==="type" || edit ? typeForm(edit) : "")
+      +'<section class="panel"><h2>Household</h2><p class="muted" style="margin:0">People you share meals with. Their food rules stay on this device and are never sent online.</p>'
+      +(h.people.length ? h.people.map(personCard).join("") : '<small class="muted">No one added yet.</small>')
+      +'<div class="chips"><button class="btn" data-hh-mode="open">Add from a food card</button><button class="btn ghost" data-hh-mode="type">Type someone in</button></div>'
+      +'<small class="muted">Best: each person makes their own card in their own Daily Helper, so they choose what\'s on it.</small></section>'
+      +tablePanel(h) + cardPanel(h)
+      +(h.given.length ? '<section class="panel"><h2>Cards you\'ve made</h2><ul class="hh-ul">'+h.given.slice().reverse().slice(0,10).map(function(g){ return '<li>'+esc(nice(g.date))+": "+g.n+" line"+(g.n===1?"":"s")+(g.until?", could be opened until "+esc(nice(g.until)):", no end date")+'</li>'; }).join("")+'</ul><small class="muted">A card can\'t be taken back once opened. To change what someone has, send them a new card. It replaces the old one.</small></section>' : '')
+      +'<section class="panel"><details><summary><b>How sharing stays private</b></summary><ul class="hh-ul">'
+      +'<li>No accounts and no server. Everything stays on each person\'s own device.</li>'
+      +'<li>Only food rules go on a card. You tick each line, and sensitive lists start unticked.</li>'
+      +'<li>Each card is locked with a passcode (PBKDF2 with 600,000 rounds, then sealed so changes are caught). Say the passcode out loud; never send it with the card.</li>'
+      +'<li>Cards stop opening after the date you pick.</li>'
+      +'<li>Whoever made a card owns it. You can turn it off or remove it, but only they can change it.</li></ul>'
+      +(A.sources?'<small class="muted">Sources: <a href="'+esc(A.sources)+'#household">how cards are locked and why only food rules are shared</a>.</small>':'')+'</details></section></div>';
+    if(made && made.wantQr) drawQr();
+  }
+  function loadQr(){
+    return new Promise(function(res){ if(window.qrcode || !A.qrSrc) return res(); var s = document.createElement("script"); s.src = A.qrSrc; s.onload = res; s.onerror = res; document.head.appendChild(s); });
+  }
+  async function drawQr(){
+    made.wantQr = false; if(!made.url) return;
+    await loadQr();
+    try{ var q = qrcode(0, "L"); q.addData(made.url); q.make(); made.qr = q.createSvgTag({cellSize:4, margin:4, scalable:true}); }catch(e){ made.qr = ""; }
+    render();
+  }
+  function cardFile(){
+    return "Daily Helper food card from "+(made.name||"someone")+".\nOpen Daily Helper, go to More, then Household, then Add from a food card.\n"
+      +(made.until?"It can be opened until "+nice(made.until)+".\n":"")+"\n"+(made.url||made.text)+"\n";
+  }
+  async function open(text, pass){
+    busy = "open"; msg = ""; render();
+    try{
+      var c = await HH.unlock(text, pass), p = HH.personFrom(c), h = H();
+      if(p.id === h.me.id) throw new Error("mine");
+      var i = h.people.findIndex(function(x){ return x.id===p.id; });
+      if(i>=0){ p.shared = h.people[i].shared; h.people[i] = p; } else h.people.push(p);
+      A.save(); setPending(""); mode = ""; busy = "";
+      A.toast((i>=0?"Updated ":"Added ")+p.name+"'s food card");
+    }catch(e){
+      busy = "";
+      msg = e.message==="passcode" ? "That passcode doesn't open this card. Check it with them, letter by letter."
+        : e.message==="expired" ? "This card stopped opening on "+nice(e.until)+". Ask them for a new one."
+        : e.message==="mine" ? "That's your own card."
+        : e.message==="old browser" ? "This browser is too old to open the card. Update it, or open the card on another device."
+        : "That doesn't look like a food card. It starts with DHC1.";
+    }
+    render();
+  }
+  function onClick(e){
+    var b = e.target.closest("button"); if(!b || !el.contains(b)) return;
+    var d = b.dataset, h = H();
+    if(d.hhMode!==undefined){ mode = d.hhMode; msg = ""; render(); var f = el.querySelector(mode==="open"?"#hh-open":"#hh-type"); if(f) f.scrollIntoView({block:"start"}); return; }
+    if(d.hhCancel!==undefined){ mode = ""; msg = ""; setPending(""); render(); return; }
+    if(d.hhEdit!==undefined){ mode = "edit:"+h.people[+d.hhEdit].id; render(); var t = el.querySelector("#hh-type"); if(t) t.scrollIntoView({block:"start"}); return; }
+    if(d.hhDel!==undefined){ var p = h.people[+d.hhDel]; if(p && confirm("Remove "+p.name+" and their food rules from this device?")){ h.people.splice(+d.hhDel,1); A.save(); render(); A.toast("Removed"); } return; }
+    if(d.hhTsave!==undefined){
+      var name = el.querySelector("#hh-t-name").value.trim(); if(!name){ A.toast("Add a name"); return; }
+      if(!el.querySelector("#hh-t-ok").checked){ A.toast("Check that they said it's OK first"); return; }
+      var form = {presets:[].map.call(el.querySelectorAll("[data-hh-pre]:checked"), function(x){ return x.dataset.hhPre; }),
+        packs:[].map.call(el.querySelectorAll("[data-hh-pack]:checked"), function(x){ return x.dataset.hhPack; }),
+        avoid:el.querySelector("#hh-t-avoid").value, limit:el.querySelector("#hh-t-limit").value};
+      var items = form.presets.map(function(id){ var x = HH.PRESETS.find(function(y){ return y[0]===id; }); return {label:x[1], pat:x[2], level:"avoid", src:x[3]}; })
+        .concat(form.packs.map(function(id){ return {label:HH.PACKS[id].name, pack:id, level:"avoid"}; }));
+      if(HH.wordsPat(form.avoid)) items.push({label:form.avoid.trim(), pat:HH.wordsPat(form.avoid), level:"avoid"});
+      if(HH.wordsPat(form.limit)) items.push({label:form.limit.trim(), pat:HH.wordsPat(form.limit), level:"limit"});
+      var old = h.people.find(function(x){ return x.id===d.hhTsave; });
+      var person = {id:old?old.id:"t"+Date.now().toString(36), name:name, adds:el.querySelector("#hh-t-adds").value.trim(), src:"typed", ok:true, got:HH.ymd(new Date()), shared:old?old.shared:true, items:items, form:form};
+      if(old) h.people[h.people.indexOf(old)] = person; else h.people.push(person);
+      A.save(); mode = ""; render(); A.toast("Saved"); return;
+    }
+    if(d.hhOpen!==undefined){
+      var text = pending() || (el.querySelector("#hh-paste")||{}).value || "", pass = el.querySelector("#hh-pass").value;
+      if(!HH.cardText(text)){ msg = "Scan their QR code, open the card file, or paste the card first."; render(); return; }
+      if(!HH.normPass(pass)){ msg = "Type the passcode they told you."; render(); return; }
+      open(text, pass); return;
+    }
+    if(d.hhMake!==undefined){
+      var its = cardItems(h); if(!its.length && !h.me.adds){ A.toast("Tick at least one line for the card"); return; }
+      if(!h.me.name){ A.toast("Add your name for the card"); return; }
+      busy = "make"; render();
+      var pass = HH.newPass(), days = +h.card.days||0, c = HH.cardFrom(h.me, its, days);
+      HH.lock(c, pass).then(function(t){
+        var base = A.appUrl && A.appUrl();
+        made = {text:t, pass:pass, name:h.me.name, until:c.x, n:its.length, url:base ? base.split("#")[0]+"#hh-card="+t : "", qr:"", wantQr:true};
+        h.given.push({date:HH.ymd(new Date()), n:its.length, until:c.x}); A.save(); busy = ""; render();
+        var m = el.querySelector(".hh-made"); if(m) m.scrollIntoView({block:"center"});
+      }, function(){ busy = ""; A.toast("Couldn't lock the card on this device"); render(); });
+      return;
+    }
+    if(d.hhShare!==undefined && made){
+      var name = "food-card-"+(made.name||"me").toLowerCase().replace(/[^a-z0-9]+/g,"-")+".txt", body = cardFile();
+      try{ var file = new File([body], name, {type:"text/plain"});
+        if(navigator.canShare && navigator.canShare({files:[file]})){ navigator.share({files:[file], title:"Food card"}).catch(function(){}); return; } }catch(err){}
+      A.saveFile(name, body); return;
+    }
+    if(d.hhCopy!==undefined && made){ var txt = made.url || made.text;
+      (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function(){ A.toast("Card copied. Send the passcode separately."); }, function(){ prompt("Copy the card:", txt); }); return; }
+    if(d.hhCopypending!==undefined){ var pc = pending();
+      (navigator.clipboard ? navigator.clipboard.writeText(pc) : Promise.reject()).then(function(){ A.toast("Card copied"); }, function(){ prompt("Copy the card:", pc); }); return; }
+    if(d.hhAll!==undefined){ (A.myItems()||[]).forEach(function(it){ h.card.pick[it.key] = d.hhAll==="1"; }); made = null; A.save(); render(); return; }
+    if(d.hhDone!==undefined){ made = null; render(); return; }
+  }
+  function onChange(e){
+    var t = e.target, h = H(), d = t.dataset;
+    if(d.hhShared!==undefined){ h.people[+d.hhShared].shared = t.checked; A.save(); render(); return; }
+    if(d.hhPick!==undefined){ h.card.pick[d.hhPick] = t.checked; made = null; A.save(); render(); return; }
+    if(t.id==="hh-days"){ h.card.days = +t.value; made = null; A.save(); render(); return; }
+    if(t.id==="hh-me-name" || t.id==="hh-me-adds" || t.id==="hh-me-words"){
+      if(t.id==="hh-me-name") h.me.name = t.value.trim(); else if(t.id==="hh-me-adds") h.me.adds = t.value.trim(); else h.card.words = t.value;
+      A.save(); var see = el.querySelector("#hh-see"); if(see) see.innerHTML = seeHtml(h);
+      if(made){ made = null; var m = el.querySelector(".hh-made"); if(m) m.remove(); var mk = el.querySelector("[data-hh-make]"); if(mk) mk.textContent = "Make my card"; }
+      return; }
+    if(t.id==="hh-file" && t.files && t.files[0]){ t.files[0].text().then(function(x){ var c = HH.cardText(x); if(c){ setPending(c); msg = ""; } else msg = "That file doesn't hold a food card."; render(); }); }
+  }
+  var CSS = ".hh .hh-person{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;gap:6px}.hh .hh-ph{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center}"
+    +".hh label.inline{display:flex;gap:6px;align-items:center;font-weight:400}.hh .hh-picks{display:grid;grid-template-columns:repeat(auto-fill,minmax(14rem,1fr));gap:4px 12px;margin-top:4px}"
+    +".hh .hh-ul{margin:0;padding-left:1.2em;display:grid;gap:2px}.hh .hh-made{display:grid;gap:10px;justify-items:start;border-top:1px solid var(--line);padding-top:12px}"
+    +".hh .hh-qr{background:#fff;padding:8px;border-radius:8px;width:min(300px,100%)}.hh .hh-qr svg{display:block;width:100%;height:auto}"
+    +".hh .hh-pass{display:grid;gap:2px}.hh .hh-pass b{font-size:1.35rem;letter-spacing:.02em;word-break:break-word}.hh summary{cursor:pointer}";
+  function mount(adapter){
+    A = adapter; HH.style();
+    if(!document.getElementById("hh-ui-css")){ var s = document.createElement("style"); s.id = "hh-ui-css"; s.textContent = CSS; document.head.appendChild(s); }
+    document.addEventListener("click", function(e){ if(el && el.contains(e.target) && el.querySelector(".hh")) onClick(e); });
+    document.addEventListener("change", function(e){ if(el && el.contains(e.target) && el.querySelector(".hh")) onChange(e); });
+  }
+  return {mount:mount, render:render, takeHash:takeHash};
+})();
+const HH_MINE = [["Beans to check first", "butter beans?|lima beans?|kidney beans?|navy beans?|cannellini(?: beans?)?|great northern(?: beans?)?", "ask"], ["Lemon", "lemon(?:s| juice| zest| peel)?|lemonade", "avoid"], ["Apple", "apples?(?: cider vinegar| cider| juice| sauce)?|applesauce", "avoid"], ["Mushrooms", "mushrooms?|shiitakes?|portobellos?|cremini|morels?|chanterelles?|lion'?s mane|maitake|reishi|chaga|cordyceps", "avoid"], ["Coffee", "coffee|espresso|lattes?|cappuccinos?|mochas?", "avoid"], ["Shellfish", "crabs?|lobsters?|shrimp|prawns?|crawfish|crayfish|langoustines?", "avoid"], ["Cantaloupe", "cantaloupes?|muskmelon", "avoid"], ["Green beans", "green beans?|string beans?|snap beans?|haricots? verts?", "avoid"], ["Pinto beans", "pinto(?: beans?)?|refried beans", "avoid"], ["Carrot family", "carrots?|celery(?: seed| salt)?|celeriac|parsnips?|parsley|dill|fennel(?: seed)?|(?:star )?anise|caraway|lovage|chervil|mirepoix", "avoid"], ["Bell-type peppers and paprika", "bell peppers?|(?:red|green|yellow|orange|sweet|roasted) peppers?|poblanos?|anaheims?|pimentos?|pimientos?|paprika", "avoid"], ["Eggplant", "eggplants?|aubergines?|baba ganoush", "avoid"], ["Almond", "almonds?(?: milk| flour| butter| meal| extract)?|marzipan|amaretto", "avoid"], ["Peach", "peach(?:es)?", "avoid"], ["Nectarine", "nectarines?", "ask"], ["Pineapple", "pineapples?", "avoid"], ["Avocado", "avocados?|guacamole", "avoid"], ["Turkey", "turkey", "avoid"], ["Pork", "pork|bacon|ham|prosciutto|pancetta|chorizo|pepperoni|salami|lard", "avoid"], ["Sausage", "sausages?|hot dogs?|bratwurst", "ask"], ["Cruciferous", "broccoli rabe|broccolini|broccoli|rapini|cabbages?|kale|cauliflower|brussels sprouts?|bok choy|pak choi|collards?(?: greens)?|arugula|radish(?:es)?|watercress|turnips?|rutabagas?|kohlrabi|mustard(?: greens| seeds?)?|horseradish|wasabi|coleslaw|slaw|sauerkraut|kimchi", "avoid"], ["Gluten", "gluten|wheat|barley|rye|spelt|farro|semolina|couscous|bulgur|seitan|malt(?:ed)?|durum", "avoid"], ["Bread and baked goods", "bread|breadcrumbs|bagels?|toast|muffins?|cakes?|cookies?|pastr(?:y|ies)|crackers?|baked goods?|pizza|croissants?|biscuits?|pancakes?|waffles?|flour tortillas?|pita|naan|brownies?|donuts?|doughnuts?|pie crust", "avoid"], ["Yeast", "yeast|nutritional yeast|brewer'?s yeast", "avoid"], ["Corn", "corn(?: tortillas?| chips| syrup| starch| flour| oil)?|cornmeal|cornstarch|polenta|grits|popcorn|masa|hominy|tortilla chips|tortillas?", "avoid"], ["Potato", "(?<!sweet )potato(?:es)?|hash browns?|french fries|fries|potato chips|tater tots", "avoid"], ["Pickled foods", "pickles?|pickled|relish|capers", "avoid"], ["Vinegar", "vinegar|balsamic|vinaigrettes?|ketchup|bbq sauce|barbecue sauce|hot sauce|sriracha|worcestershire", "avoid"], ["Soy sauce", "soy sauce|tamari|shoyu|teriyaki|coconut aminos", "avoid"], ["Grapes", "grapes?|raisins?|grape juice", "avoid"], ["Dried fruit", "dried fruits?|prunes?|medjool(?: dates?)?|dates(?! syrup| sugar)|dried (?:cranberr(?:y|ies)|apricots?|figs?|mango|cherries|blueberries)|craisins?|fruit leather", "avoid"], ["Aged cheese", "aged cheeses?|cheddar|parmesan|parmigiano|pecorino|romano|gouda|swiss cheese|gruy[eè]re|brie|camembert|blue cheese|bleu cheese|gorgonzola|roquefort|manchego|provolone|asiago|havarti|colby|monterey jack|pepper jack|moldy cheese", "avoid"], ["Cheese (which kind?)", "(?<!mozzarella |feta |cream |cottage )cheeses?", "ask"], ["Peanuts", "peanuts?(?: butter| oil)?|groundnuts?", "avoid"], ["Pistachios", "pistachios?", "avoid"], ["Brazil nuts", "brazil nuts?", "avoid"], ["Alcohol", "alcohol|wine|beer|liquor|vodka|whiske?y|rum|tequila|cocktails?|sake|hard cider|cider|mead", "avoid"], ["Fermented drinks", "kombucha|kvass|jun tea", "avoid"], ["Black or oolong tea", "black tea|oolong|chai|earl grey|english breakfast", "avoid"], ["Agave syrup", "agave(?: syrup| nectar)?", "limit"], ["Date syrup", "date (?:syrup|sugar)", "limit"], ["Sweetened drinks", "sodas?|soft drinks?|sweet tea|energy drinks?|sports drinks?|colas?", "avoid"], ["Butter", "ghee|butter", "avoid"], ["Lentils", "lentils?|dal|dhal", "avoid"], ["Monk fruit", "monk ?fruit|luo han guo", "avoid"], ["Pomegranate", "pomegranates?", "avoid"], ["Cinnamon", "cinnamon", "avoid"], ["Vanilla", "vanilla", "avoid"], ["Coconut", "coconut(?: oil| milk| cream| flour| sugar| water| flakes)?|copra", "avoid"], ["Sweets and sugar", "brown sugar|cane sugar|coconut sugar|powdered sugar|sugar|honey|maple(?: syrup)?|molasses|corn syrup|candy|candies|syrup|frosting|icing|jam|jelly|caramel|dessert|ice cream|sorbet", "avoid"], ["Pasta", "pasta|spaghetti|noodles?|macaroni|ramen|lasagna", "ask"], ["Pear or quince", "pears?|quince", "ask"], ["Egg whites", "egg whites?|meringue", "ask"], ["Eggs", "eggs?|omelets?|omelettes?|frittatas?|quiche|hard[- ]boiled", "ask"], ["Broth or stock", "broth|stock|bouillon|soup base|rotisserie(?: chicken)?|canned soup", "ask"], ["Blends, sauces, and dressings", "italian seasoning|herbes de provence|curry powder|garam masala|seasoning blend|spice blend|spice mix|natural flavou?rs?|chili powder|chile powder|taco seasoning|cajun seasoning|everything bagel seasoning|poultry seasoning|salsa|mayonnaise|mayo|aioli|dressing", "ask"], ["Fermented foods", "miso|tempeh|natto|fish sauce|kefir|sour cream|buttermilk", "ask"], ["Tomato", "tomato(?:es)?|tomato sauce|marinara|passata|tomato paste", "limit"], ["Banana", "bananas?", "limit"], ["Mint", "peppermint|spearmint|mint", "limit"], ["Rosemary", "rosemary", "limit"], ["Oats", "oats?|oatmeal|porridge|granola|overnight oats", "limit"], ["Yogurt", "yogurt|yoghurt", "limit"], ["Chocolate", "chocolate|cocoa|cacao", "limit"], ["Caffeine", "caffeine|green tea|matcha|yerba mate", "limit"], ["Sablefish", "sablefish|black cod", "limit"]];
+
+function defaultHousehold(){ return null; }
+const DAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const DAYS_LONG = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+const PENDING_NOTE = "Spacing not confirmed yet";
+
+
+const BKF_PULL = "4 oz shredded chicken for breakfast, if not using patties (patties go into the pan frozen)";
+const RECIPES = {
+  b_usual:{t:"b", n:"Your usual breakfast", d:"Cucumber with lime and salt, 3 to 4 oz meat (2 sage bison patties or shredded chicken; canned salmon or sardines any day), 1 slice Pacha toast with cream cheese.", pull:[BKF_PULL]},
+  l_salmon:{t:"l", n:"Salmon snap pea bowl", d:"Canned salmon over quinoa with snap peas, artichoke hearts, cilantro, lime, 1 tsp sesame oil.", pull:["1/2 cup quinoa (lunch)"]},
+  l_thermos:{t:"l", n:"Leftover stew in a thermos", d:"A bowl of last night's stew, reheated.", pull:[], night:"Set aside one bowl of tonight's stew for tomorrow's thermos lunch"},
+  l_chicken:{t:"l", n:"Chicken, quinoa and artichoke bowl", d:"Shredded chicken, quinoa, artichoke hearts, lime.", pull:["Shredded chicken (lunch)","1/2 cup quinoa (lunch)"]},
+  l_chickpea:{t:"l", n:"Chickpea jar salad (bean)", d:"Chickpeas, cucumber, artichoke hearts, fresh mozzarella, olive oil, lime, cilantro, cumin.", pull:[]},
+  l_sardine:{t:"l", n:"Sardines with cucumber and toast", d:"Sardines, cucumber with lime, buckwheat bread.", pull:[]},
+  d_chickenstew:{t:"d", n:"Chicken butternut stew night", you:"Chard, black pepper, lime, 1/2 cup beans on the side (bean)", his:"Rice", pull:["Chicken butternut stew","1/2 cup beans"]},
+  d_bison:{t:"d", n:"Bison skillet bowls", you:"Quinoa, 1/2 cup beans, sheep feta, jalapeño, lime, cilantro (bean)", his:"Potatoes", pull:["Bison skillet meat","1/2 cup quinoa (dinner)","1/2 cup beans"]},
+  d_lamb:{t:"d", n:"Lamb chickpea stew night", you:"Spinach, jalapeño or serrano, lime (the chickpeas are your bean serving)", his:"Rice", pull:["Lamb chickpea stew"]},
+  d_chickenplate:{t:"d", n:"Shredded chicken plate", you:"Roasted beets and sweet potato, artichoke hearts, snap peas, lime, cilantro", his:"Potatoes or rice", pull:["Shredded chicken (dinner)"]},
+  d_fish:{t:"d", n:"Fish tray dinner", you:"Acorn squash and snap peas from the same tray", his:"Potatoes", pull:["Sablefish or trout, if frozen"]},
+  d_beansoup:{t:"d", n:"Black bean pumpkin soup", you:"Jalapeño and lime at the table (bean)", his:"", pull:[]},
+  d_beefquinoa:{t:"d", n:"Beef and quinoa skillet", you:"Serrano, cilantro", his:"", pull:["1/2 cup quinoa (dinner)"]},
+  d_chickentray:{t:"d", n:"Tiny-oven chicken tray", you:"", his:"", pull:[]},
+  d_thermossoup:{t:"d", n:"Thermos chicken squash soup", you:"Spinach stirred in", his:"", pull:[]},
+  d_cookday:{t:"d", n:"Cook day: whatever comes off the stove", you:"Quinoa or buckwheat and beans (bean)", his:"His starch", pull:[]},
+  s_persimmon:{t:"s", n:"Persimmon with mozzarella", d:"Half a persimmon with fresh mozzarella.", pull:[]},
+  s_kiwi:{t:"s", n:"Kiwi with walnuts", d:"2 kiwi with a few walnuts (counts toward your handful).", pull:[]},
+  s_cucumber:{t:"s", n:"Cucumber and snap peas with tahini", d:"With tahini and lime.", pull:[]},
+  s_edamame:{t:"s", n:"Salted edamame (bean)", d:"Counts as your bean serving.", pull:[]},
+  s_chickpeas:{t:"s", n:"Tiny-oven roasted chickpeas (bean)", d:"Counts as your bean serving.", pull:[]},
+  e_chiajam:{t:"e", n:"Chia berry jam", d:"1/4 cup, alone or with a spoon of plain yogurt. Counts toward your seed handful.", pull:[]}
+};
+const SLOTS = [["b","Breakfast"],["l","Lunch"],["s","Snack"],["d","Dinner"],["e","Evening treat"]];
+
+function plannerMine(){
+  try{ const p = JSON.parse(localStorage.getItem("pantryplanner.v1")||"null"); return (p&&Array.isArray(p.mine))? p.mine : []; }catch(e){ return []; }
+}
+function recipe(id){
+  if(RECIPES[id]) return RECIPES[id];
+  const m = plannerMine().find(r=>r.id===id);
+  if(m) return {t:(m.t||"d")[0], n:m.n, d:"", you:"", his:"", pull:[]};
+  return null;
+}
+function recipeOptions(slot){
+  const all = Object.entries(RECIPES).filter(([,r])=>r.t===slot).map(([id,r])=>[id,r.n]);
+  for(const m of plannerMine()) if((m.t||"")[0]===slot && !RECIPES[m.id]) all.push([m.id, m.n+" (yours)"]);
+  return all;
+}
+
+
+function extraSupps(){ return []; }
+
+function defaultRoutine(){ return []; }
+
+
+function defaultMiss(){ return {after:30, suppCutoff:"21:30", homeCutoff:"21:00", townCutoff:"16:00", skipWithin:180}; }
+const MISS_FIELDS = [["after","Counts as missed after","minutes past its time","number"],["suppCutoff","Supplements without food, latest","after this, next day","time"],["homeCutoff","Routine at home, latest","after this, next day","time"],["townCutoff","Routine in town, latest","after this, next town day","time"],["skipWithin","Skip a catch-up this close to the next dose","minutes","number"]];
+
+
+let OV_OPEN = null, EDIT_ITEM = null; 
+function dayOver(d){ return ((S.dayOver||{})[ymd(d)])||{}; }
+function idsFor(d){ const ov = dayOver(d); return Object.assign({}, ((S.week[d.getDay()]||{}).ids)||{}, ov.ids||{}, Object.fromEntries(Object.keys(ov.text||{}).filter(k=>ov.text[k]).map(k=>[k,"__text"]))); }
+function defaultClock(){ return {on:true, wake:"09:00", bed:"22:00", easeUntil:"2026-10-28"}; }
+function dayTimes(d){
+  const C = S.clock||{}, T = Object.assign({}, S.times), ov = dayOver(d);
+  const W = parseTime(ov.wake||C.wake), B = parseTime(C.bed), om = k=>parseTime(ov[k]) ? mins(parseTime(ov[k])) : null;
+  if(!C.on || !W || !B){ for(const [k,f] of [["breakfast","first"],["lunch","lunch"],["dinner","dinner"]]) if(om(f)!==null) T[k]=fromMins(om(f)); return T; }
+  const w = mins(W), bd = mins(B) < w ? mins(B)+1440 : mins(B);
+  const ease = C.easeUntil && ymd(d) < C.easeUntil;
+  const first = om("first") ?? w + (ease?60:120), last = om("dinner") ?? Math.max(first+240, bd - 180), lunch = om("lunch") ?? Math.round((first+last)/2/15)*15;
+  Object.assign(T, {wake:fromMins(w), breakfast:fromMins(first), lunch:fromMins(lunch), snack:fromMins(Math.round((lunch+last)/2/15)*15),
+    dinner:fromMins(last), treat:fromMins(last+15), psyllium:fromMins(om("first")!==null ? first+120 : w+240), closes:fromMins(last+Number(T.walkAfter||15)+15), bed:fromMins(bd), ease});
+  return T;
+}
+
+const FLARE_WORDS = [
+  {word:"nut|nuts|walnut|walnuts|pecan|pecans|almond|almonds|hazelnut|hazelnuts|cashew|cashews|peanut|peanuts|pistachio|pistachios|macadamia", label:"Nuts", level:"avoid"},
+  {word:"seed|seeds|chia|flax|flaxseed|sesame|tahini|pepitas|pumpkin seeds|sunflower|hemp", label:"Seeds, chia, flax, sesame and tahini", level:"avoid"},
+  {word:"bean|beans|chickpea|chickpeas|garbanzo|edamame|soy|soybean|soybeans|tofu|tempeh|miso|mung|lentil|lentils|hummus|bean noodles|edamame noodles", label:"Beans, chickpeas, edamame, soy and legume noodles", level:"avoid"},
+  {word:"chocolate|cacao|cocoa|carob", label:"Chocolate and cacao", level:"avoid"},
+  {word:"oat|oats|oatmeal|granola", label:"Oats", level:"avoid"},
+  {word:"quinoa|buckwheat", label:"Quinoa and buckwheat (moderate arginine)", level:"limit"}
+];
+
+const FLARE_SWAP = {l_chickpea:"l_chicken", d_lamb:"d_chickenplate", d_beansoup:"d_chickentray", s_kiwi:"s_persimmon", s_cucumber:"s_persimmon", s_edamame:"s_persimmon", s_chickpeas:"s_persimmon", e_chiajam:""};
+const FLARE_NOTE = {d_chickenstew:"skip the beans on the side", d_bison:"skip the beans and keep the quinoa small", d_cookday:"skip the beans"};
+const LYSINE_FOODS = "fish, chicken, turkey, beef, lamb, bison, fresh mozzarella, cream cheese, sheep feta and plain yogurt";
+function flareOn(d){ const F = S.flare||{}; return !!(F.on && (!F.until || ymd(d||new Date()) <= F.until)); }
+function flareAffected(){
+  const out = [];
+  for(const dow of [1,2,3,4,5,6,0]) for(const [k] of SLOTS){ const id = ((S.week[dow]||{}).ids||{})[k];
+    if(id && (id in FLARE_SWAP || FLARE_NOTE[id])) out.push({dow, k, id, to: id in FLARE_SWAP ? FLARE_SWAP[id] : null, note: FLARE_NOTE[id]||""}); }
+  return out;
+}
+function startFlare(until){
+  S.flare = {on:true, until, started:ymd(new Date()), saved:null};
+  S.rules.extra = (S.rules.extra||[]).filter(x=>!x.flare).concat(FLARE_WORDS.map(x=>Object.assign({}, x, {flare:true, why:"High in arginine. Flare-up mode through "+until.slice(5).replace("-","/")+"."})));
+  logRule("Flare-up mode on through "+until);
+  (S.notes=S.notes||[]).push({id:"n"+Date.now(), about:"Flare-up", feel:"Worse", date:ymd(new Date()), time:pad(new Date().getHours())+":"+pad(new Date().getMinutes()), text:"Turned on flare-up mode (no arginine foods) through "+until+"."});
+}
+function swapFlareMeals(){
+  const saved = {};
+  for(const a of flareAffected()) if(a.to!==null){ saved[a.dow+":"+a.k] = a.id; S.week[a.dow].ids[a.k] = a.to; }
+  S.flare.saved = Object.assign(S.flare.saved||{}, saved);
+  return Object.keys(saved).length;
+}
+function endFlare(){
+  const F = S.flare||{};
+  for(const [key,id] of Object.entries(F.saved||{})){ const [dow,k] = key.split(":"); const w = S.week[dow]; if(w && w.ids && (w.ids[k]===FLARE_SWAP[id] || (FLARE_SWAP[id]==="" && !w.ids[k]))) w.ids[k] = id; }
+  S.rules.extra = (S.rules.extra||[]).filter(x=>!x.flare);
+  logRule("Flare-up mode off");
+  S.flare = {on:false, until:"", started:"", saved:null};
+}
+function checkFlare(){ const F = S.flare||{}; if(F.on && F.until && ymd(new Date()) > F.until){ endFlare(); return true; } return false; }
+
+function defaultTodo(){ return []; }
+
+function defaultRules(){
+  return {carbsPerDay:null, carbsPerMeal:null, glLow:10, glHigh:20, fiberGoal:30, ramp:[13,20,25,30],
+    beansPerDay:1, nutsSeedsTbsp:2, oilTspPerMeal:2, spacingMin:120,
+    extra:[], ok:[{word:"cilantro|coriander", label:"Cilantro and coriander"}]};
+}
+const RULE_FIELDS = [
+  ["carbsPerDay","Daily carb target","g a day","Leave blank until you have a number."],
+  ["carbsPerMeal","Carb cap per meal","g a meal","Leave blank until you have a number."],
+  ["fiberGoal","Fiber goal","g a day",""],
+  ["beansPerDay","Bean servings","1/2-cup servings a day",""],
+  ["nutsSeedsTbsp","Nuts and seeds","tbsp a day","Chia and flax count."],
+  ["oilTspPerMeal","Added oil","tsp a meal, at most",""],
+  ["spacingMin","Binder spacing","minutes from meds and supplements","Psyllium and other binders."],
+  ["glLow","Low glycemic load","per meal, at or under",""],
+  ["glHigh","High glycemic load","per meal, at or over",""]
+];
+
+
+function defaultLabs(){ return []; }
+function defaultVisits(){ return []; }
+
+
+function defaultDoctor(){ return []; }
+
+
+function defaults(){
+  return {
+    version: 13, clinicQs: true, flare: {on:false, until:"", started:"", saved:null},
+    clock: defaultClock(),
+    stock: {}, stockAsOf: "", lastGrain: "",
+    miss: defaultMiss(),
+    moved: [],
+    todo: defaultTodo(),
+    missFrom: "",
+    rules: defaultRules(),
+    rulesLog: [],
+    labs: defaultLabs(),
+    visits: defaultVisits(),
+    notes: [],
+    doctor: defaultDoctor(),
+    leads: {home:"10, 5", town:"40, 30"},
+    routine: defaultRoutine(),
+    supplements: [],
+    times: {breakfast:"08:00", lunch:"12:30", snack:"15:30", dinner:"18:00", walkAfter:15, treat:"19:30", pull:"20:00", cook:"10:00", water:"10:00, 13:00, 16:00"},
+    on: {supps:true, meals:true, snack:true, walk:true, treat:true, pull:true, cook:true, water:true, routine:true, feel:true},
+    fiberStart: "2026-10-21",
+    waterGoal: 80, glassOz: 16, waterSizes: [4, 8],
+    cookDay: 0,
+    nextCook: {date:"2026-10-25", session:"A"},
+    
+    week: {
+      1:{ids:{b:"b_usual", l:"l_salmon", s:"s_persimmon", d:"d_chickenstew", e:"e_chiajam"}, note:""},
+      2:{ids:{b:"b_usual", l:"l_thermos", s:"s_kiwi", d:"d_bison", e:"e_chiajam"}, note:""},
+      3:{ids:{b:"b_usual", l:"l_chicken", s:"s_cucumber", d:"d_lamb", e:"e_chiajam"}, note:""},
+      4:{ids:{b:"b_usual", l:"l_chickpea", s:"s_persimmon", d:"d_chickenplate", e:"e_chiajam"}, note:""},
+      5:{ids:{b:"b_usual", l:"l_salmon", s:"s_kiwi", d:"d_chickenstew", e:"e_chiajam"}, note:""},
+      6:{ids:{b:"b_usual", l:"l_chickpea", s:"s_cucumber", d:"d_fish", e:"e_chiajam"}, note:""},
+      0:{ids:{b:"b_usual", l:"l_sardine", s:"s_persimmon", d:"d_cookday", e:"e_chiajam"}, note:""}
+    },
+    
+    pull: {0:[],1:[],2:[],3:[],4:[],5:[],6:[]},
+    log: {}
+  };
+}
+
+
+let S = defaults();
+let SERVER = false;
+let LAPTOP = false; 
+function lsGet(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)||"null"); }catch(e){ return null; } }
+function lsSet(v){ try{ localStorage.setItem(LS_KEY, JSON.stringify(v)); }catch(e){} }
+function merge(saved){
+  const d = defaults(), d0 = defaults();
+  if(!saved || typeof saved!=="object") return d;
+  const out = Object.assign(d, saved);
+  out.times = Object.assign(defaults().times, saved.times||{});
+  out.on = Object.assign(defaults().on, saved.on||{});
+  out.log = saved.log||{};
+  if(!saved.version || saved.version<2){ out.week = d0.week; out.pull = d0.pull; out.version = 2; }
+  if(out.version<3){
+    const have = new Set((out.supplements||[]).map(x=>x.id));
+    out.supplements = (out.supplements||[]).concat(extraSupps().filter(x=>!have.has(x.id)));
+    out.routine = out.routine || defaultRoutine();
+    out.version = 3;
+  }
+  if(out.version<4){
+    out.leads = out.leads || {home:"10, 5", town:"40, 30"};
+    const dr = defaultRoutine(), ids = new Set(out.routine.map(r=>r.id));
+    out.routine = out.routine.map(r=>r.id==="sweat" ? Object.assign({}, r, {name:dr.find(x=>x.id==="sweat").name, how:dr.find(x=>x.id==="sweat").how, where:"town"}) : r);
+    for(const id of ["epsom","gym"]) if(!ids.has(id)) out.routine.push(dr.find(x=>x.id===id));
+    out.version = 4;
+  }
+  if(out.version<5){
+    out.notes = out.notes || [];
+    out.doctor = out.doctor || defaultDoctor();
+    out.version = 5;
+  }
+  if(out.version<6){
+    out.labs = out.labs || defaultLabs();
+    out.visits = out.visits || defaultVisits();
+    out.version = 6;
+  }
+  if(out.version<7){ out.rules = out.rules || defaultRules(); out.rulesLog = out.rulesLog || []; out.version = 7; }
+  if(out.version<8){ out.moved = out.moved||[]; out.todo = out.todo||defaultTodo(); const g = (out.routine||[]).find(r=>r.id==="gym"); if(g) g.where = "town"; out.version = 8; }
+  if(out.version<9){ out.stock = out.stock||{}; out.version = 9; }
+  if(out.version<10){
+    const dr = defaultRoutine(), have = new Set(out.routine.map(r=>r.id));
+    const bm = out.routine.find(r=>r.id==="bm"), nb = dr.find(r=>r.id==="bm"); if(bm){ bm.how = nb.how; bm.notes = nb.notes; }
+    for(const id of ["morningwater","fast"]) if(!have.has(id)) out.routine.push(dr.find(r=>r.id===id));
+    out.version = 10;
+  }
+  if(out.version<11){
+    out.clock = out.clock || defaultClock(); out.times.walkAfter = 15;
+    const f = (out.routine||[]).find(r=>r.id==="fast"), nf = defaultRoutine().find(r=>r.id==="fast"); if(f){ f.name = nf.name; f.how = nf.how; f.notes = nf.notes; }
+    for(const q of (out.doctor||[])) if(/13 to 15 hour overnight fast/.test(q.text)) q.text = q.text.replace("13 to 15 hour","16-hour");
+    out.version = 11;
+  }
+  if(out.version<12){
+    out.waterSizes = out.waterSizes || [4, 8];
+    for(const lg of Object.values(out.log||{})) if(lg && lg.oz==null){ lg.oz = (Number(lg.water)||0)*(Number(out.glassOz)||16); lg.sips = lg.oz ? [lg.oz] : []; }
+    out.version = 12;
+  }
+  if(out.version<13){ out.on = Object.assign({feel:true}, out.on); out.version = 13; }
+  out.clock = Object.assign(defaultClock(), out.clock||{});
+  out.flare = Object.assign({on:false, until:"", started:"", saved:null}, out.flare||{});
+  if(!out.clinicQs){ 
+    const qs = (out.doctor||[]).map(x=>x.text);
+    for(const t of [])
+      if(!qs.includes(t)) (out.doctor=out.doctor||[]).push({id:"q"+Date.now()+t.length, text:t, status:"ask", answer:"", added:"2026-10-21"});
+    out.clinicQs = true;
+  }
+  out.stock = out.stock||{};
+  out.miss = Object.assign(defaultMiss(), out.miss||{});
+  out.moved = out.moved||[];
+  out.rules = Object.assign(defaultRules(), out.rules||{});
+  out.leads = Object.assign({home:"10, 5", town:"40, 30"}, out.leads||{});
+  return out;
+}
+async function load(){
+  const local = lsGet();
+  if(false){
+    try{
+      const r = await fetch("/api/state",{cache:"no-store"});
+      const j = await r.json();
+      if(j && j.server){ SERVER = true; LAPTOP = !!j.laptop; S = merge(j.state || local); return; }
+    }catch(e){}
+  }
+  S = merge(local);
+}
+
+function rollCook(){
+  let d = parseYmd(S.nextCook.date); if(!d) return;
+  const today = parseYmd(ymd(new Date()));
+  let moved = false;
+  while(d < today){ d = addDays(d,7); S.nextCook.session = S.nextCook.session==="A"?"B":"A"; moved = true; }
+  if(moved){ S.nextCook.date = ymd(d); }
+  return moved;
+}
+let saveTimer = null;
+function save(){
+  pruneLog();
+  try{ const cd = nextCookDate(parseYmd(ymd(new Date()))); if(cd) S.cookNext = {date:ymd(cd), items:cookPlanFor(cd).map(x=>({id:x.id==="r_grain"?(x.grain==="buckwheat"?"r_buckwheat":"r_quinoa"):x.id, batches:x.batches}))}; }catch(e){}
+  lsSet(S);
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async ()=>{
+    if(!SERVER) return;
+    try{
+      await fetch("/api/state",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({state:S, reminders:buildReminders(60)})});
+      setSync();
+    }catch(e){ setSync("Could not reach the reminder service. Changes are saved in this browser."); }
+  }, 400);
+}
+function pruneLog(){
+  const keep = ymd(addDays(new Date(),-45));
+  for(const k of Object.keys(S.log)) if(k<keep) delete S.log[k];
+  S.moved = (S.moved||[]).filter(m=>m.day>=keep);
+  for(const k of Object.keys(S.dayOver||{})) if(k<keep) delete S.dayOver[k];
+}
+
+
+const pad = n=>String(n).padStart(2,"0");
+function ymd(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+function parseYmd(s){ const [y,m,d]=(s||"").split("-").map(Number); return y? new Date(y,m-1,d): null; }
+function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+function parseTime(t){
+  const m = String(t).toLowerCase().replace(/[\s.]/g,"").match(/^(\d{1,2})(?::?(\d{2}))?(am|pm|a|p)?$/);
+  if(!m) return null;
+  let h=+m[1], mi=+(m[2]||0); const ap=m[3];
+  if(ap){ if(h===12) h=0; if(ap[0]==="p") h+=12; }
+  if(h>23||mi>59) return null;
+  return pad(h)+":"+pad(mi);
+}
+function parseTimes(s){ return [...new Set(String(s||"").split(/[,;]|\band\b/).map(x=>x.trim()).filter(Boolean).map(parseTime).filter(Boolean))].sort(); }
+function badTimes(s){ return String(s||"").split(/[,;]|\band\b/).map(x=>x.trim()).filter(x=>x && !parseTime(x)); }
+const mins = t=>{ const [h,m]=t.split(":").map(Number); return h*60+m; };
+const fromMins = m=>{ m=((m%1440)+1440)%1440; return pad(Math.floor(m/60))+":"+pad(m%60); };
+function niceTime(t){ if(!t) return ""; let [h,m]=t.split(":").map(Number); const ap=h>=12?"pm":"am"; h=h%12||12; return h+":"+pad(m)+" "+ap; }
+const esc = s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+
+function fiberWeek(d){
+  const st = parseYmd(S.fiberStart); if(!st) return 1;
+  return Math.max(1, Math.floor((d - st)/86400000/7)+1);
+}
+function fiberInfo(d){
+  const w = fiberWeek(d);
+  const R = S.rules||defaultRules(), ramp = R.ramp||[13,20,25,30];
+  const target = (w>=4 ? (R.fiberGoal||ramp[3]) : ramp[w-1]) + " g";
+  const psyllium = w===1?"1 tsp":"2 tsp";
+  const inulin = w<3?null: w===3?"1/2 tsp": w===4?"1 tsp": w===5?"1 1/2 tsp":"1 to 2 tsp";
+  const adds = w===1?"1 tsp psyllium in water, plus 1 tbsp chia"
+    : w===2?"Psyllium up to 2 tsp, plus a fruit and a vegetable at lunch"
+    : w===3?"One 1/2 cup bean serving a day. Start agave inulin at 1/2 tsp"
+    : "Inulin up to 1 to 2 tsp and more vegetables";
+  return {w, target, psyllium, inulin, adds};
+}
+function cookSession(d){
+  if(d.getDay()!==Number(S.cookDay)) return null;
+  const anchor = parseYmd(S.nextCook.date); if(!anchor) return S.nextCook.session;
+  const weeks = Math.round((d - anchor)/86400000/7);
+  const flip = Math.abs(weeks)%2===1;
+  return flip ? (S.nextCook.session==="A"?"B":"A") : S.nextCook.session;
+}
+
+const BASES = {
+  r_chickenstew:{n:"Chicken, butternut and leek stew", unit:"bowls", yield:8, min:45, where:"stove"},
+  r_lambstew:{n:"Lamb, chickpea and pumpkin stew", unit:"bowls", yield:8, min:90, where:"stove"},
+  r_bison:{n:"Bison zucchini skillet meat", unit:"portions", yield:6, min:20, where:"stove"},
+  r_shredded:{n:"Poached shredded chicken", unit:"4 oz portions", yield:10, min:25, where:"stove", note:"Strain and freeze the poaching liquid as broth."},
+  r_beans:{n:"Anasazi or bolita bean pot", unit:"half-cup portions", yield:12, min:150, where:"stove", soak:true},
+  r_grain:{n:"Quinoa or buckwheat pot", unit:"half-cup portions", yield:11, min:25, where:"stove"},
+  r_patties:{n:"Sage bison breakfast patties", unit:"patties", yield:16, min:18, where:"oven"},
+  r_roastveg:{n:"Roasted sweet potato and beets", unit:"sides", yield:5, min:40, where:"oven", fridge:true},
+  r_chiajam:{n:"Chia berry jam", unit:"servings", yield:8, min:5, where:"none", fridge:true}
+};
+
+const USES = {
+  b_usual:{r_patties:2}, l_salmon:{r_grain:1}, l_chicken:{r_shredded:1, r_grain:1},
+  d_chickenstew:{r_chickenstew:2, r_beans:1}, d_bison:{r_bison:2, r_grain:1, r_beans:1}, d_lamb:{r_lambstew:2},
+  d_chickenplate:{r_shredded:2, r_roastveg:1}, d_beefquinoa:{r_grain:1}, d_cookday:{r_grain:1, r_beans:1}, e_chiajam:{r_chiajam:1}
+};
+function usageOn(d){
+  const ids = idsFor(d), out = {};
+  const addU = m=>{ for(const [k,v] of Object.entries(m||{})) out[k]=(out[k]||0)+v; };
+  for(const [k] of SLOTS) if(ids[k]!=="l_thermos") addU(USES[ids[k]]);
+  if(flareOn(d)){ delete out.r_beans; delete out.r_chiajam; }
+  if(ids.l==="l_thermos"){ 
+    const prev = USES[idsFor(addDays(d,-1)).d]||{};
+    const stew = Object.keys(prev).find(k=>k==="r_chickenstew"||k==="r_lambstew"||k==="r_bison");
+    if(stew) out[stew]=(out[stew]||0)+1;
+  }
+  return out;
+}
+function usageBetween(from, days){ const t={}; for(let i=0;i<days;i++){ for(const [k,v] of Object.entries(usageOn(addDays(from,i)))) t[k]=(t[k]||0)+v; } return t; }
+function nextCookDate(from){ for(let i=0;i<8;i++){ const d=addDays(from,i); if(d.getDay()===Number(S.cookDay) && !(S.log[ymd(d)]||{}).cooked) return parseYmd(ymd(d)); } return null; }
+
+function cookPlanFor(cd){
+  const today = parseYmd(ymd(new Date()));
+  if(cd < today) cd = today;
+  const before = usageBetween(today, Math.round((cd-today)/86400000));
+  const need = usageBetween(cd, 7), items = [];
+  for(const [id,b] of Object.entries(BASES)){
+    const have = Math.max(0, (Number((S.stock||{})[id])||0) - (before[id]||0));
+    const n = need[id]||0;
+    if(n > have){ const batches = Math.ceil((n-have)/b.yield); items.push({id, batches, need:n, have}); }
+  }
+  const g = items.find(x=>x.id==="r_grain");
+  if(g) g.grain = S.lastGrain==="quinoa" ? "buckwheat" : "quinoa";
+  return items;
+}
+function baseName(it){ const b=BASES[it.id]; if(it.id==="r_grain") return it.grain==="buckwheat"?"Buckwheat groats pot":"Quinoa pot"; return b.n; }
+function baseMin(it){ return it.id==="r_grain" && it.grain==="buckwheat" ? 12 : BASES[it.id].min; }
+
+function cookTimeline(items){
+  const burners=[0,0], steps=[]; let oven=0;
+  const stove = items.filter(x=>BASES[x.id].where==="stove").sort((a,b)=>baseMin(b)-baseMin(a));
+  for(const it of stove) for(let k=0;k<it.batches;k++){ const i = burners[0]<=burners[1]?0:1; steps.push({at:burners[i], where:"Burner "+(i+1), it}); burners[i]+=baseMin(it); }
+  for(const it of items.filter(x=>BASES[x.id].where==="oven")) for(let k=0;k<it.batches;k++){ steps.push({at:oven, where:"Oven", it}); oven+=baseMin(it)+5; }
+  const end = Math.max(burners[0], burners[1], oven);
+  for(const it of items.filter(x=>BASES[x.id].where==="none")) steps.push({at:Math.max(0,end-15), where:"No heat", it});
+  return {steps: steps.sort((a,b)=>a.at-b.at||a.where.localeCompare(b.where)), end};
+}
+const hm = m=> Math.floor(m/60)+":"+pad(m%60);
+function cookSummary(items){
+  if(!items.length) return "Your freezer covers next week. Nothing to cook.";
+  const {end} = cookTimeline(items);
+  return "About "+(Math.round(end/15)/4)+" hours: "+items.map(it=>baseName(it).replace(/^(Quinoa|Buckwheat groats) pot$/,"$1").replace(/^Anasazi or bolita bean pot$/,"bean pot")+(it.batches>1?" x"+it.batches:"")).join(", ")+".";
+}
+
+function useUpStock(){
+  const today = ymd(new Date()); let d = parseYmd(S.stockAsOf||today), changed=false;
+  while(ymd(d) < today){ for(const [k,v] of Object.entries(usageOn(d))) S.stock[k]=Math.max(0,(Number(S.stock[k])||0)-v); d=addDays(d,1); changed=true; }
+  S.stockAsOf = today; return changed;
+}
+
+function suppDose(s,d){ if(s.dose) return s.dose; if(s.id==="psyllium") return fiberInfo(d).psyllium+" (fiber week "+fiberWeek(d)+")"; return ""; }
+
+
+function dueOn(x, d){
+  if(x.alt){ const st = parseYmd(x.altFrom) || d; const n = Math.round((parseYmd(ymd(d)) - parseYmd(ymd(st)))/86400000); return ((n%2)+2)%2===0; }
+  return !(x.days && x.days.length) || x.days.includes(d.getDay());
+}
+function freqHtml(x, i, attr){
+  return `<div class="row">${DAYS.map((n,dw)=>`<label class="inline"><input type="checkbox" data-${attr}day="${i}" value="${dw}" ${!x.alt&&(x.days||[]).includes(dw)?"checked":""} ${x.alt?"disabled":""}> ${n}</label>`).join("")}
+    <label class="inline"><input type="checkbox" data-${attr}alt="${i}" ${x.alt?"checked":""}> Every other day</label></div>
+    <small class="muted">${x.alt?"Every other day, starting "+esc(x.altFrom||"today")+".":(x.days||[]).length?x.days.length+" days a week.":"Every day."}</small>`;
+}
+
+
+function itemsFor(d, plain){
+  const dow = d.getDay(), T = dayTimes(d), items = [];
+  const clockTime = id=> T.wake ? ({psyllium:T.psyllium, morningwater:T.wake, fast:T.closes})[id] : null;
+  const add = o=>items.push(o);
+  if(S.on.supps) for(const s of S.supplements){
+    if(!s.active || !dueOn(s,d)) continue;
+    const ts = parseTimes(s.times).length ? parseTimes(s.times) : (clockTime(s.id) ? [clockTime(s.id)] : []);
+    const dose = suppDose(s,d);
+    const detail = [dose, s.how].filter(Boolean).join(". ");
+    if(!ts.length){ add({id:"supp:"+s.id, time:null, kind:"supp", title:s.name, detail, pending:s.pending}); continue; }
+    ts.forEach(t=>add({id:"supp:"+s.id+":"+t, time:t, kind:"supp", title:s.name, detail, pending:s.pending, suppId:s.id, binder:!!s.binder, where:s.where||"home"}));
+  }
+  const wk = S.week[dow]||{ids:{}}, ids = idsFor(d), ovt = dayOver(d).text||{};
+  const r = k=> ids[k]==="__text" ? {n:(ovt[k]||"").trim()||"something else (type it in)", d:"", you:"", his:""} : recipe(ids[k]);
+  if(S.on.meals){
+    const b=r("b"), l=r("l"), dn=r("d");
+    if(b) add({id:"meal:b", time:parseTime(T.breakfast), kind:"meal", title:"Breakfast: "+b.n, detail:b.d});
+    if(l) add({id:"meal:l", time:parseTime(T.lunch), kind:"meal", title:"Lunch: "+l.n, detail:[l.d,"Start with a few bites of vegetables (or cucumber with lime) before the rest. In a mixed bowl, eat some veggies off the top first; if that's not practical, a mixed bowl is fine."].filter(Boolean).join(" ")});
+    if(dn) add({id:"meal:d", time:parseTime(T.dinner), kind:"meal", title:"Dinner: "+dn.n, detail:[flareOn(d)&&FLARE_NOTE[ids.d]?"Flare-up: "+FLARE_NOTE[ids.d]+".":"", "Start with a few bites of vegetables (or cucumber with lime) before the rest. In a mixed bowl, eat some veggies off the top first; if that's not practical, a mixed bowl is fine.", dn.you?"You add: "+dn.you+".":"", dn.his?"He adds: "+dn.his+".":"", householdNote(dn.n+" "+(dn.d||"")), wk.note||""].filter(Boolean).join(" ")});
+  }
+  if(S.on.snack && r("s")) add({id:"snack", time:parseTime(T.snack), kind:"habit", title:"Snack: "+r("s").n, detail:[r("s").d,"Have a little protein with any fruit."].filter(Boolean).join(" ")});
+  if(S.on.walk) for(const [k,lbl] of [["breakfast","your first meal"],["lunch","lunch"],["dinner","dinner"]]) if(parseTime(T[k])) add({id:k==="dinner"?"walk":"walk:"+k, time:fromMins(mins(parseTime(T[k]))+Number(T.walkAfter||30)), kind:"habit", title:"10-minute walk after "+lbl, detail:"As your energy allows. It helps your blood sugar after a meal."});
+  if(S.on.feel!==false) add({id:"feel", time:T.bed ? fromMins(mins(T.bed)-30) : "21:30", kind:"feel", title:"How did today feel?", detail:"One tap is enough. Add more if you want."});
+  if(S.on.treat && r("e")) add({id:"treat", time:parseTime(T.treat), kind:"habit", title:"Evening treat: "+r("e").n, detail:r("e").d});
+  if(S.on.water) parseTimes(T.water).forEach(t=>add({id:"water:"+t, time:t, kind:"water", title:"Glass of water", detail:"Goal "+S.waterGoal+" oz today. Altitude and psyllium both need it."}));
+  if(S.on.routine!==false) for(const r of (S.routine||[])){
+    if(!r.active || !dueOn(r,d)) continue;
+    const ts = parseTimes(r.times).length ? parseTimes(r.times) : (clockTime(r.id) ? [clockTime(r.id)] : []);
+    if(!ts.length){ add({id:"rt:"+r.id, time:null, kind:"routine", title:r.name, detail:r.how}); continue; }
+    ts.forEach(t=>add({id:"rt:"+r.id+":"+t, time:t, kind:"routine", title:r.name, detail:r.how, pending:r.pending, weekly:!!(r.days&&r.days.length), where:r.where||"home", routineId:r.id}));
+  }
+  const sess = cookSession(d);
+  if(S.on.cook && sess){ const done = (S.log[ymd(d)]||{}).cooked, cp = plain||done ? null : cookPlanFor(parseYmd(ymd(d)));
+    if(done) add({id:"cook", time:parseTime(T.cook), kind:"cook", title:"Cook day", detail:"Cooked: "+done.map(x=>BASES[x.id].n).join(", ")+"."}); else
+    add({id:"cook", time:parseTime(T.cook), kind:"cook", title:"Cook day", detail: cp ? cookSummary(cp)+" Full plan on the Meals & freezer tab." : "Your cook list is on the Meals & freezer tab."}); }
+  if(S.on.pull){
+    const tmr = addDays(d,1), tdow = tmr.getDay();
+    const tids = idsFor(tmr);
+    const list = [];
+    for(const [k] of SLOTS){ const rc = recipe(tids[k]); if(rc){ for(const x of rc.pull||[]) if(!list.includes(x) && !(flareOn(tmr) && /bean/i.test(x))) list.push(x); if(rc.night) list.push(rc.night); } }
+    list.push(...(S.pull[tdow]||[]));
+    const tsess = cookSession(tmr);
+    if(tsess){ const cp = cookPlanFor(parseYmd(ymd(tmr)));
+      const bp = cp.find(x=>x.id==="r_beans");
+      if(bp) list.push("Soak "+bp.batches+" lb Anasazi or bolita beans for tomorrow's cook day"); else list.push("1/2 cup beans for cook-day dinner (no bean pot this time)"); }
+    if(tsess) list.unshift("Tomorrow is cook day: skip anything you'll cook fresh");
+    if(list.length) add({id:"pull", time:parseTime(T.pull), kind:"freezer", title:"Move to the fridge for "+DAYS_LONG[tdow], list});
+  }
+  if(!plain) for(const m of (S.moved||[])) if(m.day===ymd(d)) add(Object.assign({}, m, {moved:true}));
+  if(!plain){ const io = dayOver(d).items||{};
+    for(const it of items){ const o = io[it.id]; if(!o) continue; if(parseTime(o.time)){ it.time = parseTime(o.time); it.changed = true; } if(o.did) it.did = o.did; if(o.skip) it.skip = true; } }
+  const timed = items.filter(i=>i.time).sort((a,b)=>a.time.localeCompare(b.time));
+  return {timed, untimed: items.filter(i=>!i.time)};
+}
+
+
+function spacingWarnings(){
+  const out = [];
+  const act = S.supplements.filter(s=>s.active && parseTimes(s.times).length);
+  for(const b of act.filter(s=>s.binder)) for(const o of act.filter(s=>!s.binder))
+    for(const tb of parseTimes(b.times)) for(const to of parseTimes(o.times)){
+      const gap = Math.abs(mins(tb)-mins(to));
+      if(gap<(Number((S.rules||{}).spacingMin)||120)) out.push(b.name+" at "+niceTime(tb)+" is "+(gap? gap+" min" : "at the same time as")+(gap?" from ":" ")+o.name+" at "+niceTime(to)+".");
+    }
+  return out;
+}
+
+
+
+function leadsFor(where){
+  const v = String((S.leads||{})[where==="town"?"town":"home"]||"").split(/[,;\s]+/).map(Number).filter(x=>Number.isFinite(x)&&x>=0&&x<=600);
+  return v.length ? [...new Set(v)].sort((a,b)=>b-a) : [0];
+}
+
+function buildReminders(n){
+  const groups = new Map(), now = new Date();
+  for(let i=0;i<n;i++){
+    const d = addDays(now,i);
+    for(const it of itemsFor(d).timed){
+      if(it.skip) continue;
+      const [h,m] = it.time.split(":").map(Number);
+      for(const lead of leadsFor(it.where)){
+        const at = new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, m - lead);
+        const k = ymd(at)+"T"+pad(at.getHours())+":"+pad(at.getMinutes());
+        const g = groups.get(k+"|"+lead) || {at:k, lead, time:it.time, items:[]};
+        g.items.push(it); groups.set(k+"|"+lead, g);
+      }
+    }
+  }
+  const out = [];
+  for(const [key,g] of groups){
+    const when = g.lead ? "In "+g.lead+" min ("+niceTime(g.time)+")" : niceTime(g.time);
+    const title = when+": "+g.items.map(x=>x.title).join(", ");
+    const body = g.items.map(x=> x.list ? x.list.join("\n") : (x.kind==="supp"? [x.title,x.detail].filter(Boolean).join(": ") : x.detail)).filter(Boolean).join("\n");
+    out.push({key, at:g.at, title, body});
+  }
+  return out.sort((a,b)=>a.at.localeCompare(b.at));
+}
+
+
+
+const missable = it=> (it.kind==="supp" || it.kind==="routine") && it.time && it.routineId!=="bm";
+function withFood(s){ return /meal|food/i.test(s.how||""); }
+const abs = (dayStr, m)=> parseYmd(dayStr).getTime()/60000 + m;
+function whenText(day, time){
+  const t = ymd(new Date()), tm = ymd(addDays(new Date(),1));
+  return niceTime(time)+" "+(day===t?"today":day===tm?"tomorrow":DAYS_LONG[parseYmd(day).getDay()]);
+}
+function planMiss(it, srcDay, now){
+  const M = S.miss, today = ymd(now), nowM = now.getHours()*60+now.getMinutes();
+  const later = where=> Math.ceil((nowM + Math.max(...leadsFor(where)) + 5)/5)*5;
+  const cut = t=> mins(parseTime(t)||"23:59");
+  if(it.moved) return {why:"This was already a catch-up, so it isn't moved again."};
+  if(it.kind==="supp"){
+    const s = S.supplements.find(x=>x.id===it.suppId); if(!s) return {why:"Not on your list any more."};
+    const gap = Number(S.rules.spacingMin)||120, food = withFood(s);
+    const DT = dayTimes(now), meals = ["breakfast","lunch","dinner"].map(k=>parseTime(DT[k])).filter(Boolean).map(mins).sort((a,b)=>a-b);
+    const clash = (day,m)=> itemsFor(parseYmd(day)).timed.find(o=>o.kind==="supp" && o.suppId!==s.id && (o.binder!==!!s.binder) && Math.abs(mins(o.time)-m)<gap);
+    let day = today, m = null;
+    for(let tries=0; tries<12 && m===null; tries++){
+      const from = day===today ? (food? nowM : later(it.where)) : 0;
+      if(food){ m = meals.find(x=>x>=from) ?? null; }
+      else { m = Math.max(from, meals[0]||480); if(m>cut(M.suppCutoff)) m = null; }
+      while(m!==null){
+        const c = clash(day,m); if(!c) break;
+        const next = food ? meals.find(x=>x>m) : mins(c.time)+gap;
+        m = (next===undefined || (!food && next>cut(M.suppCutoff))) ? null : Math.ceil(next/5)*5;
+      }
+      if(m===null){ day = ymd(addDays(parseYmd(day),1)); }
+    }
+    if(m===null) return {why:"No safe time in the next few days."};
+    const at = abs(day,m);
+    for(let k=0;k<3;k++){ const dd = addDays(parseYmd(today),k);
+      if(!s.active || !dueOn(s,dd)) continue;
+      for(const t of parseTimes(s.times)){ const x = abs(ymd(dd),mins(t));
+        if(x>abs(srcDay,mins(it.time)) && Math.abs(x-at) < (Number(M.skipWithin)||0)) return {why:"Your next regular dose is "+whenText(ymd(dd),t)+", so skip this one."}; } }
+    return {day, time:fromMins(m), why: food ? "Next meal" + (day===today?"":" (none left today)") : "Keeps "+Math.round(gap/6)/10+" h from "+(s.binder?"your other supplements":"psyllium")};
+  }
+  const r = (S.routine||[]).find(x=>x.id===it.routineId); if(!r) return {why:"Not on your list any more."};
+  const town = (r.where||"home")==="town", cutoff = cut(town? M.townCutoff : M.homeCutoff);
+  const daily = !r.alt && !(r.days&&r.days.length);
+  if(srcDay===today && later(it.where)<=cutoff) return {day:today, time:fromMins(later(it.where)), why:"Later today"};
+  if(daily) return {why: srcDay===today ? "Too late today. It's back on your list tomorrow." : "It's back on your list today."};
+  const start = srcDay===today ? 1 : 0;
+  for(let k=start;k<15;k++){
+    const d = addDays(parseYmd(today),k), dn = DAYS_LONG[d.getDay()];
+    if(k===0 && nowM>=cutoff) continue;
+    if(dueOn(r,d)) return {why:"Your next regular one is "+(k===1?"tomorrow":k===0?"today":dn)+", so skip this one."};
+    if(town){
+      const others = (S.routine||[]).filter(o=>o.id!==r.id && o.active && o.where==="town");
+      if(!others.length) return {day:ymd(d), time:it.time, why:"Next day (no other town days set)"};
+      if(others.some(o=>dueOn(o,d))) return {day:ymd(d), time:it.time, why:"Your next town day"};
+      continue;
+    }
+    if(dueOn(r,addDays(d,1))) return {why:"Your next regular one is "+DAYS_LONG[addDays(d,1).getDay()]+", and you want a day between."};
+    return {day:ymd(d), time:it.time, why:"Next free day"};
+  }
+  return {why:"No free day found."};
+}
+function markMissed(it, srcDay, auto){
+  const lg = dayLog(srcDay); lg.missed = lg.missed||{};
+  if((lg.missed[it.id] && !lg.missed[it.id].undone) || lg.done[it.id]) return false;
+  const p = planMiss(it, srcDay, new Date());
+  const rec = {auto:!!auto, why:p.why};
+  if(p.day){
+    const id = "mv:"+srcDay+":"+it.id;
+    S.moved = (S.moved||[]).filter(m=>m.id!==id);
+    S.moved.push({id, day:p.day, time:p.time, kind:it.kind, title:"Catch-up: "+it.title, detail:it.detail, where:it.where||"home",
+      suppId:it.suppId, routineId:it.routineId, binder:it.binder, from:srcDay+" "+it.time});
+    rec.to = id; rec.day = p.day; rec.time = p.time;
+  }
+  const n = {id:"n"+Date.now()+Math.random().toString(36).slice(2,6), about:it.title.replace(/^Catch-up: /,""), feel:"", date:srcDay, time:it.time,
+    text:"Missed"+(auto?" (not ticked off)":"")+". "+(p.day? "Moved to "+whenText(p.day,p.time)+". "+p.why+"." : p.why), missed:true};
+  (S.notes=S.notes||[]).push(n); rec.note = n.id;
+  lg.missed[it.id] = rec;
+  return true;
+}
+function undoMissed(srcDay, itemId){
+  const lg = dayLog(srcDay), rec = (lg.missed||{})[itemId]; if(!rec) return;
+  if(rec.to) S.moved = (S.moved||[]).filter(m=>m.id!==rec.to);
+  if(rec.note) S.notes = (S.notes||[]).filter(n=>n.id!==rec.note);
+  lg.missed[itemId] = {undone:true}; 
+}
+
+function sweepMissed(){
+  const now = new Date(), after = Number(S.miss.after)||30; let changed = false;
+  if(!S.missFrom){ S.missFrom = ymd(now); changed = true; }
+  for(let k=2;k>=0;k--){
+    const d = addDays(now,-k), key = ymd(d);
+    if(key < (S.missFrom||key)) continue;
+    for(const it of itemsFor(d).timed){
+      if(!missable(it) || it.skip) continue;
+      const due = new Date(d.getFullYear(), d.getMonth(), d.getDate(), ...it.time.split(":").map(Number));
+      if(now - due < after*60000) continue;
+      const lg = S.log[key]; if(lg && (lg.done[it.id] || (lg.missed||{})[it.id])) continue;
+      if(!(lg && (lg.missed||{})[it.id]) && markMissed(it, key, true)) changed = true;
+    }
+  }
+  return changed;
+}
+
+
+let TAB = "today";
+const view = document.getElementById("view");
+function setSync(msg){
+  document.getElementById("syncNote").textContent = msg || (SERVER ? (LAPTOP ? "Desktop reminders on" : "Connected to the laptop") : "Saved on this phone");
+}
+function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.hidden=false; clearTimeout(toast.h); toast.h=setTimeout(()=>t.hidden=true,2200); }
+
+function dayLog(key){ return S.log[key] = S.log[key] || {done:{}, water:0, oz:0, sips:[]}; }
+const r1w = n=>Math.round(n*10)/10;
+const FEEL_FACES = [[1,"😣","Rough"],[2,"🙁","Low"],[3,"😐","OK"],[4,"🙂","Good"],[5,"😄","Great"]];
+const FEEL_MORE = [["energy","Energy"],["mood","Mood"],["gut","Digestion"],["sleep","Sleep last night"],["symptoms","Symptoms (5 = none)"]];
+let FEEL_OPEN = false;
+function feelHtml(key, lg){
+  const f = lg.feel||{};
+  const row = (k,big)=>`<div class="${big?"faces":"scale"}" role="group">${FEEL_FACES.map(([v,e,n])=>`<button class="${big?"face":"pip"} ${f[k]===v?"on":""}" data-feel="${k}" data-v="${v}" data-day="${key}" aria-pressed="${f[k]===v}" aria-label="${big?n:v}">${big?`<span aria-hidden="true">${e}</span><small>${n}</small>`:v}</button>`).join("")}</div>`;
+  return `<div class="feelbox">${row("overall",true)}
+    <details ${FEEL_OPEN?"open":""} data-feelbox="1"><summary class="linkbtn">Add more</summary>
+      ${FEEL_MORE.map(([k,n])=>`<div class="feelrow"><small>${esc(n)}</small>${row(k,false)}</div>`).join("")}
+      <label>Note<textarea data-feelnote="1" data-day="${key}" rows="2" placeholder="Anything worth remembering">${esc(f.note||"")}</textarea></label>
+    </details></div>`;
+}
+
+function renderDay(offset){
+  const d = addDays(new Date(), offset), key = ymd(d), lg = S.log[key]||{done:{},water:0};
+  const {timed, untimed} = itemsFor(d);
+  const f = fiberInfo(d), sess = cookSession(d), glasses = Math.ceil(S.waterGoal/S.glassOz);
+  const nowM = new Date().getHours()*60+new Date().getMinutes();
+  const next = offset===0 ? timed.find(i=>!lg.done[i.id] && !((lg.missed||{})[i.id]||{}).why && mins(i.time)>=nowM-30) : null;
+  const warns = spacingWarnings();
+  const pendingCount = S.supplements.filter(s=>s.active && s.pending).length;
+  const oz = Number(lg.oz)||0, goal = Number(S.waterGoal)||80, sizes = (S.waterSizes&&S.waterSizes.length?S.waterSizes:[4,8]);
+  let h = `<div class="stack">
+  <section class="panel">
+    <h2>${DAYS_LONG[d.getDay()]}, ${d.toLocaleDateString(undefined,{month:"long",day:"numeric"})}</h2>
+    ${offset===0?`<div class="stack" style="gap:8px" id="waterBox">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap"><b>Water</b><span><span class="wtotal">${r1w(oz)}</span> <span class="muted">of ${esc(goal)} oz${oz>=goal?" · goal reached":""}</span></span></div>
+      <div class="wbar" role="progressbar" aria-label="Water today" aria-valuemin="0" aria-valuemax="${esc(goal)}" aria-valuenow="${esc(oz)}"><span style="width:${Math.min(100,oz/goal*100)}%"></span></div>
+      <div class="sips">${sizes.map(n=>`<button class="sip" data-sip="${esc(n)}" aria-label="Add ${esc(n)} ounces of water">+${esc(n)} oz</button>`).join("")}</div>
+      ${(lg.sips||[]).length?`<div><button class="linkbtn" data-unsip="1">Undo last (${esc(lg.sips[lg.sips.length-1])} oz)</button></div>`:""}
+    </div>`:""}
+  </section>`;
+  const factsBox = `<details class="panel"><summary><b>Fiber, psyllium and limits</b>${sess?` <span class="chip dusk">Cook day</span>`:""}${pendingCount?` <span class="chip pending">${pendingCount} pending</span>`:""}</summary>
+    <div class="chips"><span class="chip">Fiber week ${f.w}: ${esc(f.target)}</span></div>
+    <div class="facts">
+      <div class="fact"><small class="muted">Psyllium</small><b>${esc(suppDose(S.supplements.find(s=>s.id==="psyllium")||{id:"psyllium"},d))}</b></div>
+      <div class="fact"><small class="muted">Chia</small><b>${flareOn(d)?"Paused for the flare-up":"1 tbsp"}</b></div>
+      <div class="fact"><small class="muted">Agave inulin</small><b>${f.inulin?esc(f.inulin)+" if your gut is calm":"Not yet (starts week 3)"}</b></div>
+      <div class="fact"><small class="muted">Limits</small><b>${flareOn(d)?"No beans, nuts or seeds during the flare-up":`${esc(S.rules.beansPerDay)} bean serving${S.rules.beansPerDay==1?"":"s"}, ${esc(S.rules.nutsSeedsTbsp)} tbsp nuts or seeds`}${S.rules.carbsPerMeal?`, ${esc(S.rules.carbsPerMeal)} g carbs a meal`:""}</b></div>
+    </div>
+    <small class="muted">This week: ${esc(f.adds)}. Stop raising fiber if bloating or cramping gets worse.</small>
+    <small class="muted">This week: ${esc(f.adds)}. Stop raising fiber if bloating or cramping gets worse.</small>
+  </details>`;
+  if(flareOn(d)) h += `<div class="warnbox"><b>Flare-up mode through ${esc(DAYS_LONG[parseYmd(S.flare.until).getDay()])} ${esc(S.flare.until.slice(5).replace("-","/"))}.</b> No nuts, seeds, chia, flax, beans, chickpeas, edamame, soy, legume noodles, chocolate or oats. Keep quinoa and buckwheat small. Lean on ${LYSINE_FOODS}. <button class="linkbtn" data-goflare="1">Change or end it</button></div>`;
+  else if(offset===0) h += `<div><button class="linkbtn" data-goflare="1">Need a food break? Turn off some foods for a while</button></div>`;
+  if(next) h += `<div class="next"><b>Next: ${niceTime(next.time)}</b> · ${esc(next.title)}</div>`;
+  if(warns.length) h += `<div class="warnbox"><b>Spacing check.</b> Your rule keeps psyllium and other binders at least ${Math.round((Number(S.rules.spacingMin)||120)/6)/10} hours from medicines and supplements. ${warns.map(esc).join(" ")}</div>`;
+  { const ov = dayOver(d), wk = ((S.week[d.getDay()]||{}).ids)||{}, DT = dayTimes(d), any = Object.keys(ov).length;
+    const tin = (f,label,val)=>`<label>${label}<input type="time" id="ov-${f}-${key}" data-ov="${f}" data-day="${key}" value="${esc(ov[f]||"")}" placeholder="${esc(val||"")}">${!ov[f]&&val?`<small class="muted" style="font-weight:400">Now ${niceTime(val)}</small>`:""}</label>`;
+    const sel = (k,label)=>{ const cur = (ov.text||{})[k] ? "__text" : (ov.ids&&k in ov.ids ? (ov.ids[k]||"__skip") : "");
+      return `<label>${label}<select id="ov-${k}-${key}" data-ovslot="${k}" data-day="${key}"><option value="">Usual: ${esc((recipe(wk[k])||{n:"none"}).n)}</option>${recipeOptions(k).map(([id,n])=>`<option value="${esc(id)}" ${cur===id?"selected":""}>${esc(n)}</option>`).join("")}<option value="__skip" ${cur==="__skip"?"selected":""}>Skip it</option><option value="__text" ${cur==="__text"?"selected":""}>Something else…</option></select>
+        ${cur==="__text"?`<input type="text" id="ov-t-${k}-${key}" data-ovtext="${k}" data-day="${key}" value="${esc(ov.text[k]||"")}" placeholder="What you ate">`:""}</label>`; };
+    const sumBits = [ov.wake?"woke "+niceTime(ov.wake):"", ov.first?"first meal "+niceTime(ov.first):"", ov.lunch?"lunch "+niceTime(ov.lunch):"", ov.dinner?"dinner "+niceTime(ov.dinner):"",
+      ...SLOTS.filter(([k])=>(ov.text||{})[k]&&ov.text[k].trim()).map(([k,l])=>l.toLowerCase()+": "+ov.text[k].trim()),
+      ...SLOTS.filter(([k])=>ov.ids&&k in ov.ids).map(([k,l])=>l.toLowerCase()+": "+(ov.ids[k]?(recipe(ov.ids[k])||{n:ov.ids[k]}).n:"skipped")),
+      Object.keys(ov.items||{}).length ? Object.keys(ov.items).length+" checklist item"+(Object.keys(ov.items).length>1?"s":"")+" changed" : ""].filter(Boolean);
+    var ovBox = `<details class="panel" id="ovBox" ${OV_OPEN===key?"open":""}><summary><b>Change just ${offset===0?"today":"tomorrow"}</b>${any?` <span class="chip dusk">changed</span>`:""}</summary>
+      ${sumBits.length?`<p style="margin:0"><b>Changed:</b> ${esc(sumBits.join(", "))}.</p>`:""}
+      <p class="muted" style="margin:0">Only this day changes. Your usual week stays the same. Set when you woke or ate, and the rest of the day moves to match.</p>
+      <div class="grid2">${tin("wake","Woke up",S.clock&&S.clock.on?(S.clock.wake):"")}${tin("first","First meal",DT.breakfast)}${tin("lunch","Lunch",DT.lunch)}${tin("dinner","Dinner",DT.dinner)}</div>
+      <div class="grid2">${SLOTS.map(([k,l])=>sel(k,l)).join("")}</div>
+      <div class="chips" style="gap:8px"><button class="btn" data-ovsave="${key}">Save</button>${any?`<button class="btn ghost" data-ovreset="${key}">Back to the usual day</button>`:""}</div>
+      <small class="muted">Changes also save by themselves when you leave a box.</small>
+    </details>`; }
+  h += `<section class="panel"><h2>${offset===0?"Today's checklist":"Tomorrow"}</h2><ol class="day">`;
+  for(const it of timed){
+    const done = !!lg.done[it.id], ms0 = (lg.missed||{})[it.id], ms = ms0 && !ms0.undone ? ms0 : null;
+    const ed = EDIT_ITEM===key+"|"+it.id;
+    h += `<li class="${it.kind} ${done||it.skip?"is-done":""} ${ms&&!done?"is-missed":""}"><span class="t">${niceTime(it.time)}${it.changed?`<br><small class="muted">changed</small>`:""}</span>
+      <input type="checkbox" id="c-${esc(it.id)}" data-done="${esc(it.id)}" data-day="${key}" ${done?"checked":""} aria-label="Done: ${esc(it.title)}">
+      <div class="item"><div class="title">${esc(it.title)} ${it.pending?`<span class="chip pending">${it.kind==="routine"?"how often: confirm":"time pending"}</span>`:""}${it.moved?` <span class="chip dusk">from ${esc(whenText(it.from.slice(0,10), it.from.slice(11)))}</span>`:""}${ms&&!done?` <span class="chip pending">Missed</span>`:""}</div>
+      ${ms&&!done?`<div class="detail"><b>${ms.day?"Moved to "+esc(whenText(ms.day,ms.time))+".":"Skipped."}</b> ${esc(ms.day?ms.why+".":ms.why)} <button class="linkbtn" data-unmiss="${esc(it.id)}" data-day="${key}">Undo</button></div>`:""}
+      ${it.skip?`<div class="detail" style="text-decoration:none"><span class="chip dusk">Skipped today</span></div>`:""}
+      ${it.did?`<div class="detail" style="text-decoration:none"><b>What you did:</b> ${esc(it.did)}</div>`:""}
+      ${it.detail?`<div class="detail">${esc(it.detail)}</div>`:""}
+      ${ed?`<div class="itemedit stack" style="gap:8px;margin-top:6px">
+        <div class="grid2"><label>Time this day<input type="time" id="ie-time" value="${esc(it.time)}"></label></div>
+        <label>What you actually did (optional)<input type="text" id="ie-did" value="${esc(it.did||"")}" placeholder="e.g. water with minerals, no tea"></label>
+        <label class="inline"><input type="checkbox" id="ie-skip" ${it.skip?"checked":""}> Skip it this day</label>
+        <div class="chips" style="gap:8px"><button class="btn" data-iesave="${esc(it.id)}" data-day="${key}">Save</button><button class="btn ghost" data-iecancel="1">Cancel</button><button class="btn ghost" data-iereset="${esc(it.id)}" data-day="${key}">Undo changes</button></div>
+        <button class="linkbtn" data-goto="${it.kind==="supp"||it.kind==="routine"?"supps":it.kind==="water"||it.id.startsWith("walk")||it.kind==="cook"?"settings":"week"}">Change it for every day instead</button>
+      </div>`:""}
+      ${it.kind==="feel"&&offset===0?feelHtml(key, lg):""}
+      ${it.list?`<ul class="detail">${it.list.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}
+      ${ed?"":`<button class="linkbtn" data-iedit="${esc(it.id)}" data-day="${key}" style="margin-right:14px">Change</button>`}${offset===0&&!done&&!ms&&!it.skip&&missable(it)?`<button class="linkbtn" data-miss="${esc(it.id)}" data-day="${key}" style="margin-right:14px">Missed it</button>`:""}${it.kind==="supp"||it.kind==="routine"||it.kind==="meal"?`<button class="linkbtn" data-noteabout="${esc(it.kind==="meal"?it.title.replace(/^[^:]+: /,""):it.title)}">Add a note</button>`:""}</div></li>`;
+  }
+  h += `</ol></section>`;
+  h += ovBox + factsBox;
+  if(untimed.length){
+    h += `<section class="panel"><h2>No time set yet</h2><small class="muted">These won't remind you until they have a time. Add times on the Supplements &amp; routine tab.</small><ol class="day">`;
+    for(const it of untimed){
+      const done = !!lg.done[it.id];
+      h += `<li class="${done?"is-done":""}"><span class="t">—</span><input type="checkbox" data-done="${esc(it.id)}" data-day="${key}" ${done?"checked":""} aria-label="Done: ${esc(it.title)}"><div class="item"><div class="title">${esc(it.title)}</div>${it.detail?`<div class="detail">${esc(it.detail)}</div>`:""}</div></li>`;
+    }
+    h += `</ol></section>`;
+  }
+  h += `</div>`;
+  view.innerHTML = h;
+}
+
+const MENU = [["supps","Supplements & routine","Doses, times, healing steps"],["week","Meals & freezer","Your week, cook day, what's frozen"],
+  ["notes","Notes","Symptoms, questions, what you did"],["labs","Labs & visits","Results and doctor list"],["rules","My rules","Food rules, flare-up mode, missed items"],
+  ["household","Household","Your husband and others at the table, food cards"],
+  ["settings","Times & reminders","Wake time, water, calendar"],["backup","Backups","Saved copies of your data"],["phone","Phone shortcuts","One-tap buttons, reminders, backups"]];
+MENU.unshift(["lookback","Week look-back","Water, check-ins, bowels, notes. Print or send"],["visit","Doctor visit","Questions, labs, last 2 weeks. Print or send"]);
+
+function householdMine(){
+  const out = HH_MINE.map(([label, pat, level])=>({key:"m:"+label, label, detail:level==="avoid"?"":HH.LEVELS[level], item:{label, pat, level}, on:level==="avoid"}));
+  for(const x of (S.rules.extra||[]).filter(x=>!x.flare && ["avoid","limit","ask"].includes(x.level) && x.word)) out.push({key:"x:"+x.word, label:x.label||x.word, detail:x.level==="avoid"?"":HH.LEVELS[x.level],
+    item:{label:x.label||x.word, pat:HH.wordsPat(String(x.word).replace(/\|/g,",")), level:x.level}, on:true});
+  const fl = (S.rules.extra||[]).filter(x=>x.flare && x.word);
+  if(flareOn() && fl.length) out.push({key:"flare", label:"Flare-up foods", detail:"Until "+S.flare.until.slice(5).replace("-","/")+". Could hint at a health condition",
+    item:{label:"Flare-up foods", pat:HH.wordsPat(fl.map(x=>x.word.replace(/\|/g,",")).join(",")), level:"avoid", until:S.flare.until}, on:false});
+  return out;
+}
+function householdMeals(){
+  const out = [], d0 = new Date();
+  for(let k=0;k<7;k++){ const d = addDays(d0,k), r = recipe(idsFor(d).d); if(r) out.push({when:k===0?"Today":DAYS_LONG[d.getDay()], name:r.n, text:r.n+" "+(r.d||"")}); }
+  return out;
+}
+function householdNote(text){ return HH.tableLines(text, S.household).filter(x=>x.hits.length).map(x=>x.name+": leave out "+x.hits.map(h=>h.words.join(", ")).join(", ")+" (take their share first).").join(" "); }
+function mountHousehold(){
+  if(!S.household){ S.household = defaultHousehold(); save(); }
+  HHUI.mount({get:()=>S, save, myItems:householdMine, meals:householdMeals, toast, saveFile, sources:null,
+    qrSrc: SERVER ? "/qr.js" : "qrcode.js",
+    appUrl:()=> location.protocol.startsWith("http") && !/^(localhost|127\.|\[::1\])/.test(location.hostname) ? location.origin+location.pathname : null});
+}
+function renderMore(){
+  view.innerHTML = `<div class="stack"><section class="panel"><h2>Everything else</h2><div class="menu">
+    ${MENU.map(([id,n,sub])=>`<button data-goto="${id}">${esc(n)}<small>${esc(sub)}</small></button>`).join("")}
+    ${true?`<a href="pantry.html#grocery">Grocery mode<small>Big tap list for the store</small></a><a href="pantry.html">Pantry and shopping list<small>Label photos, meals, shopping</small></a><a href="checker.html">Meal checker<small>Check a meal or recipe</small></a>`:""}
+  </div></section></div>`;
+}
+function backToMore(){ return TAB!=="more"&&TAB!=="today"&&TAB!=="quick"&&TAB!=="tomorrow" ? `<button class="linkbtn" data-goto="more">← Everything else</button>` : ""; }
+
+
+async function saveFile(name, text, type){
+  if(!SERVER && location.protocol!=="file:" && window.claude && window.claude.use){
+    const dl = await window.claude.use("downloads").catch(()=>null);
+    if(dl){ try{ await dl.save({filename:name, data:text}); toast("Saved "+name); }catch(e){ if(e && e.code!=="declined") toast("Couldn't save the file here"); } return; }
+  }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text],{type:type||"text/plain"})); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
+}
+const LOCAL_BACKUPS = "dailyhelper.backups";
+function localBackups(){ try{ return JSON.parse(localStorage.getItem(LOCAL_BACKUPS)||"[]"); }catch(_){ return []; } }
+function snapshot(){ let kv = null; try{ kv = localStorage.getItem("pantryplanner.v1"); }catch(_){} return {day:ymd(new Date()), state:JSON.parse(JSON.stringify(S)), kv:{"pantryplanner.v1":kv}}; }
+function dailyLocalBackup(){
+  try{ const list = localBackups(); if(list.some(b=>b.day===ymd(new Date()))) return;
+    list.push(snapshot()); while(list.length>7) list.shift(); localStorage.setItem(LOCAL_BACKUPS, JSON.stringify(list)); }catch(_){}
+}
+let RESTORE_ASK = null, SERVER_DAYS = null;
+async function restoreFrom(b){
+  if(!b || !b.state || typeof b.state!=="object") { toast("That isn't a Daily Helper backup"); return; }
+  S = merge(b.state); save();
+  const pv = b.kv && b.kv["pantryplanner.v1"];
+  if(pv){ try{ localStorage.setItem("pantryplanner.v1", pv); }catch(_){}
+    if(SERVER) try{ await fetch("/api/kv/pantryplanner.v1",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({value:pv})}); }catch(_){} }
+  RESTORE_ASK = null; toast("Restored your data from "+(b.day||"the file")); TAB="today"; render();
+}
+function renderBackup(){
+  if(SERVER && SERVER_DAYS===null){ SERVER_DAYS=[]; fetch("/api/backups",{cache:"no-store"}).then(r=>r.json()).then(j=>{ SERVER_DAYS=j.days||[]; if(TAB==="backup") render(); }).catch(()=>{}); }
+  const auto = SERVER ? SERVER_DAYS||[] : localBackups().map(b=>b.day).reverse();
+  view.innerHTML = `<div class="stack"><section class="panel"><h2>Backups</h2>
+    <p class="muted" style="margin:0">${SERVER?"The laptop saves a copy of everything once a day and keeps the last 7, in the DailyHelper data folder.":"This browser saves a copy once a day and keeps the last 7."} Download one now and then to keep it somewhere safe, like your email or a USB stick.</p>
+    <div class="chips" style="gap:8px"><button class="btn" data-backupdl="1">Download a backup now</button>
+    <label class="btn ghost">Restore from a backup file<input type="file" accept=".json,application/json" data-restorefile="1" hidden></label></div>
+  </section>
+  <section class="panel"><h2>Daily copies</h2>
+    ${auto.length?`<ol class="day">${auto.map(d=>`<li style="grid-template-columns:1fr auto"><span><b>${esc(DAYS_LONG[parseYmd(d).getDay()])} ${esc(d.slice(5).replace("-","/"))}</b><br><small class="muted">Your data as it was at the start of that day</small></span>
+      ${RESTORE_ASK===d?`<span class="chips" style="gap:6px"><button class="btn" data-restoreday="${esc(d)}">Yes, go back to this</button><button class="btn ghost" data-restorecancel="1">Cancel</button></span>`:`<button class="btn ghost" data-restoreask="${esc(d)}">Restore</button>`}</li>`).join("")}</ol>
+      <small class="muted">Restoring replaces what's in the app now. Download a backup first if you might want today's data back.</small>`:`<p class="muted" style="margin:0">No daily copies yet. The first one is made tomorrow.</p>`}
+  </section></div>`;
+}
+
+
+const FEEL_WORD = {1:"Rough",2:"Low",3:"OK",4:"Good",5:"Great"};
+function dayRow(d){
+  const key = ymd(d), lg = S.log[key]||{done:{}}, its = itemsFor(d).timed.filter(i=>!i.skip && i.kind!=="water" && i.kind!=="feel");
+  const done = its.filter(i=>lg.done[i.id]).length, f = lg.feel||{};
+  const notes = (S.notes||[]).filter(n=>n.date===key);
+  const has = !!S.log[key]; // no log means the app wasn't used that day: leave it out of averages
+  return {key, d, done, total:its.length, pct: has&&its.length?Math.round(done/its.length*100):null,
+    oz: has ? Number(lg.oz ?? (Number(lg.water)||0)*(Number(S.glassOz)||16))||0 : null, feel:f,
+    bm: Object.keys(lg.done).some(k=>k.startsWith("rt:bm")), flare: flareOn(d), fiber: fiberInfo(d).w,
+    missed: notes.filter(n=>n.missed), notes: notes.filter(n=>!n.missed)};
+}
+function rangeRows(end, n){ const out=[]; for(let i=n-1;i>=0;i--) out.push(dayRow(addDays(end,-i))); return out; }
+const avg = a=>{ const v=a.filter(x=>x!=null&&x!==""); return v.length? Math.round(v.reduce((s,x)=>s+Number(x),0)/v.length*10)/10 : null; };
+function summary(rows){
+  const goal = Number(S.waterGoal)||80;
+  return {days: rows.length, pct: avg(rows.map(r=>r.pct)), oz: avg(rows.map(r=>r.oz)), goalDays: rows.filter(r=>r.oz!=null&&r.oz>=goal).length, used: rows.filter(r=>r.pct!=null||r.oz!=null).length,
+    overall: avg(rows.map(r=>r.feel.overall)), energy: avg(rows.map(r=>r.feel.energy)), mood: avg(rows.map(r=>r.feel.mood)), gut: avg(rows.map(r=>r.feel.gut)),
+    sleep: avg(rows.map(r=>r.feel.sleep)), symptoms: avg(rows.map(r=>r.feel.symptoms)), bm: rows.filter(r=>r.bm).length, flare: rows.filter(r=>r.flare).length,
+    missed: rows.reduce((s,r)=>s+r.missed.length,0)};
+}
+const dLabel = d=> DAYS[d.getDay()]+" "+(d.getMonth()+1)+"/"+d.getDate();
+const csvCell = v=>{ v = v==null?"":String(v); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; };
+function rowsCsv(rows){
+  const head = ["Date","Checklist done","Checklist total","Checklist %","Water oz","Water goal oz","Overall","Energy","Mood","Digestion","Sleep","Symptoms (5 = none)","Bowel check done","Flare-up mode","Fiber week","Feeling note","Missed","Notes"];
+  const lines = [head, ...rows.map(r=>[r.key, r.done, r.total, r.pct, r.oz, S.waterGoal, r.feel.overall, r.feel.energy, r.feel.mood, r.feel.gut, r.feel.sleep, r.feel.symptoms,
+    r.bm?"yes":"no", r.flare?"yes":"no", r.fiber, r.feel.note||"", r.missed.map(n=>n.about+": "+n.text).join(" | "), r.notes.map(n=>(n.about?n.about+": ":"")+n.text+(n.feel?" ("+n.feel+")":"")).join(" | ")])];
+  return lines.map(l=>l.map(csvCell).join(",")).join("\r\n");
+}
+function sumLines(sm){
+  const b = [];
+  b.push(`Checklist: ${sm.pct??"-"}% done on average`);
+  b.push(`Water: ${sm.oz??0} oz a day on average (goal ${S.waterGoal} oz), goal reached ${sm.goalDays} of ${sm.used} days`);
+  if(sm.used<sm.days) b.push(`Days with no app use: ${sm.days-sm.used}`);
+  if(sm.overall!=null) b.push(`How I felt (1 to 5): overall ${sm.overall}`+[["energy","energy"],["mood","mood"],["gut","digestion"],["sleep","sleep"],["symptoms","symptoms (5 = none)"]].filter(([k])=>sm[k]!=null).map(([k,n])=>`, ${n} ${sm[k]}`).join(""));
+  else b.push("How I felt: no check-ins yet");
+  b.push(`Bowel check ticked off: ${sm.bm} of ${sm.days} days`);
+  if(sm.flare) b.push(`Flare-up mode (no arginine foods): ${sm.flare} of ${sm.days} days`);
+  if(sm.missed) b.push(`Missed items: ${sm.missed}`);
+  return b;
+}
+function rowsTable(rows){
+  return `<div class="tablewrap"><table class="rep"><thead><tr><th>Day</th><th>Checklist</th><th>Water</th><th>Felt</th><th>Bowel</th></tr></thead><tbody>
+    ${rows.map(r=>`<tr><td><b>${esc(dLabel(r.d))}</b>${r.flare?`<br><small class="muted">flare-up</small>`:""}</td><td>${r.pct==null?"-":r.pct+"%"}</td><td>${r.oz==null?"-":esc(r.oz)+" oz"}</td>
+      <td>${r.feel.overall?esc(FEEL_WORD[r.feel.overall]):"-"}${r.feel.note?`<br><small class="muted">${esc(r.feel.note)}</small>`:""}</td><td>${r.bm?"✓":"-"}</td></tr>`).join("")}
+  </tbody></table></div>`;
+}
+function notesBlock(rows, title){
+  const list = rows.flatMap(r=>[...r.missed, ...r.notes].map(n=>({d:r.d, n})));
+  return list.length ? `<section class="panel"><h2>${esc(title)}</h2><ul style="margin:0;padding-left:20px;display:grid;gap:4px">${list.map(({d,n})=>`<li><b>${esc(dLabel(d))}</b> ${n.about?esc(n.about)+": ":""}${esc(n.text)}${n.feel?` (${esc(n.feel)})`:""}</li>`).join("")}</ul></section>` : "";
+}
+function notesText(rows){ return rows.flatMap(r=>[...r.missed, ...r.notes].map(n=>`- ${dLabel(r.d)} ${n.about?n.about+": ":""}${n.text}${n.feel?" ("+n.feel+")":""}`)); }
+function printReport(){ document.body.classList.add("printing-report"); const off=()=>{ document.body.classList.remove("printing-report"); window.removeEventListener("afterprint",off); }; window.addEventListener("afterprint",off); try{ window.print(); }catch(_){ off(); toast("Printing isn't available here. Download the file instead."); } setTimeout(off, 60000); }
+let LB_WEEKS = 0;
+function lookbackRows(){ return rangeRows(addDays(parseYmd(ymd(new Date())), -7*LB_WEEKS), 7); }
+function renderLookback(){
+  const rows = lookbackRows(), sm = summary(rows), a = rows[0].d, z = rows[6].d;
+  view.innerHTML = `<div class="stack"><section class="panel"><h2>Week look-back: ${esc(dLabel(a))} to ${esc(dLabel(z))}</h2>
+    <div class="chips noprint" style="gap:8px"><button class="btn ghost" data-lbweek="1">← Week before</button>${LB_WEEKS?`<button class="btn ghost" data-lbweek="-1">Next week →</button>`:""}</div>
+    <ul style="margin:0;padding-left:20px;display:grid;gap:4px">${sumLines(sm).map(l=>`<li>${esc(l)}</li>`).join("")}</ul>
+    ${rowsTable(rows)}
+  </section>
+  ${notesBlock(rows, "Notes and missed items")}
+  <section class="panel noprint"><h2>Send or keep a copy</h2><div class="chips" style="gap:8px">
+    <button class="btn" data-print="1">Print or save as PDF</button><button class="btn ghost" data-lbfile="txt">Download as text</button><button class="btn ghost" data-lbfile="csv">Download as spreadsheet (.csv)</button></div>
+    <small class="muted">To send it to the clinic, save it as a PDF from the print screen, or attach the text file to an email.</small></section></div>`;
+}
+function lookbackText(){
+  const rows = lookbackRows(), sm = summary(rows);
+  return [`Daily Helper week look-back, ${dLabel(rows[0].d)} to ${dLabel(rows[6].d)}`, "", ...sumLines(sm).map(l=>"- "+l), "", "By day:",
+    ...rows.map(r=>`- ${dLabel(r.d)}: checklist ${r.pct==null?"-":r.pct+"%"}, water ${r.oz==null?"-":r.oz+" oz"}, felt ${r.feel.overall?FEEL_WORD[r.feel.overall]:"-"}, bowel check ${r.bm?"yes":"no"}${r.flare?", flare-up mode":""}${r.feel.note?". "+r.feel.note:""}`),
+    "", "Notes and missed items:", ...(notesText(rows).length?notesText(rows):["- none"])].join("\n");
+}
+function visitData(){
+  const rows = rangeRows(parseYmd(ymd(new Date())), 14), sm = summary(rows);
+  const open = (S.doctor||[]).filter(x=>x.status!=="answered");
+  const supps = S.supplements.filter(x=>x.active).map(x=>({n:x.name, dose:suppDose(x,new Date())||x.dose||"", times:x.times||"", pending:!!x.pending}));
+  const labs = []; const seen = new Set();
+  for(const x of [...(S.labs||[])].sort((a,b)=>b.date.localeCompare(a.date))){ if(seen.has(x.name)) continue; seen.add(x.name);
+    const hi = x.high!=null&&x.high!==""&&Number(x.value)>Number(x.high), lo = x.low!=null&&x.low!==""&&Number(x.value)<Number(x.low);
+    labs.push({name:x.name, value:x.value, unit:x.unit||"", date:x.date, flag: hi?"high":lo?"low":"", check:!!x.check}); }
+  return {rows, sm, open, supps, labs};
+}
+function renderVisit(){
+  const v = visitData(), lim = 12;
+  const flagged = v.labs.filter(l=>l.flag||l.check), other = v.labs.filter(l=>!l.flag&&!l.check);
+  view.innerHTML = `<div class="stack"><section class="panel"><h2>For my doctor visit</h2>
+    <p class="muted" style="margin:0">${esc(DAYS_LONG[new Date().getDay()])}, ${esc(new Date().toLocaleDateString(undefined,{month:"long",day:"numeric",year:"numeric"}))}</p>
+    <h3>Questions (${v.open.length})</h3>${v.open.length?`<ol style="margin:0;padding-left:22px;display:grid;gap:4px">${v.open.map(q=>`<li>${esc(q.text)}</li>`).join("")}</ol>`:`<p class="muted" style="margin:0">No open questions. Add them on the Notes page.</p>`}
+  </section>
+  <section class="panel"><h2>Last 2 weeks</h2><ul style="margin:0;padding-left:20px;display:grid;gap:4px">${sumLines(v.sm).map(l=>`<li>${esc(l)}</li>`).join("")}</ul></section>
+  <section class="panel"><h2>Supplements and medicine I take</h2><ul style="margin:0;padding-left:20px;display:grid;gap:4px">${v.supps.map(x=>`<li><b>${esc(x.n)}</b>${x.dose?" · "+esc(x.dose):""}${x.times?" · "+esc(x.times):""}${x.pending?` <span class="chip pending">timing to confirm</span>`:""}</li>`).join("")}</ul></section>
+  <section class="panel"><h2>Recent labs</h2>${v.labs.length?`<div class="tablewrap"><table class="rep"><thead><tr><th>Test</th><th>Result</th><th>Date</th><th></th></tr></thead><tbody>
+    ${[...flagged, ...other].slice(0, Math.max(lim, flagged.length)).map(l=>`<tr><td>${esc(l.name)}</td><td>${esc(l.value)} ${esc(l.unit)}</td><td>${esc(l.date)}</td><td>${l.flag?`<span class="chip pending">${l.flag}</span>`:""}${l.check?` <span class="chip dusk">check digits</span>`:""}</td></tr>`).join("")}</tbody></table></div>`:`<p class="muted" style="margin:0">No labs entered.</p>`}</section>
+  ${notesBlock(v.rows, "Notes from the last 2 weeks")}
+  <section class="panel noprint"><h2>Send or keep a copy</h2><div class="chips" style="gap:8px">
+    <button class="btn" data-print="1">Print or save as PDF</button><button class="btn ghost" data-visitfile="txt">Download as text</button><button class="btn ghost" data-visitfile="csv">Download last 2 weeks (.csv)</button></div>
+    <small class="muted">The print copy leaves out these buttons.</small></section></div>`;
+}
+function visitText(){
+  const v = visitData();
+  return [`For my doctor visit, ${new Date().toLocaleDateString(undefined,{month:"long",day:"numeric",year:"numeric"})}`, "", "Questions:", ...(v.open.length?v.open.map((q,i)=>`${i+1}. ${q.text}`):["- none"]),
+    "", "Last 2 weeks:", ...sumLines(v.sm).map(l=>"- "+l), "", "Supplements and medicine:", ...v.supps.map(x=>`- ${x.n}${x.dose?", "+x.dose:""}${x.times?", "+x.times:""}${x.pending?" (timing to confirm)":""}`),
+    "", "Recent labs:", ...(v.labs.length?v.labs.map(l=>`- ${l.name}: ${l.value} ${l.unit} (${l.date})${l.flag?" "+l.flag.toUpperCase():""}${l.check?" (check digits)":""}`):["- none"]),
+    "", "Notes from the last 2 weeks:", ...(notesText(v.rows).length?notesText(v.rows):["- none"])].join("\n");
+}
+
+function renderSupps(){
+  let h = `<div class="stack"><section class="panel"><h2>Supplements and medicine</h2>
+  <p class="muted" style="margin:0">Times are blank on purpose: your provider hasn't answered how to space these yet. Type times like <b>8:00, 6:30pm</b>. Leave "Pending" ticked until the time is confirmed.</p>
+  ${spacingWarnings().map(w=>`<div class="warnbox">${esc(w)}</div>`).join("")}`;
+  S.supplements.forEach((s,i)=>{
+    const bad = badTimes(s.times);
+    h += `<div class="supp">
+      <div class="grid2">
+        <label>Name<input type="text" id="s-name-${i}" data-s="${i}" data-f="name" value="${esc(s.name)}"></label>
+        <label>Dose<input type="text" id="s-dose-${i}" data-s="${i}" data-f="dose" value="${esc(s.dose)}" placeholder="${s.id==="psyllium"?"Follows fiber ramp":"e.g. 500 mg"}"></label>
+        <label>Times<input type="text" id="s-times-${i}" data-s="${i}" data-f="times" value="${esc(s.times)}" placeholder="Not set"></label>
+        <label>How to take it<input type="text" id="s-how-${i}" data-s="${i}" data-f="how" value="${esc(s.how)}" placeholder="e.g. with breakfast"></label>
+        <label>Where<select id="s-where-${i}" data-s="${i}" data-f="where"><option value="home" ${(s.where||"home")==="home"?"selected":""}>At home</option><option value="town" ${s.where==="town"?"selected":""}>In town</option></select></label>
+      </div>
+      ${bad.length?`<div class="warnbox">Couldn't read: ${esc(bad.join(", "))}. Use a form like 8:00 or 6:30pm.</div>`:""}
+      <label>Notes<input type="text" id="s-notes-${i}" data-s="${i}" data-f="notes" value="${esc(s.notes)}"></label>
+      ${freqHtml(s,i,"s")}
+      <div class="row">
+        <label class="inline"><input type="checkbox" data-s="${i}" data-f="pending" ${s.pending?"checked":""}> Pending</label>
+        <label class="inline"><input type="checkbox" data-s="${i}" data-f="binder" ${s.binder?"checked":""}> Fiber or binder (keep 2 h apart)</label>
+        <label class="inline"><input type="checkbox" data-s="${i}" data-f="active" ${s.active?"checked":""}> Taking it now</label>
+        <button class="btn ghost" data-del="${i}">Remove</button>
+      </div></div>`;
+  });
+  h += `<div><button class="btn" id="addSupp">Add a supplement</button></div></section>`;
+  h += `<section class="panel"><h2>Healing routine</h2>
+  <p class="muted" style="margin:0">From your provider's notes and the Break the Mold handout. Set how often (tick days, or leave all unticked for every day) and a time if you want a reminder.</p>`;
+  (S.routine||[]).forEach((r,i)=>{
+    const bad = badTimes(r.times);
+    h += `<div class="supp">
+      <div class="grid2">
+        <label>Name<input type="text" id="r-name-${i}" data-r="${i}" data-f="name" value="${esc(r.name)}"></label>
+        <label>Times<input type="text" id="r-times-${i}" data-r="${i}" data-f="times" value="${esc(r.times)}" placeholder="Not set"></label>
+        <label>Where<select id="r-where-${i}" data-r="${i}" data-f="where"><option value="home" ${(r.where||"home")==="home"?"selected":""}>At home</option><option value="town" ${r.where==="town"?"selected":""}>In town</option></select></label>
+      </div>
+      <label>How<input type="text" id="r-how-${i}" data-r="${i}" data-f="how" value="${esc(r.how)}"></label>
+      ${bad.length?`<div class="warnbox">Couldn't read: ${esc(bad.join(", "))}. Use a form like 8:00 or 6:30pm.</div>`:""}
+      ${freqHtml(r,i,"r")}
+      <small class="muted">${esc(r.notes)}</small>
+      <div class="row">
+        <label class="inline"><input type="checkbox" data-r="${i}" data-f="active" ${r.active?"checked":""}> Doing it now</label>
+        <button class="btn ghost" data-rdel="${i}">Remove</button>
+      </div></div>`;
+  });
+  h += `<div><button class="btn" id="addRoutine">Add a routine step</button></div></section></div>`;
+  view.innerHTML = h;
+}
+
+function renderCook(){
+  const cd = nextCookDate(parseYmd(ymd(new Date())));
+  if(!cd) return "";
+  const items = cookPlanFor(cd), tl = cookTimeline(items);
+  const when = ymd(cd)===ymd(new Date()) ? "today" : DAYS_LONG[cd.getDay()]+", "+cd.toLocaleDateString(undefined,{month:"short",day:"numeric"});
+  let h = `<section class="panel" id="cookPlan"><h2>Next cook day: ${esc(when)}</h2>
+    <p class="muted" style="margin:0">Worked out from your week below and what's in the freezer. It cooks whatever the freezer won't cover for the 7 days starting that day. Dinner stews count 2 bowls, yours and his.</p>`;
+  if(!items.length) h += `<p style="margin:0"><b>Nothing to cook.</b> Your freezer covers the week.</p>`;
+  else {
+    h += `<ol class="doc">${items.map(it=>{ const b=BASES[it.id]; return `<li><div><b>${esc(baseName(it))}${it.batches>1?" x"+it.batches:""}</b> makes ${b.yield*it.batches} ${esc(b.unit)}.<br><small class="muted">Week needs ${it.need}, freezer will have ${it.have}.${b.soak?" Soak the beans the night before.":""}${b.note?" "+esc(b.note):""}</small></div></li>`; }).join("")}</ol>
+    <h3>Timeline, about ${Math.round(tl.end/15)/4} hours</h3>
+    <ol class="day">${tl.steps.map(st=>`<li><span class="t">${hm(st.at)}</span><span></span><div class="item"><div class="title">${esc(baseName(st.it))}</div><div class="detail">${esc(st.where)} · ${baseMin(st.it)>=60?Math.round(baseMin(st.it)/15)/4+" h":baseMin(st.it)+" min"}</div></div></li>`).join("")}</ol>
+    <small class="muted">His rice or potatoes fit wherever a burner or the oven frees up. Cool each pot fast, bag it flat, and freeze it the same day.</small>
+    ${true?`<div><a class="btn ghost" href="pantry.html">Shopping list for this</a></div>`:""}`;
+  }
+  h += `</section>
+  <section class="panel"><h2>In the freezer</h2>
+    <p class="muted" style="margin:0">Counts go down as each day's meals pass, and go up when you tick off a cook day. Fix any count that's off.</p>
+    <div class="grid2">${Object.entries(BASES).map(([id,b])=>`<label>${esc(b.n)} <small class="muted" style="font-weight:400">(${esc(b.unit)}${b.fridge?", fridge":""})</small><input type="number" min="0" id="stock-${id}" data-stock="${id}" value="${Number((S.stock||{})[id])||0}"></label>`).join("")}</div>
+  </section>`;
+  return h;
+}
+function renderWeek(){
+  let h = `<div class="stack">${renderCook()}<section class="panel"><h2>Your week</h2>
+  <p class="muted" style="margin:0">One schedule for everything. Today's checklist, the nightly freezer list, the cook day, your phone calendar, and the shopping list all come from these choices. Freezer items come up automatically the night before.</p></section>`;
+  for(const dow of [1,2,3,4,5,6,0]){
+    const w = S.week[dow] = S.week[dow]||{ids:{}}, ids = w.ids = w.ids||{}, prev = DAYS_LONG[(dow+6)%7];
+    const sel = (k,label)=>`<label>${label}<select id="w-${k}-${dow}" data-wid="${dow}" data-slot="${k}"><option value="">None</option>${recipeOptions(k).map(([id,n])=>`<option value="${esc(id)}" ${ids[k]===id?"selected":""}>${esc(n)}</option>`).join("")}</select></label>`;
+    const dn = recipe(ids.d);
+    h += `<section class="panel dayedit"><h3>${DAYS_LONG[dow]}${Number(S.cookDay)===dow?" · cook day":""}</h3>
+      <div class="grid2">${SLOTS.map(([k,l])=>sel(k,l)).join("")}</div>
+      ${dn&&(dn.you||dn.his)?`<small class="muted">${dn.you?"You add: "+esc(dn.you)+". ":""}${dn.his?"He adds: "+esc(dn.his)+".":""}</small>`:""}
+      <label>Dinner note (optional)<input type="text" id="w-n-${dow}" data-wnote="${dow}" value="${esc(w.note||"")}"></label>
+      <label>Also move to the fridge on ${prev} night<textarea id="w-p-${dow}" data-pull="${dow}" placeholder="One item per line">${esc((S.pull[dow]||[]).join("\n"))}</textarea></label>
+    </section>`;
+  }
+  h += `</div>`;
+  view.innerHTML = h;
+}
+
+function renderSettings(){
+  const T=S.times, on=S.on;
+  const tf = (k,label)=>`<label>${label}<input type="time" id="t-${k}" data-t="${k}" value="${esc(parseTime(T[k])||"")}"></label>`;
+  const ck = (k,label)=>`<label class="inline" style="display:flex;gap:6px;align-items:center;font-weight:400"><input type="checkbox" data-on="${k}" ${on[k]?"checked":""}> ${label}</label>`;
+  view.innerHTML = `<div class="stack">
+  <section class="panel"><h2>Your day</h2>
+    <label class="inline"><input type="checkbox" id="c-on" data-clock="on" ${S.clock.on?"checked":""}> Set meal times from when I wake and go to bed</label>
+    <div class="grid2"><label>Wake up<input type="time" id="c-wake" data-clock="wake" value="${esc(S.clock.wake)}"></label>
+      <label>Bed<input type="time" id="c-bed" data-clock="bed" value="${esc(S.clock.bed)}"></label>
+      <label>Ease-in week ends<input type="date" id="c-ease" data-clock="easeUntil" value="${esc(S.clock.easeUntil)}"></label></div>
+    ${S.clock.on?(()=>{ const D=dayTimes(new Date()); return `<small class="muted">Today: first meal ${niceTime(D.breakfast)}${D.ease?" (an hour early while you ease in)":""}, lunch ${niceTime(D.lunch)}, dinner ${niceTime(D.dinner)}, kitchen closes ${niceTime(D.closes)}. Psyllium at ${niceTime(D.psyllium)} until your provider sets its time. Change wake or bed on a day that shifts and everything moves with it.</small>`; })():""}
+  </section>
+  <section class="panel"><h2>Daily times</h2><small class="muted">${S.clock.on?"Meal and snack times below are ignored while they follow your wake and bed times.":"Starting guesses. Change them to fit your day."}</small>
+    <div class="grid2">${tf("breakfast","Breakfast")}${tf("lunch","Lunch")}${tf("snack","Snack")}${tf("dinner","Dinner")}${tf("treat","Evening treat")}${tf("pull","Freezer to fridge")}${tf("cook","Cook session starts")}
+    <label>Walk, minutes after each meal<input type="number" id="t-walkAfter" min="0" max="180" data-t="walkAfter" value="${esc(T.walkAfter)}"></label></div>
+    <label>Water reminders<input type="text" id="t-water" data-t="water" value="${esc(T.water)}" placeholder="10:00, 13:00, 16:00"></label>
+    <div class="grid2">
+      <label>Alerts for things at home (minutes before)<input type="text" id="l-home" data-lead="home" value="${esc(S.leads.home)}" placeholder="10, 5"></label>
+      <label>Alerts for things in town (minutes before)<input type="text" id="l-town" data-lead="town" value="${esc(S.leads.town)}" placeholder="40, 30"></label>
+    </div><small class="muted">Meals, water and the freezer list count as at home. Pick "In town" on a supplement or routine step to use the town alerts.</small>
+  </section>
+  <section class="panel"><h2>Which reminders to show</h2><div class="chips" style="gap:8px 18px">
+    ${ck("supps","Supplements")}${ck("meals","Meals")}${ck("snack","Snack")}${ck("walk","Walk")}${ck("treat","Evening treat")}${ck("water","Water")}${ck("routine","Healing routine")}${ck("pull","Freezer to fridge")}${ck("cook","Cook day")}${ck("feel","Evening check-in")}</div></section>
+  <section class="panel"><h2>Plan settings</h2><div class="grid2">
+    <label>Fiber ramp started<input type="date" id="p-fiber" data-p="fiberStart" value="${esc(S.fiberStart)}"></label>
+    <label>Water goal (oz)<input type="number" id="p-water" data-p="waterGoal" min="8" value="${esc(S.waterGoal)}"></label>
+    <label>Water buttons (oz)<input type="text" id="p-sizes" data-sizes="1" value="${esc((S.waterSizes||[4,8]).join(", "))}" placeholder="4, 8"><small class="muted" style="font-weight:400">One button for each size, like 4, 8, 16</small></label>
+    <label>Cook day<select id="p-cookday" data-p="cookDay">${DAYS_LONG.map((n,i)=>`<option value="${i}" ${Number(S.cookDay)===i?"selected":""}>${n}</option>`).join("")}</select></label>
+  </div><small class="muted">What to cook is worked out from your week and freezer on the Meals &amp; freezer tab.</small></section>
+  <section class="panel"><h2>Reminders on this device</h2>
+    ${SERVER&&!LAPTOP?`<p style="margin:0">On your phone, alerts come from Google Calendar (see below). Everything you tick or change here is saved on the laptop, so it shows up there and on the other phone too.</p>`
+      :SERVER?`<p style="margin:0">Desktop reminders are on. They pop up even when this window is closed, as long as the laptop is on. Opening this app once a month keeps the next 60 days scheduled.</p>`
+      :`<p style="margin:0">Reminders here only appear while this page is open. For pop-ups with the window closed, use the Ubuntu app on your laptop, or the phone calendar file below.</p>
+        <div><button class="btn ghost" id="notifyBtn">Turn on reminders in this browser</button></div>`}
+  </section>
+  ${LAPTOP?`<section class="panel"><h2>Phones</h2><div id="phonesBody" class="stack"><p class="muted" style="margin:0">Checking…</p></div></section>`:""}
+  <section class="panel"><h2>Google Calendar and phone</h2>
+    <p style="margin:0">Save one calendar file with every timed reminder as a repeating event. Items with no time yet, like pending supplements, are left out.</p>
+    <div class="chips" style="gap:8px">${SERVER?`<button class="btn" id="icsBtn">Save calendar file</button>`:""}<button class="btn ghost" id="icsCopy">Show calendar text</button></div>
+    <textarea id="icsText" hidden readonly></textarea>
+    <ol style="margin:0;padding-left:20px;display:grid;gap:4px">
+      <li>On the laptop, open <b>calendar.google.com</b>. Next to "Other calendars", press <b>+</b> and choose <b>Create new calendar</b>. Name it <b>Daily Helper</b>.</li>
+      <li>Press the gear, then <b>Import &amp; export</b>. Pick <b>daily-helper.ics</b> from Downloads, choose the Daily Helper calendar, and press <b>Import</b>.</li>
+      <li>Open one imported event and check for a notification. Google doesn't reliably keep the file's alerts or add your default reminders to imported events. If there's none, ask Claude to add the events through the Google Calendar connector instead, which sets the reminders for you.</li>
+      <li>When your times or week change, delete the Daily Helper calendar, create it again, and import a new file. That way you don't get double events.</li>
+    </ol>
+  </section>
+  <section class="panel"><h2>Move settings between devices</h2>
+    <p style="margin:0">Copy this text on one device and paste it on another to bring over your supplements, times, and meals.</p>
+    <div class="chips" style="gap:8px"><button class="btn ghost" id="exportBtn">Copy settings</button></div>
+    <textarea id="importText" placeholder="Paste settings here"></textarea>
+    <div><button class="btn ghost" id="importBtn">Load pasted settings</button></div>
+  </section></div>`;
+}
+
+
+let PH = null;
+function loadQr(){
+  return new Promise(res=>{ if(window.qrcode) return res(); const sc=document.createElement("script"); sc.src="/qr.js"; sc.onload=()=>res(); sc.onerror=()=>res(); document.head.appendChild(sc); });
+}
+function qrSvg(url){
+  if(!window.qrcode) return "";
+  const q = qrcode(0,"M"); q.addData(url); q.make();
+  return q.createSvgTag({cellSize:5, margin:3, scalable:true});
+}
+async function loadPhones(){
+  const box = document.getElementById("phonesBody"); if(!box) return;
+  try{ PH = await (await fetch("/api/phones",{cache:"no-store"})).json(); }catch(e){ box.innerHTML = `<p style="margin:0">Couldn't check phone access. Close and reopen Daily Helper.</p>`; return; }
+  await loadQr();
+  const iphoneUrl = `http://${PH.local}:${PH.port}/?k=${encodeURIComponent(PH.key)}`;
+  const ip = PH.ips[0];
+  const androidUrl = ip ? `http://${ip}:${PH.port}/?k=${encodeURIComponent(PH.key)}` : null;
+  const card = (who, url, steps)=>`<div class="qrcard"><h3>${who}</h3><div class="qr">${qrSvg(url)}</div><code>${esc(url)}</code><ol>${steps.map(x=>`<li>${x}</li>`).join("")}</ol></div>`;
+  box.innerHTML = `<p style="margin:0">Your phones can open this app while they're on the same Wi-Fi as the laptop. Everything stays on the laptop, so both phones always see the same week, pantry and shopping list.</p>
+    <label class="inline" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="phonesToggle" ${PH.enabled?"checked":""}> Let our phones in</label>
+    ${PH.enabled?`<div class="qrgrid">
+      ${card("iPhone", iphoneUrl, ["Open the Camera and point it at this code. Tap the yellow link.","In Safari, tap the Share button (square with an arrow), then <b>Add to Home Screen</b>, then <b>Add</b>.","Open Daily Helper from the new icon from now on.","If the link won't open, scan the Android code instead. It works on iPhone too."])}
+      ${androidUrl?card("Android", androidUrl, ["Open the Camera (or Google Lens) and point it at this code. Tap the link.","In Chrome, tap the three dots, then <b>Add to Home screen</b>.","If it stops opening someday, scan this code again. The Wi-Fi can give the laptop a new address."]):`<p class="warnbox">The laptop isn't on a Wi-Fi network right now, so there's no Android code. Connect to Wi-Fi and reopen this tab.</p>`}
+    </div>
+    <small class="muted">The code has a private key in it, so only phones that scan it can get in. A neighbor on a campground Wi-Fi can't. If a phone is lost, press the button below. The old code stops working, and you scan the new one on the phones you keep.</small>
+    <div><button class="btn ghost" id="phonesNewKey">Make a new code</button></div>`:""}`;
+}
+
+
+const DOC_STATUS = {ask:"To ask", sent:"Sent, waiting", answered:"Answered"};
+let NOTE_ABOUT = "";
+function noteSubjects(){
+  const out = [];
+  for(const x of S.supplements) out.push(x.name);
+  for(const x of (S.routine||[])) out.push(x.name);
+  const seen = new Set();
+  for(const dow of [0,1,2,3,4,5,6]) for(const k of ["b","l","s","d","e"]){ const r = recipe(((S.week[dow]||{}).ids||{})[k]); if(r && !seen.has(r.n)){ seen.add(r.n); out.push(r.n); } }
+  return out;
+}
+function renderNotes(){
+  const subj = noteSubjects();
+  const notes = [...(S.notes||[])].sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));
+  const now = new Date();
+  let h = `<div class="stack">
+  <section class="panel"><h2>How did it go?</h2>
+    <p class="muted" style="margin:0">Jot down how you felt after a supplement, a routine step, or a meal. These help you spot patterns and give your provider real details.</p>
+    <div class="grid2">
+      <label>About<select id="n-about"><option value="">Something else</option>${subj.map(n=>`<option ${n===NOTE_ABOUT?"selected":""}>${esc(n)}</option>`).join("")}</select></label>
+      <label>How you felt<select id="n-feel"><option value="">No rating</option><option>Better</option><option>Same</option><option>Worse</option></select></label>
+      <label>Date<input type="date" id="n-date" value="${ymd(now)}"></label>
+      <label>Time<input type="time" id="n-time" value="${pad(now.getHours())}:${pad(now.getMinutes())}"></label>
+    </div>
+    <label>Note<textarea id="n-text" placeholder="e.g. 15 min sauna, foggy for an hour after, slept well"></textarea></label>
+    <div class="chips" style="gap:8px"><button class="btn" id="noteAdd">Save note</button><button class="btn ghost" id="noteAddDoc">Save and add to doctor list</button></div>
+  </section>
+  <section class="panel"><h2>Your notes</h2>
+    ${notes.length? `<ol class="day">${notes.map(n=>`<li><span class="t">${esc(n.date.slice(5).replace("-","/"))}<br><small>${n.time?niceTime(n.time):""}</small></span><span></span>
+      <div class="item"><div class="title">${esc(n.about||"Note")} ${n.feel?`<span class="chip ${n.feel==="Worse"?"pending":n.feel==="Better"?"":"dusk"}">${esc(n.feel)}</span>`:""}</div>
+      <div class="detail">${esc(n.text)}</div>
+      <div class="chips" style="gap:6px;margin-top:4px"><button class="btn ghost" data-note2doc="${esc(n.id)}">Ask my provider about this</button><button class="btn ghost" data-notedel="${esc(n.id)}">Delete</button></div></div></li>`).join("")}</ol>`
+      : `<p class="muted" style="margin:0">No notes yet. Your first one shows up here.</p>`}
+  </section>
+  <section class="panel" id="doctorList"><h2>For my doctor</h2>
+    <p class="muted noprint" style="margin:0">Questions and things to tell your provider. Mark each one as you go, and copy the list before an appointment.</p>
+    <div class="noprint"><label>New question or note<textarea id="d-text" placeholder="e.g. Is a 15 minute sauna OK with my heat sensitivity?"></textarea></label></div>
+    <div class="chips noprint" style="gap:8px"><button class="btn" id="docAdd">Add to list</button><button class="btn ghost" id="docCopy">Copy the open questions</button>${SERVER&&LAPTOP?`<button class="btn ghost" id="docPrint">Print</button>`:""}</div>
+    <textarea id="docCopyText" hidden readonly></textarea>
+    ${["ask","sent","answered"].map(st=>{
+      const items = (S.doctor||[]).filter(x=>x.status===st);
+      if(!items.length) return "";
+      return `<h3 ${st==="answered"?'class="noprint"':""}>${DOC_STATUS[st]} (${items.length})</h3><ol class="doc">${items.map(x=>`<li ${st==="answered"?'class="noprint"':""}>
+        <div>${esc(x.text)}</div>
+        ${st==="answered"?`<label class="noprint">Answer<textarea id="d-ans-${esc(x.id)}" data-docans="${esc(x.id)}">${esc(x.answer||"")}</textarea></label>`:""}
+        <div class="chips noprint" style="gap:6px"><select data-docst="${esc(x.id)}" aria-label="Status">${Object.entries(DOC_STATUS).map(([k,v])=>`<option value="${k}" ${k===x.status?"selected":""}>${v}</option>`).join("")}</select><button class="btn ghost" data-docdel="${esc(x.id)}">Delete</button></div>
+      </li>`).join("")}</ol>`;
+    }).join("")}
+  </section></div>`;
+  view.innerHTML = h;
+}
+function labFlag(x){
+  if(x.value==null || x.value==="") return "";
+  if(x.high!=null && x.high!=="" && +x.value>+x.high) return x.low==null||x.low===""? "Present" : "High";
+  if(x.low!=null && x.low!=="" && +x.value<+x.low) return "Low";
+  return "In range";
+}
+function renderRules(){
+  const R = S.rules;
+  const lv = {avoid:"Avoid", limit:"Limit", ask:"Check first"};
+  view.innerHTML = `<div class="stack">
+  <section class="panel"><h2>My rules</h2>
+    <p class="muted" style="margin:0">Small changes you can make yourself. The checklist, the pantry and shopping list, and the meal checker all use these. For big changes, like a new diagnosis, new medicine, or a whole new diet tier, upload your provider's notes in the project chat and Claude will rebuild the plan and these rules.</p>
+    <div class="grid2">${RULE_FIELDS.map(([k,l,u,hint])=>`<label>${l} <small class="muted" style="font-weight:400">(${u})</small><input type="number" step="any" min="0" id="rule-${k}" data-rule="${k}" value="${R[k]==null?"":esc(R[k])}" placeholder="${R[k]==null?"Pending":""}">${hint?`<small class="muted" style="font-weight:400">${hint}</small>`:""}</label>`).join("")}</div>
+    <h3>Fiber ramp (g a day)</h3>
+    <div class="grid2">${[0,1,2,3].map(i=>`<label>Week ${i+1}${i===3?" and on":""}<input type="number" min="0" id="ramp-${i}" data-ramp="${i}" value="${esc(R.ramp[i])}"></label>`).join("")}</div>
+  </section>
+  <section class="panel" id="flarePanel"><h2>Flare-up mode</h2>
+    <p class="muted" style="margin:0">Beans, soy, nuts, seeds, chocolate and oats are high in arginine, which some people limit during a flare. Turn this on for a while to flag them everywhere, including the meal checker and the shopping list, and to swap the meals that use them. It turns itself off after the last day.</p>
+    ${S.flare.on?`<p style="margin:0"><b>On through ${esc(S.flare.until)}.</b></p>
+      <div class="grid2"><label>Last day<input type="date" id="flare-until" data-flareuntil="1" value="${esc(S.flare.until)}"></label></div>
+      ${(()=>{ const af = flareAffected(); return af.length ? `<h3>Meals in your week that use these foods</h3><ol class="doc">${[...new Set(af.map(a=>a.id))].map(id=>{ const a=af.find(x=>x.id===id), days=af.filter(x=>x.id===id).map(x=>DAYS[x.dow]); return `<li><b>${esc((recipe(id)||{n:id}).n)}</b> (${days.length===7?"every day":esc(days.join(", "))}) → ${a.to===null?esc(a.note):a.to?esc(recipe(a.to).n):"skip it"}</li>`; }).join("")}</ol>${af.some(a=>a.to!==null)?`<div><button class="btn" id="flareSwap">Swap these meals</button></div>`:""}` : `<p class="muted" style="margin:0">None of your planned meals use these foods now.</p>`; })()}
+      <div><button class="btn ghost" id="flareEnd">End flare-up mode now</button></div>`
+    : `<div class="grid2"><label>Through<input type="date" id="flare-new" value="${ymd(addDays(new Date(),6))}"></label></div>
+      <div><button class="btn" id="flareStart">Turn on flare-up mode</button></div>`}
+    ${S.flare.saved&&Object.keys(S.flare.saved).length?`<small class="muted">Swapped meals go back to your usual week when it ends.</small>`:""}
+  </section>
+  <section class="panel"><h2>Foods to flag</h2>
+    <p class="muted" style="margin:0">Add something new that bothers you, or something to keep small. Your plan's built-in allergy and mold lists stay as they are.</p>
+    ${(R.extra||[]).some(x=>!x.flare)?`<ol class="day">${R.extra.map((x,i)=>x.flare?"":`<li><span class="t"><span class="chip ${x.level==="avoid"?"pending":x.level==="ask"?"dusk":""}">${lv[x.level]||x.level}</span></span><span></span><div class="item"><div class="title">${esc(x.label||x.word)}</div>${x.why?`<div class="detail">${esc(x.why)}</div>`:""}<button class="linkbtn" data-ruledel="extra:${i}">Remove</button></div></li>`).join("")}</ol>`:""}
+    <div class="grid2"><label>Food or ingredient<input type="text" id="rx-word" placeholder="e.g. paprika"></label>
+      <label>What to do<select id="rx-level"><option value="avoid">Avoid</option><option value="limit">Limit</option><option value="ask">Check first</option></select></label></div>
+    <label>Why (optional)<input type="text" id="rx-why" placeholder="e.g. flared my gut on 10/30"></label>
+    <div><button class="btn" id="ruleAddExtra">Add to my list</button></div>
+  </section>
+  <section class="panel"><h2>Foods that are fine</h2>
+    <p class="muted" style="margin:0">Things you know you tolerate. These are never flagged, even if a built-in rule would catch them.</p>
+    ${(R.ok||[]).length?`<div class="chips">${R.ok.map((x,i)=>`<span class="chip">${esc(x.label||x.word)} <button class="linkbtn" style="padding:0 0 0 6px" data-ruledel="ok:${i}" aria-label="Remove ${esc(x.label||x.word)}">✕</button></span>`).join("")}</div>`:""}
+    <div class="grid2"><label>Food<input type="text" id="rk-word" placeholder="e.g. lion's mane"></label></div>
+    <div><button class="btn ghost" id="ruleAddOk">Add as fine</button></div>
+  </section>
+  <section class="panel"><h2>Missed something?</h2>
+    <p class="muted" style="margin:0">Anything not ticked off by these times counts as missed, and the app moves it. Supplements with food go to your next meal that day, or the next day after your last meal. Supplements without food can be taken any time before the cutoff, keeping psyllium spacing. A catch-up too close to the next regular dose is skipped. Routine steps move to later today before the cutoff. After it, daily steps wait for tomorrow, steps you do a few times a week move to the next free day with a day between, and town trips move to your next town day. Each miss is logged on the Notes tab.</p>
+    <div class="grid2">${MISS_FIELDS.map(([k,l,u,ty])=>`<label>${l} <small class="muted" style="font-weight:400">(${u})</small><input type="${ty}" ${ty==="number"?'min="0"':""} id="miss-${k}" data-miss-set="${k}" value="${esc(S.miss[k])}"></label>`).join("")}</div>
+  </section>
+  <section class="panel"><h2>Still to decide</h2>
+    <p class="muted" style="margin:0">Things you want to think over. Remove one once it's settled.</p>
+    ${(S.todo||[]).length?`<ol class="doc">${S.todo.map(x=>`<li>${esc(x.text)} <button class="linkbtn" data-tododel="${esc(x.id)}">Done</button></li>`).join("")}</ol>`:""}
+    <div class="grid2"><label>Add one<input type="text" id="todo-text" placeholder="e.g. Is the gym OK on cook day?"></label></div>
+    <div><button class="btn ghost" id="todoAdd">Add</button></div>
+  </section>
+  ${(S.rulesLog||[]).length?`<section class="panel"><h2>Changes you've made</h2><ol class="doc">${S.rulesLog.slice().reverse().slice(0,30).map(x=>`<li><small class="muted">${esc(x.date.slice(5).replace("-","/"))}</small> ${esc(x.what)}</li>`).join("")}</ol></section>`:""}
+  </div>`;
+}
+function logRule(what){ (S.rulesLog=S.rulesLog||[]).push({date:ymd(new Date()), what}); }
+
+function renderLabs(){
+  const labs = S.labs||[], byName = new Map();
+  for(const x of [...labs].sort((a,b)=>b.date.localeCompare(a.date))){ if(!byName.has(x.name)) byName.set(x.name,[]); byName.get(x.name).push(x); }
+  const fmtD = d=>d? d.slice(5).replace("-","/")+"/"+d.slice(2,4) : "";
+  const range = x=> (x.low!=null&&x.low!==""?x.low:"")+((x.low!=null&&x.low!=="")?" to ":"under ")+(x.high??"");
+  let h = `<div class="stack">
+  <section class="panel"><h2>Add a new result</h2>
+    <p class="muted" style="margin:0">Type in a new lab result when you get it. Earlier results for the same test stay, so you can see the trend.</p>
+    <div class="grid2">
+      <label>Test<input type="text" id="lb-name" list="lb-names" placeholder="e.g. Vitamin D"></label>
+      <datalist id="lb-names">${[...byName.keys()].map(n=>`<option value="${esc(n)}">`).join("")}</datalist>
+      <label>Date<input type="date" id="lb-date" value="${ymd(new Date())}"></label>
+      <label>Result<input type="number" step="any" id="lb-value"></label>
+      <label>Unit<input type="text" id="lb-unit" placeholder="filled in for known tests"></label>
+      <label>Range low<input type="number" step="any" id="lb-low"></label>
+      <label>Range high<input type="number" step="any" id="lb-high"></label>
+    </div>
+    <label>Note (optional)<input type="text" id="lb-note"></label>
+    <div><button class="btn" id="labAdd">Save result</button></div>
+  </section>
+  <section class="panel"><h2>Your results</h2>
+    <small class="muted">"Check" means the number came from a faxed copy that was hard to read. Compare it with your paper report and fix it here if needed.</small>
+    <div class="labs">${[...byName].map(([name,xs])=>{ const x=xs[0], f=labFlag(x);
+      return `<div class="labrow"><div class="labname"><b>${esc(name)}</b> ${f&&f!=="In range"?`<span class="chip pending">${f}</span>`:`<span class="chip">${f||"—"}</span>`} ${x.check?`<span class="chip dusk">check</span>`:""}</div>
+        <div class="labval"><b>${esc(x.value)}</b> ${esc(x.unit)} <small class="muted">range ${esc(range(x))} · ${fmtD(x.date)}</small></div>
+        ${xs.length>1?`<small class="muted">Before: ${xs.slice(1).map(y=>`${esc(y.value)} (${fmtD(y.date)})`).join(", ")}</small>`:""}
+        ${x.note?`<small class="muted">${esc(x.note)}</small>`:""}
+        <div class="chips" style="gap:6px"><button class="linkbtn" data-labfix="${esc(x.id)}">Fix this number</button><button class="linkbtn" data-labdel="${esc(x.id)}">Delete</button></div>
+      </div>`;}).join("")}</div>
+  </section>
+  <section class="panel"><h2>Visits</h2>
+    ${(S.visits||[]).slice().sort((a,b)=>b.date.localeCompare(a.date)).map(v=>`<div class="visit"><b>${fmtD(v.date)} · ${esc(v.who)}</b><div>${esc(v.summary)}</div>${v.changes?`<div class="muted"><b>What changed:</b> ${esc(v.changes)}</div>`:""}<div><button class="linkbtn" data-visitdel="${esc(v.id)}">Delete</button></div></div>`).join("")}
+    <div class="grid2"><label>Date<input type="date" id="vs-date" value="${ymd(new Date())}"></label><label>Who<input type="text" id="vs-who" value=""></label></div>
+    <label>What you talked about<textarea id="vs-summary"></textarea></label>
+    <label>What changed (new meds, doses, limits, things to do)<textarea id="vs-changes"></textarea></label>
+    <div><button class="btn" id="visitAdd">Save visit</button></div>
+    <div class="warnbox">For bigger changes, like a new carb target, new limits, or a new medicine, also upload the notes or results in your project chat. Claude then updates your eating plan and the app's rules to match. Answers to your questions go on the Notes tab under "For my doctor".</div>
+  </section></div>`;
+  view.innerHTML = h;
+}
+
+function docText(){
+  const open = (S.doctor||[]).filter(x=>x.status!=="answered");
+  const lines = ["Questions for my provider ("+new Date().toLocaleDateString()+")",""];
+  for(const st of ["ask","sent"]){ const xs = open.filter(x=>x.status===st); if(!xs.length) continue; lines.push(st==="ask"?"New:":"Sent earlier, still waiting:"); xs.forEach((x,i)=>lines.push((i+1)+". "+x.text)); lines.push(""); }
+  return lines.join("\n").trim();
+}
+
+function render(){
+  const navTab = TAB==="today"||TAB==="quick"||TAB==="tomorrow" ? TAB : "more";
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected", b.dataset.tab===navTab));
+  document.querySelectorAll(".dh-bar a").forEach(a=>{ const h=a.getAttribute("href"), on = h==="index.html#more" ? navTab==="more" : h==="index.html#today" && navTab!=="more"; if(on) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current"); });
+  if(TAB==="quick") renderQuick();
+  else if(TAB==="today") renderDay(0);
+  else if(TAB==="tomorrow") renderDay(1);
+  else if(TAB==="more") renderMore();
+  else if(TAB==="backup") renderBackup();
+  else if(TAB==="phone") renderPhone();
+  else if(TAB==="lookback") renderLookback();
+  else if(TAB==="visit") renderVisit();
+  else if(TAB==="supps") renderSupps();
+  else if(TAB==="week") renderWeek();
+  else if(TAB==="notes") renderNotes();
+  else if(TAB==="labs") renderLabs();
+  else if(TAB==="rules") renderRules();
+  else if(TAB==="household") HHUI.render(view);
+  else { renderSettings(); if(LAPTOP) loadPhones(); }
+  if(navTab==="more" && TAB!=="more") view.insertAdjacentHTML("afterbegin", `<div class="noprint" style="margin:-6px 0 10px">${backToMore()}</div>`);
+}
+
+
+function icsText(){
+  const lines = ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Daily Helper//EN","CALSCALE:GREGORIAN","X-WR-CALNAME:Daily Helper"];
+  const today = new Date(), stamp = ymd(today).replace(/-/g,"")+"T000000Z";
+  const escI = s=>String(s).replace(/\\/g,"\\\\").replace(/\n/g,"\\n").replace(/[,;]/g,m=>"\\"+m);
+  const ev = (uid, date, time, title, body, rrule, where)=>{
+    lines.push("BEGIN:VEVENT","UID:"+uid+"@daily-helper","DTSTAMP:"+stamp,
+      "DTSTART:"+ymd(date).replace(/-/g,"")+"T"+time.replace(":","")+"00","DURATION:PT10M",
+      "SUMMARY:"+escI(title), "DESCRIPTION:"+escI(body||""), "RRULE:"+rrule);
+    for(const lead of leadsFor(where)) lines.push("BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:"+escI(title),"TRIGGER:-PT"+lead+"M","END:VALARM");
+    lines.push("END:VEVENT");
+  };
+  const perDay = i=>i.kind==="meal"||i.id==="snack"||i.id==="treat"||i.weekly;
+  const daily = itemsFor(today,true).timed.filter(i=>i.kind!=="freezer" && i.kind!=="cook" && !perDay(i));
+  daily.forEach(i=>ev(i.id.replace(/[^a-z0-9]/gi,"-"), today, i.time, i.title, i.detail, "FREQ=DAILY", i.where));
+  for(let k=0;k<7;k++){
+    const d = addDays(today,k), byday = ["SU","MO","TU","WE","TH","FR","SA"][d.getDay()];
+    const its = itemsFor(d,true).timed;
+    its.filter(perDay).forEach(i=>ev(i.id.replace(/[^a-z0-9]/gi,"-")+"-"+byday, d, i.time, i.title, i.detail, "FREQ=WEEKLY;BYDAY="+byday, i.where));
+    const alt = !!cookSession(addDays(d,1));
+    for(const wk of (alt?[0,7]:[0])){
+      const dd = addDays(d,wk), p = itemsFor(dd,true).timed.find(i=>i.kind==="freezer");
+      if(p) ev("pull-"+byday+(alt?"-"+ymd(dd):""), dd, p.time, p.title, p.list.join("\n"), alt?"FREQ=WEEKLY;INTERVAL=2":"FREQ=WEEKLY;BYDAY="+byday);
+    }
+    for(const wk of [0,7]){
+      const dd = addDays(d,wk), c = itemsFor(dd,true).timed.find(i=>i.kind==="cook");
+      if(c) ev("cook-"+ymd(dd), dd, c.time, c.title, c.detail, "FREQ=WEEKLY;INTERVAL=2");
+    }
+  }
+  lines.push("END:VCALENDAR");
+  return lines.join("\r\n");
+}
+
+
+
+window.addEventListener("hashchange",()=>{ if(HHUI.takeHash()){ TAB = "household"; render(); window.scrollTo(0,0); } });
+window.addEventListener("hashchange",()=>{ const h = location.hash.slice(1); if(!["today","quick","tomorrow","more"].includes(h)) return; TAB = h; EDIT_ITEM = null; try{ sessionStorage.setItem("dh-tab",TAB); }catch(_){} history.replaceState(null, "", location.pathname + location.search); render(); window.scrollTo(0,0); });
+document.querySelector("nav.tabs").addEventListener("click",e=>{
+  const b = e.target.closest("button[data-tab]"); if(!b) return;
+  TAB = b.dataset.tab; try{ sessionStorage.setItem("dh-tab",TAB); }catch(_){} render(); window.scrollTo(0,0);
+});
+view.addEventListener("change",e=>{
+  const t = e.target;
+  if(t.dataset.done==="cook"){ const lg = dayLog(t.dataset.day);
+    if(t.checked && !lg.cooked){ const items = cookPlanFor(parseYmd(t.dataset.day)); lg.cooked = items.map(x=>({id:x.id, n:BASES[x.id].yield*x.batches}));
+      for(const x of lg.cooked) S.stock[x.id]=(Number(S.stock[x.id])||0)+x.n; const g=items.find(x=>x.id==="r_grain"); if(g) S.lastGrain=g.grain; }
+    if(!t.checked && lg.cooked){ for(const x of lg.cooked) S.stock[x.id]=Math.max(0,(Number(S.stock[x.id])||0)-x.n); delete lg.cooked; } }
+  if(t.dataset.stock){ S.stock[t.dataset.stock]=Math.max(0,Number(t.value)||0); save(); renderWeek(); return; }
+  if(t.dataset.done){ const lg = dayLog(t.dataset.day); if(t.checked){ lg.done[t.dataset.done]=true; undoMissed(t.dataset.day, t.dataset.done); } else delete lg.done[t.dataset.done]; save(); render(); return; }
+  if(t.dataset.r!==undefined){ const r=S.routine[+t.dataset.r]; r[t.dataset.f] = t.type==="checkbox"? t.checked : t.value; save(); if(t.type==="checkbox"||t.dataset.f==="times") renderSupps(); return; }
+  for(const [attr,list] of [["r","routine"],["s","supplements"]]){
+    if(t.dataset[attr+"day"]!==undefined){ const x=S[list][+t.dataset[attr+"day"]], dw=+t.value; x.days=(x.days||[]).filter(v=>v!==dw); if(t.checked) x.days.push(dw); x.days.sort(); save(); renderSupps(); return; }
+    if(t.dataset[attr+"alt"]!==undefined){ const x=S[list][+t.dataset[attr+"alt"]]; x.alt=t.checked; if(t.checked) x.altFrom=ymd(new Date()); save(); renderSupps(); return; }
+  }
+  if(t.dataset.s!==undefined){ const s=S.supplements[+t.dataset.s]; s[t.dataset.f] = t.type==="checkbox"? t.checked : t.value; save(); if(t.type==="checkbox"||t.dataset.f==="times") renderSupps(); return; }
+  if(t.dataset.wid){ const w=S.week[t.dataset.wid]=S.week[t.dataset.wid]||{ids:{}}; (w.ids=w.ids||{})[t.dataset.slot]=t.value; save(); renderWeek(); return; }
+  if(t.dataset.wnote){ (S.week[t.dataset.wnote]=S.week[t.dataset.wnote]||{ids:{}}).note=t.value; save(); return; }
+  if(t.dataset.pull){ S.pull[t.dataset.pull]=t.value.split("\n").map(x=>x.trim()).filter(Boolean); save(); return; }
+  if(t.dataset.top){ S[t.dataset.top]=t.value; save(); return; }
+  if(t.dataset.docst){ const x=S.doctor.find(v=>v.id===t.dataset.docst); if(x){ x.status=t.value; save(); renderNotes(); } return; }
+  if(t.dataset.docans){ const x=S.doctor.find(v=>v.id===t.dataset.docans); if(x){ x.answer=t.value; save(); } return; }
+  if(t.dataset.rule){ const k=t.dataset.rule, old=S.rules[k], v=t.value===""?null:Number(t.value); S.rules[k]=v; const f=RULE_FIELDS.find(x=>x[0]===k); logRule(f[1]+": "+(old??"pending")+" → "+(v??"pending")); save(); return; }
+  if(t.dataset.ramp!==undefined){ const i=+t.dataset.ramp, old=S.rules.ramp[i]; S.rules.ramp=[...S.rules.ramp]; S.rules.ramp[i]=Number(t.value)||old; logRule("Fiber ramp week "+(i+1)+": "+old+" → "+S.rules.ramp[i]+" g"); save(); return; }
+  if(t.dataset.ov||t.dataset.ovslot||t.dataset.ovtext!==undefined){
+    const D = (S.dayOver=S.dayOver||{}), o = D[t.dataset.day] = D[t.dataset.day]||{};
+    OV_OPEN = t.dataset.day;
+    if(t.dataset.ov){ if(t.value) o[t.dataset.ov]=t.value; else delete o[t.dataset.ov]; }
+    if(t.dataset.ovslot){ const k=t.dataset.ovslot; o.ids=o.ids||{}; o.text=o.text||{};
+      delete o.ids[k]; delete o.text[k];
+      if(t.value==="__skip") o.ids[k]=""; else if(t.value==="__text") o.text[k]=" "; else if(t.value) o.ids[k]=t.value; }
+    if(t.dataset.ovtext!==undefined){ o.text=o.text||{}; o.text[t.dataset.ovtext]=t.value.trim()||" ";
+      if(t.value.trim()) (S.notes=S.notes||[]).push({id:"n"+Date.now(), about:"Ate instead", feel:"", date:t.dataset.day, time:"", text:SLOTS.find(x=>x[0]===t.dataset.ovtext)[1]+": "+t.value.trim()}); }
+    for(const f of ["ids","text"]) if(o[f] && !Object.keys(o[f]).length) delete o[f];
+    if(!Object.keys(o).length) delete D[t.dataset.day];
+    save(); render(); toast("Saved"); return; }
+  if(t.dataset.flareuntil){ if(t.value){ S.flare.until=t.value; for(const x of S.rules.extra) if(x.flare) x.why="High in arginine. Flare-up mode through "+t.value.slice(5).replace("-","/")+"."; logRule("Flare-up mode now through "+t.value); save(); } return; }
+  if(t.dataset.missSet){ const k=t.dataset.missSet, old=S.miss[k]; S.miss[k]= t.type==="number" ? Number(t.value) : t.value; logRule("Missed items, "+MISS_FIELDS.find(x=>x[0]===k)[1].toLowerCase()+": "+old+" → "+S.miss[k]); save(); return; }
+  if(t.dataset.lead){ S.leads[t.dataset.lead]=t.value; save(); return; }
+  if(t.dataset.clock){ S.clock[t.dataset.clock] = t.type==="checkbox" ? t.checked : t.value; save(); renderSettings(); if(LAPTOP) loadPhones(); return; }
+  if(t.dataset.t){ S.times[t.dataset.t]=t.value; save(); return; }
+  if(t.dataset.on){ S.on[t.dataset.on]=t.checked; save(); return; }
+  if(t.dataset.restorefile && t.files[0]){ const f=t.files[0]; t.value=""; f.text().then(x=>{ let b; try{ b=JSON.parse(x); }catch(_){ toast("That isn't a Daily Helper backup"); return; } restoreFrom(b.state?b:{state:b}); }); return; }
+  if(t.dataset.feelnote){ const lg=dayLog(t.dataset.day); lg.feel=lg.feel||{}; lg.feel.note=t.value.trim(); save(); return; }
+  if(t.dataset.sizes){ const v=t.value.split(/[,\s]+/).map(Number).filter(n=>n>0&&n<=64).slice(0,6); S.waterSizes = v.length?v:[4,8]; save(); toast("Water buttons: "+S.waterSizes.join(", ")+" oz"); return; }
+  if(t.dataset.p){ S[t.dataset.p] = t.type==="number"||t.tagName==="SELECT" ? Number(t.value) : t.value; save(); return; }
+  if(t.dataset.nc){ S.nextCook[t.dataset.nc]=t.value; save(); return; }
+});
+view.addEventListener("toggle",e=>{ if(e.target.dataset && e.target.dataset.feelbox) FEEL_OPEN = e.target.open; }, true);
+view.addEventListener("click",async e=>{
+  const t = e.target;
+  if(t.dataset.iedit){ EDIT_ITEM = t.dataset.day+"|"+t.dataset.iedit; render(); const f=document.getElementById("ie-time"); if(f) f.closest("li").scrollIntoView({block:"center"}); return; }
+  if(t.dataset.iecancel){ EDIT_ITEM = null; render(); return; }
+  { const g = t.closest("[data-goto]"); if(g){ EDIT_ITEM = null; TAB = g.dataset.goto; render(); window.scrollTo(0,0); return; } }
+  if(t.dataset.iesave||t.dataset.iereset){
+    const key = t.dataset.day, id = t.dataset.iesave||t.dataset.iereset, D = (S.dayOver=S.dayOver||{}), o = D[key] = D[key]||{}; o.items = o.items||{};
+    if(t.dataset.iereset) delete o.items[id];
+    else {
+      const it = itemsFor(parseYmd(key)).timed.find(x=>x.id===id), base = itemsFor(parseYmd(key), true).timed.find(x=>x.id===id) || {};
+      const time = document.getElementById("ie-time").value, did = document.getElementById("ie-did").value.trim(), skip = document.getElementById("ie-skip").checked;
+      const rec = {}; if(time && time!==base.time) rec.time = time; if(did) rec.did = did; if(skip) rec.skip = true;
+      if(did && did!==(it&&it.did)) (S.notes=S.notes||[]).push({id:"n"+Date.now(), about:(it?it.title:id).replace(/^[^:]+: /,""), feel:"", date:key, time:time||"", text:"Did instead: "+did});
+      if(Object.keys(rec).length) o.items[id] = rec; else delete o.items[id];
+    }
+    if(!Object.keys(o.items).length) delete o.items;
+    if(!Object.keys(o).length) delete D[key];
+    EDIT_ITEM = null; save(); render(); toast(t.dataset.iereset?"Back to usual":"Saved"); return; }
+  if(t.dataset.ovsave){ const a=document.activeElement; if(a && a!==t && a.dataset && (a.dataset.ov||a.dataset.ovtext!==undefined)) a.dispatchEvent(new Event("change",{bubbles:true}));
+    for(const el of view.querySelectorAll(`[data-day="${t.dataset.ovsave}"][data-ov],[data-day="${t.dataset.ovsave}"][data-ovtext]`)){ const o=((S.dayOver||{})[t.dataset.ovsave])||{}; const cur = el.dataset.ov ? (o[el.dataset.ov]||"") : ((o.text||{})[el.dataset.ovtext]||"").trim(); if(el.value!==cur) el.dispatchEvent(new Event("change",{bubbles:true})); }
+    OV_OPEN = null; save(); render(); toast("Saved. "+(t.dataset.ovsave===ymd(new Date())?"Today":"Tomorrow")+" is updated");
+    const cl = view.querySelector("ol.day"); if(cl) cl.closest("section").scrollIntoView({behavior:"smooth"}); return; }
+  if(t.dataset.ovreset){ delete (S.dayOver||{})[t.dataset.ovreset]; OV_OPEN = null; save(); render(); toast("Back to your usual day"); return; }
+  if(t.dataset.goflare){ TAB="rules"; render(); document.getElementById("flarePanel").scrollIntoView(); return; }
+  if(t.id==="flareStart"){ const u=document.getElementById("flare-new").value||ymd(addDays(new Date(),6)); startFlare(u); save(); renderRules(); document.getElementById("flarePanel").scrollIntoView(); toast("Flare-up mode on through "+u.slice(5).replace("-","/")); return; }
+  if(t.id==="flareSwap"){ const n=swapFlareMeals(); save(); renderRules(); document.getElementById("flarePanel").scrollIntoView(); toast(n+" meal"+(n===1?"":"s")+" swapped"); return; }
+  if(t.id==="flareEnd"){ endFlare(); save(); renderRules(); toast("Flare-up mode off. Your usual meals are back"); return; }
+  if(t.dataset.miss){ const it = itemsFor(parseYmd(t.dataset.day)).timed.find(x=>x.id===t.dataset.miss); if(it && markMissed(it, t.dataset.day, false)){ save(); render(); const r=S.log[t.dataset.day].missed[it.id]; toast(r.day?"Moved to "+whenText(r.day,r.time):"Skipped"); } return; }
+  if(t.dataset.unmiss){ undoMissed(t.dataset.day, t.dataset.unmiss); save(); render(); return; }
+  if(t.dataset.tododel){ S.todo=(S.todo||[]).filter(x=>x.id!==t.dataset.tododel); save(); renderRules(); return; }
+  if(t.id==="todoAdd"){ const v=document.getElementById("todo-text").value.trim(); if(!v) return; (S.todo=S.todo||[]).push({id:"td"+Date.now(), text:v}); save(); renderRules(); return; }
+  { const fb = t.closest("[data-feel]"); if(fb){ const lg=dayLog(fb.dataset.day); lg.feel=lg.feel||{}; const k=fb.dataset.feel, v=Number(fb.dataset.v);
+    if(lg.feel[k]===v) delete lg.feel[k]; else lg.feel[k]=v;
+    if(k==="overall"){ if(lg.feel.overall) lg.done.feel=true; else delete lg.done.feel; }
+    save(); render(); return; } }
+  if(t.dataset.print){ printReport(); return; }
+  if(t.dataset.lbweek){ LB_WEEKS = Math.max(0, LB_WEEKS + Number(t.dataset.lbweek)); render(); return; }
+  if(t.dataset.lbfile){ const r=lookbackRows(), nm="week-look-back-"+r[0].key+"-to-"+r[6].key;
+    if(t.dataset.lbfile==="csv") saveFile(nm+".csv", rowsCsv(r), "text/csv"); else saveFile(nm+".txt", lookbackText(), "text/plain"); return; }
+  if(t.dataset.visitfile){ const nm="doctor-visit-"+ymd(new Date());
+    if(t.dataset.visitfile==="csv") saveFile(nm+"-last-2-weeks.csv", rowsCsv(visitData().rows), "text/csv"); else saveFile(nm+".txt", visitText(), "text/plain"); return; }
+  if(t.dataset.backupdl){ saveFile("daily-helper-backup-"+ymd(new Date())+".json", JSON.stringify(snapshot()), "application/json"); return; }
+  if(t.dataset.restoreask){ RESTORE_ASK=t.dataset.restoreask; render(); return; }
+  if(t.dataset.restorecancel){ RESTORE_ASK=null; render(); return; }
+  if(t.dataset.restoreday){ const d=t.dataset.restoreday;
+    if(SERVER){ try{ restoreFrom(await (await fetch("/api/backups/"+d,{cache:"no-store"})).json()); }catch(_){ toast("Couldn't read that copy"); } }
+    else restoreFrom(localBackups().find(b=>b.day===d)); return; }
+  if(t.dataset.sip){ const lg=dayLog(ymd(new Date())); const n=Number(t.dataset.sip)||0; lg.sips=lg.sips||[]; lg.sips.push(n); lg.oz=(Number(lg.oz)||0)+n; save(); render(); return; }
+  if(t.dataset.unsip){ const lg=dayLog(ymd(new Date())); const n=(lg.sips||[]).pop(); if(n!=null) lg.oz=Math.max(0,(Number(lg.oz)||0)-n); save(); render(); toast("Took off "+n+" oz"); return; }
+  if(t.dataset.glass!==undefined){ const lg=dayLog(ymd(new Date())); const n=+t.dataset.glass+1; lg.water = lg.water===n? n-1 : n; save(); render(); return; }
+  if(t.dataset.del!==undefined){
+    if(t.dataset.armed){ S.supplements.splice(+t.dataset.del,1); save(); renderSupps(); toast("Removed"); }
+    else { t.dataset.armed="1"; t.textContent="Tap again to remove"; }
+    return;
+  }
+  if(t.id==="ruleAddExtra"){ const w=document.getElementById("rx-word").value.trim(); if(!w){ toast("Type a food first"); return; }
+    const x={word:w.toLowerCase(), label:w.charAt(0).toUpperCase()+w.slice(1), level:document.getElementById("rx-level").value, why:document.getElementById("rx-why").value.trim()};
+    S.rules.extra=[...(S.rules.extra||[]), x]; logRule("Added "+x.label+" ("+x.level+")"); save(); renderRules(); toast("Added"); return; }
+  if(t.id==="ruleAddOk"){ const w=document.getElementById("rk-word").value.trim(); if(!w) return;
+    S.rules.ok=[...(S.rules.ok||[]), {word:w.toLowerCase(), label:w.charAt(0).toUpperCase()+w.slice(1)}]; logRule("Marked "+w+" as fine"); save(); renderRules(); toast("Added"); return; }
+  if(t.dataset.ruledel){ const [list,i]=t.dataset.ruledel.split(":"); const x=S.rules[list][+i]; S.rules[list]=S.rules[list].filter((_,j)=>j!==+i); logRule("Removed "+(x.label||x.word)+(list==="ok"?" from fine foods":" from flagged foods")); save(); renderRules(); return; }
+  if(t.id==="labAdd"){
+    const g=id=>document.getElementById(id).value.trim(), name=g("lb-name"), value=g("lb-value");
+    if(!name||value===""){ toast("Add the test name and result"); return; }
+    const prev=(S.labs||[]).filter(x=>x.name.toLowerCase()===name.toLowerCase()).sort((a,b)=>b.date.localeCompare(a.date))[0];
+    const num=v=>v===""?(null):Number(v);
+    S.labs.push({id:"l"+Date.now(), name:prev?prev.name:name, value:Number(value), unit:g("lb-unit")||(prev?prev.unit:""), low:g("lb-low")!==""?num(g("lb-low")):(prev?prev.low:null), high:g("lb-high")!==""?num(g("lb-high")):(prev?prev.high:null), date:g("lb-date")||ymd(new Date()), check:false, note:g("lb-note")});
+    save(); renderLabs(); toast("Result saved"); return;
+  }
+  if(t.dataset.labfix){ const x=S.labs.find(v=>v.id===t.dataset.labfix); if(!x) return;
+    const box=t.closest(".labrow"); box.insertAdjacentHTML("beforeend",`<div class="chips" style="gap:6px"><input type="number" step="any" id="fix-${esc(x.id)}" value="${esc(x.value)}" style="width:8em"><button class="btn ghost" data-labsave="${esc(x.id)}">Save</button></div>`); t.remove(); return; }
+  if(t.dataset.labsave){ const x=S.labs.find(v=>v.id===t.dataset.labsave); const v=document.getElementById("fix-"+x.id).value; if(v!==""){ x.value=Number(v); x.check=false; save(); renderLabs(); toast("Fixed"); } return; }
+  if(t.dataset.labdel){ if(t.dataset.armed){ S.labs=S.labs.filter(x=>x.id!==t.dataset.labdel); save(); renderLabs(); } else { t.dataset.armed="1"; t.textContent="Tap again to delete"; } return; }
+  if(t.id==="visitAdd"){ const g=id=>document.getElementById(id).value.trim(); if(!g("vs-summary")&&!g("vs-changes")){ toast("Write what you talked about"); return; }
+    (S.visits=S.visits||[]).push({id:"v"+Date.now(), date:g("vs-date")||ymd(new Date()), who:g("vs-who"), summary:g("vs-summary"), changes:g("vs-changes")}); save(); renderLabs(); toast("Visit saved"); return; }
+  if(t.dataset.visitdel){ if(t.dataset.armed){ S.visits=S.visits.filter(x=>x.id!==t.dataset.visitdel); save(); renderLabs(); } else { t.dataset.armed="1"; t.textContent="Tap again to delete"; } return; }
+  if(t.dataset.noteabout!==undefined){ NOTE_ABOUT=t.dataset.noteabout; TAB="notes"; render(); window.scrollTo(0,0); document.getElementById("n-text").focus(); return; }
+  if(t.id==="noteAdd"||t.id==="noteAddDoc"){
+    const text=document.getElementById("n-text").value.trim(); if(!text){ toast("Write a note first"); return; }
+    const n={id:"n"+Date.now(), about:document.getElementById("n-about").value, feel:document.getElementById("n-feel").value, date:document.getElementById("n-date").value||ymd(new Date()), time:document.getElementById("n-time").value, text};
+    (S.notes=S.notes||[]).push(n);
+    if(t.id==="noteAddDoc") (S.doctor=S.doctor||[]).push({id:"q"+Date.now(), text:(n.about?n.about+": ":"")+text+" ("+n.date.slice(5).replace("-","/")+")", status:"ask", answer:"", added:ymd(new Date())});
+    NOTE_ABOUT=""; save(); renderNotes(); toast(t.id==="noteAddDoc"?"Saved and added to your doctor list":"Note saved"); return;
+  }
+  if(t.dataset.note2doc){ const n=(S.notes||[]).find(x=>x.id===t.dataset.note2doc); if(n){ S.doctor.push({id:"q"+Date.now(), text:(n.about?n.about+": ":"")+n.text+" ("+n.date.slice(5).replace("-","/")+")", status:"ask", answer:"", added:ymd(new Date())}); save(); renderNotes(); toast("Added to your doctor list"); } return; }
+  if(t.dataset.notedel){ if(t.dataset.armed){ S.notes=S.notes.filter(x=>x.id!==t.dataset.notedel); save(); renderNotes(); } else { t.dataset.armed="1"; t.textContent="Tap again to delete"; } return; }
+  if(t.id==="docAdd"){ const v=document.getElementById("d-text").value.trim(); if(!v) return; S.doctor.push({id:"q"+Date.now(), text:v, status:"ask", answer:"", added:ymd(new Date())}); save(); renderNotes(); toast("Added"); return; }
+  if(t.dataset.docdel){ if(t.dataset.armed){ S.doctor=S.doctor.filter(x=>x.id!==t.dataset.docdel); save(); renderNotes(); } else { t.dataset.armed="1"; t.textContent="Tap again to delete"; } return; }
+  if(t.id==="docCopy"){ const txt=docText(); try{ await navigator.clipboard.writeText(txt); toast("Copied"); }catch(_){ const ta=document.getElementById("docCopyText"); ta.hidden=false; ta.value=txt; ta.select(); toast("Select all and copy"); } return; }
+  if(t.id==="docPrint"){ document.body.classList.add("printing-doc"); window.print(); setTimeout(()=>document.body.classList.remove("printing-doc"),500); return; }
+  if(t.dataset.rdel!==undefined){
+    if(t.dataset.armed){ S.routine.splice(+t.dataset.rdel,1); save(); renderSupps(); toast("Removed"); }
+    else { t.dataset.armed="1"; t.textContent="Tap again to remove"; }
+    return;
+  }
+  if(t.id==="addRoutine"){ (S.routine=S.routine||[]).push({id:"r"+Date.now(), name:"New step", how:"", times:"", days:[], active:true, pending:false, notes:"", where:"home"}); save(); renderSupps(); return; }
+  if(t.id==="addSupp"){ S.supplements.push({id:"s"+Date.now(), name:"New supplement", dose:"", times:"", how:"", binder:false, active:true, pending:true, notes:"", where:"home"}); save(); renderSupps(); return; }
+  if(t.id==="notifyBtn"){
+    try{ const p = await Notification.requestPermission(); toast(p==="granted"?"Reminders on while this page is open":"This browser blocked reminders"); }
+    catch(_){ toast("This browser can't show reminders here"); }
+    return;
+  }
+  if(t.id==="icsBtn"){
+    try{
+      const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([icsText()],{type:"text/calendar"})); a.download="daily-helper.ics"; document.body.appendChild(a); a.click(); a.remove();
+      toast("Saved daily-helper.ics to Downloads");
+    }catch(_){ toast("Saving is blocked here. Use Show calendar text."); }
+    return;
+  }
+  if(t.id==="icsCopy"){ const ta=document.getElementById("icsText"); ta.hidden=false; ta.value=icsText(); ta.select(); return; }
+  if(t.id==="exportBtn"){
+    const txt = JSON.stringify(Object.assign({}, S, {log:{}}));
+    try{ await navigator.clipboard.writeText(txt); toast("Settings copied"); }
+    catch(_){ const ta=document.getElementById("importText"); ta.value=txt; ta.select(); toast("Select all and copy"); }
+    return;
+  }
+  if(t.id==="phonesToggle"){ await fetch("/api/phones",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({enabled:t.checked})}); loadPhones(); return; }
+  if(t.id==="phonesNewKey"){
+    if(!t.dataset.armed){ t.dataset.armed="1"; t.textContent="Tap again: phones you paired will need the new code"; return; }
+    await fetch("/api/phones",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({newKey:true})}); toast("New code made"); loadPhones(); return;
+  }
+  if(t.id==="importBtn"){
+    try{ const v = JSON.parse(document.getElementById("importText").value); const log=S.log; S = merge(v); S.log=log; save(); toast("Settings loaded"); render(); }
+    catch(_){ toast("That text isn't a settings copy"); }
+  }
+});
+
+
+const firedHere = new Set();
+setInterval(()=>{
+  if(SERVER) return;
+  if(!("Notification" in window) || Notification.permission!=="granted") return;
+  const now = new Date(), key = ymd(now), hm = pad(now.getHours())+":"+pad(now.getMinutes());
+  for(const r of buildReminders(1)) if(r.at===key+"T"+hm && !firedHere.has(r.key)){ firedHere.add(r.key); try{ new Notification(r.title,{body:r.body}); }catch(_){} }
+}, 20000);
+
+
+document.addEventListener("visibilitychange", async ()=>{
+  if(document.visibilityState!=="visible" || !SERVER) return;
+  if(view.contains(document.activeElement) && document.activeElement.matches("input[type=text],textarea")) return;
+  try{ const j = await (await fetch("/api/state",{cache:"no-store"})).json(); if(j && j.state){ S = merge(j.state); render(); } }catch(e){}
+});
+let lastDay = ymd(new Date());
+setInterval(()=>{ if(checkFlare()){ save(); render(); } if(sweepMissed()){ save(); if(TAB==="notes") return; } if(TAB==="today"||TAB==="tomorrow"){ if(ymd(new Date())!==lastDay){ lastDay=ymd(new Date()); } if(!view.contains(document.activeElement)||document.activeElement===document.body) render(); } }, 60000);
+
+
+const PHX = {
+  welcome: true, feelId: "feel",
+  firstSize(){ return Number((S.waterSizes||[8])[0]) || 8; },
+  addWater(lg, n){ lg.sips = lg.sips||[]; lg.sips.push(n); lg.oz = (Number(lg.oz)||0)+n; },
+  waterText(lg){ return r1w(Number(lg.oz)||0)+" of "+S.waterGoal+" oz today"; },
+  waterHtml(lg){
+    const oz = Number(lg.oz)||0, goal = Number(S.waterGoal)||80, sizes = (S.waterSizes&&S.waterSizes.length?S.waterSizes:[4,8]);
+    return `<section class="panel"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap"><h2>Water</h2><span><span class="wtotal">${r1w(oz)}</span> <span class="muted">of ${esc(goal)} oz</span></span></div>
+      <div class="wbar" role="progressbar" aria-label="Water today" aria-valuemin="0" aria-valuemax="${esc(goal)}" aria-valuenow="${esc(oz)}"><span style="width:${Math.min(100,oz/goal*100)}%"></span></div>
+      <div class="sips">${sizes.map(n=>`<button class="sip" data-sip="${esc(n)}" aria-label="Add ${esc(n)} ounces of water">+${esc(n)} oz</button>`).join("")}</div>
+      ${(lg.sips||[]).length?`<div><button class="linkbtn" data-unsip="1">Undo last (${esc(lg.sips[lg.sips.length-1])} oz)</button></div>`:""}</section>`;
+  },
+  restoreAttr: 'data-restorefile="1"', backupAttr: 'data-backupdl="1"',
+  isRestore(t){ return !!t.dataset.restorefile; },
+  wrapSave(){ saveFile = phoneSave(saveFile); }
+};
+
+
+const PHONE_FRESH = (()=>{ try{ return !localStorage.getItem(LS_KEY); }catch(_){ return false; } })();
+const TOUCH = matchMedia("(pointer: coarse)").matches;
+let QUICK_FLASH = "";
+function pGet(k){ try{ return localStorage.getItem(k); }catch(_){ return null; } }
+function pSet(k,v){ try{ localStorage.setItem(k,v); }catch(_){} }
+function appUrl(q){ return location.origin + location.pathname.replace(/[^/]*$/, "") + (q||""); }
+function daysSinceBackup(){ const d = parseYmd(pGet("dh.lastBackup")||""); return d ? Math.round((parseYmd(ymd(new Date())) - d)/864e5) : null; }
+
+
+function quickItems(d){
+  const {timed, untimed} = itemsFor(d||new Date());
+  const all = timed.concat(untimed);
+  return {meals: all.filter(i=>i.kind==="meal"||i.id==="snack"||i.id==="treat"), supps: all.filter(i=>i.kind==="supp")};
+}
+const MEAL_IDS = {b:"meal:b", l:"meal:l", d:"meal:d", s:"snack", e:"treat"};
+function minutesNow(){ const n = new Date(); return n.getHours()*60+n.getMinutes(); }
+function markDone(key, id){ const lg = dayLog(key); lg.done[id] = true; undoMissed(key, id); }
+
+
+function runAction(p){
+  const act = p.get("do"); if(!act) return "";
+  const key = ymd(new Date()), lg = dayLog(key), {meals, supps} = quickItems(new Date());
+  if(act==="water"){
+    const n = Number(p.get("oz")) || PHX.firstSize();
+    PHX.addWater(lg, n);
+    return "Added "+n+" oz. "+PHX.waterText(lg)+".";
+  }
+  if(act==="supps"){
+    const due = supps.filter(i=>i.time && !lg.done[i.id] && mins(i.time) <= minutesNow()+60);
+    due.forEach(i=>markDone(key, i.id));
+    return due.length ? "Checked off "+due.map(i=>i.title).join(", ")+"." : "Nothing due right now. Tick the ones you took below.";
+  }
+  if(act==="meal"){
+    const m = p.get("m")||"next";
+    let it = m==="next" ? meals.filter(i=>!lg.done[i.id] && i.time && mins(i.time) <= minutesNow()+90).pop() || meals.find(i=>!lg.done[i.id]) : meals.find(i=>i.id===MEAL_IDS[m]);
+    if(!it) return m==="next" ? "All of today's meals are already ticked." : "That meal isn't on today's list.";
+    markDone(key, it.id); return "Done: "+it.title+".";
+  }
+  if(act==="feel"){
+    const v = Math.max(1, Math.min(5, Number(p.get("v"))||3));
+    lg.feel = Object.assign({}, lg.feel, {overall:v}); lg.done[PHX.feelId] = true;
+    return "Today feels "+["rough","low","OK","good","great"][v-1]+". Saved.";
+  }
+  if(act==="done" && p.get("id")){ markDone(key, p.get("id")); return "Checked off."; }
+  return "";
+}
+function phoneAfterLoad(){
+  const p = new URLSearchParams(location.search);
+  if(p.get("do")){ QUICK_FLASH = runAction(p); TAB = "quick"; save(); }
+  if(p.get("view")==="quick") TAB = "quick";
+  if(location.search) history.replaceState(null, "", location.pathname + (TAB==="quick" ? "#quick" : ""));
+  if(navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(()=>{});
+  if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
+}
+
+function welcomeHtml(){
+  if(!PHX.welcome || !PHONE_FRESH || pGet("dh.welcomed")) return "";
+  return `<section class="panel" style="border-color:var(--juniper)"><h2>Bring your data to this phone</h2>
+    <p style="margin:0">Your information lives only on this phone. To start with your own supplements, routine, labs and pantry, open a backup file from your laptop or your setup file.</p>
+    <div class="chips" style="gap:8px"><label class="btn">Open a backup or setup file<input type="file" accept=".json,application/json" ${PHX.restoreAttr} hidden></label>
+    <button class="btn ghost" data-welcomed="1">Start empty</button></div>
+    <small class="muted">On the laptop: More, then Backups, then Download a backup now. Send the file to your phone (email it to yourself or save it to iCloud), then tap the button above.</small></section>`;
+}
+function backupNudge(){
+  if(PHX.welcome && PHONE_FRESH && !pGet("dh.welcomed")) return "";
+  const n = daysSinceBackup();
+  if(n!==null && n<7) return "";
+  return `<section class="panel"><b>${n===null?"Save your first backup":"Last backup was "+n+" days ago"}</b>
+    <small class="muted">Your data is only on this phone. A backup in Files or iCloud keeps it safe if the phone is lost or reset.</small>
+    <div><button class="btn ghost" ${PHX.backupAttr}>Save a backup now</button></div></section>`;
+}
+function qRow(it, key, lg){
+  const done = !!lg.done[it.id];
+  return `<button class="qrow ${done?"on":""}" data-qdone="${esc(it.id)}" data-day="${key}" aria-pressed="${done}">
+    <span class="qtick" aria-hidden="true">${done?"✓":""}</span><span class="qt">${it.time?niceTime(it.time):"—"}</span><span class="qn">${esc(it.title.replace(/^(Breakfast|Lunch|Dinner|Snack|Evening treat): /,"$1 · "))}</span></button>`;
+}
+function renderQuick(){
+  const d = new Date(), key = ymd(d), lg = S.log[key]||{done:{}};
+  const {meals, supps} = quickItems(d);
+  const dueNow = supps.filter(i=>i.time && !lg.done[i.id] && mins(i.time) <= minutesNow()+60).length;
+  view.innerHTML = `<div class="stack">
+    ${QUICK_FLASH?`<div class="next" role="status"><b>${esc(QUICK_FLASH)}</b></div>`:""}
+    ${welcomeHtml()}
+    ${PHX.waterHtml(lg)}
+    <section class="panel"><h2>Meals</h2>${meals.length?`<div class="qlist">${meals.map(i=>qRow(i,key,lg)).join("")}</div>`:`<p class="muted" style="margin:0">No meals planned for today.</p>`}</section>
+    <section class="panel"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><h2>Supplements</h2>${dueNow?`<button class="btn" data-qsupps="1">Took all due now (${dueNow})</button>`:""}</div>
+      ${supps.length?`<div class="qlist">${supps.map(i=>qRow(i,key,lg)).join("")}</div>`:`<p class="muted" style="margin:0">No supplements on today's list.</p>`}</section>
+    ${backupNudge()}
+    <div><button class="linkbtn" data-goto="today">See the full day</button></div>
+  </div>`;
+  QUICK_FLASH = "";
+}
+
+
+const SHORTCUTS = [
+  ["+4 oz water","?do=water&oz=4"],["+8 oz water","?do=water&oz=8"],["Took my supplements","?do=supps"],
+  ["Ate my meal","?do=meal&m=next"],["Breakfast done","?do=meal&m=b"],["Lunch done","?do=meal&m=l"],["Dinner done","?do=meal&m=d"],
+  ["Quick view","?view=quick"]
+];
+function renderPhone(){
+  const n = daysSinceBackup();
+  view.innerHTML = `<div class="stack">
+  <section class="panel"><h2>One-tap buttons</h2>
+    <p style="margin:0">Each link below does one thing, like adding 4 oz of water. Put them in the iPhone Shortcuts app and you get buttons on your home screen or lock screen. They work anywhere, with no computer.</p>
+    <ol class="day">${SHORTCUTS.map(([n,q],i)=>`<li style="grid-template-columns:1fr auto"><span><b>${esc(n)}</b><br><code style="font-size:.8rem;word-break:break-all;color:var(--muted)">${esc(appUrl(q))}</code></span><button class="btn ghost" data-copylink="${i}">Copy</button></li>`).join("")}</ol>
+  </section>
+  <section class="panel"><h2>Make a shortcut on iPhone</h2>
+    <ol style="margin:0;padding-left:22px;display:grid;gap:6px">
+      <li>Tap <b>Copy</b> next to the button you want above.</li>
+      <li>Open the <b>Shortcuts</b> app and tap <b>+</b>.</li>
+      <li>Search for <b>Open URLs</b>, add it, and paste the link into it.</li>
+      <li>Tap the name at the top to call it something like "+4 oz water", then tap <b>Done</b>.</li>
+      <li>For a button on the home screen: press and hold the shortcut, tap <b>Share</b>, then <b>Add to Home Screen</b>.</li>
+      <li>For a box of several buttons: press and hold the home screen, tap <b>Edit</b>, then <b>Add Widget</b>, pick <b>Shortcuts</b>, and choose a folder with your Daily Helper shortcuts.</li>
+    </ol>
+    <small class="muted">Shortcuts opens the app in Safari, so keep using Daily Helper in Safari too. When you add it to the home screen, turn off <b>Open as Web App</b> so the icon and the shortcuts share the same data.</small>
+  </section>
+  <section class="panel"><h2>Reminders without the laptop</h2>
+    <p style="margin:0">A web app can't pop up reminders on its own while it's closed. Add your schedule to the iPhone Calendar instead: More, then Times &amp; reminders, then the calendar file. Calendar alerts work offline.</p>
+  </section>
+  <section class="panel"><h2>Backups</h2>
+    <p style="margin:0">Your data is only on this phone. ${n===null?"You haven't saved a backup yet.":"Your last backup was "+(n===0?"today":n+" day"+(n===1?"":"s")+" ago")+"."} Save one to Files or iCloud once a week. To move your data to another device, open the same file there.</p>
+    <div class="chips" style="gap:8px"><button class="btn" ${PHX.backupAttr}>Save a backup now</button><label class="btn ghost">Open a backup file<input type="file" accept=".json,application/json" ${PHX.restoreAttr} hidden></label></div>
+  </section></div>`;
+}
+
+
+function phoneSave(download){
+  return async function(name, text, type){
+    if(/\.json$/.test(name)) pSet("dh.lastBackup", ymd(new Date()));
+    if(TOUCH && navigator.canShare){
+      const f = new File([text], name, {type:type||"text/plain"});
+      if(navigator.canShare({files:[f]})){ try{ await navigator.share({files:[f], title:name}); return; }catch(e){ if(e && e.name==="AbortError") return; } }
+    }
+    return download(name, text, type);
+  };
+}
+PHX.wrapSave();
+
+view.addEventListener("click", e=>{
+  const t = e.target.closest("button"); if(!t) return;
+  if(t.dataset.qdone){ const lg = dayLog(t.dataset.day), id = t.dataset.qdone;
+    if(lg.done[id]) delete lg.done[id]; else markDone(t.dataset.day, id); save(); render(); return; }
+  if(t.dataset.qsupps){ const key = ymd(new Date()), lg = dayLog(key);
+    const due = quickItems(new Date()).supps.filter(i=>i.time && !lg.done[i.id] && mins(i.time) <= minutesNow()+60); due.forEach(i=>markDone(key, i.id));
+    save(); render(); toast("Checked off "+due.length); return; }
+  if(t.dataset.welcomed){ pSet("dh.welcomed","1"); render(); return; }
+  if(t.dataset.copylink!==undefined){ const u = appUrl(SHORTCUTS[+t.dataset.copylink][1]);
+    (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(()=>toast("Link copied"), ()=>{ prompt("Copy this link", u); }); return; }
+});
+view.addEventListener("change", e=>{ if(PHX.isRestore(e.target)) pSet("dh.welcomed","1"); });
+
+
+(async ()=>{
+  try{ TAB = sessionStorage.getItem("dh-tab") || "today"; }catch(_){}
+  { const h = location.hash.slice(1); if(["today","quick","tomorrow","more"].includes(h)){ TAB = h; history.replaceState(null, "", location.pathname + location.search); } }
+  if(HHUI.takeHash()) TAB = "household";
+  await load(); phoneAfterLoad(); dailyLocalBackup(); mountHousehold(); const ended = checkFlare(); const rolled = rollCook() || ended; const used = useUpStock(); const swept = sweepMissed(); setSync(); render();
+  if(SERVER || rolled || swept || used) save(); // refresh the 60-day reminder schedule on every open
+})();
+</script>
+
+<script>
+(function(){
+  var links = [["index.html#today","Today"],["pantry.html#grocery","Grocery"],["pantry.html","Pantry"],["checker.html","Checker"],["index.html#more","More"]];
+  var nav = document.createElement("nav"); nav.className = "dh-bar"; nav.setAttribute("aria-label", "Daily Helper");
+  var here = location.pathname.split("/").pop() || "index.html";
+  links.forEach(function(l){
+    var a = document.createElement("a"); a.href = l[0]; a.textContent = l[1];
+    if(l[0].split("#")[0] === here && l[1] !== "Grocery" && (here !== "index.html" || l[1] === "Today")) a.setAttribute("aria-current", "page");
+    nav.appendChild(a);
+  });
+  document.body.appendChild(nav);
+  document.body.classList.add("has-dh-bar");
+  if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(function(){});
+})();
+</script>
+<style>
+.dh-bar{position:fixed;left:0;right:0;bottom:0;z-index:40;display:grid;grid-template-columns:repeat(5,1fr);background:#ffffff;border-top:1px solid #d9dfd5;padding:0 0 env(safe-area-inset-bottom,0px)}
+.dh-bar a{display:flex;align-items:center;justify-content:center;min-height:56px;font:600 15px/1.1 system-ui,-apple-system,sans-serif;color:#59645c;text-decoration:none;-webkit-tap-highlight-color:transparent}
+.dh-bar a[aria-current]{color:#2f6b57;box-shadow:inset 0 3px 0 #2f6b57}
+body.has-dh-bar{padding-bottom:calc(64px + env(safe-area-inset-bottom,0px)) !important}
+body.has-dh-bar .toast{bottom:calc(72px + env(safe-area-inset-bottom,0px)) !important}
+@media (prefers-color-scheme:dark){.dh-bar{background:#1c241f;border-color:#2f3a33}.dh-bar a{color:#9eaaa1}.dh-bar a[aria-current]{color:#7fbf9f;box-shadow:inset 0 3px 0 #7fbf9f}}
+@media print{.dh-bar{display:none !important}}
+</style>
+</body>
+</html>
