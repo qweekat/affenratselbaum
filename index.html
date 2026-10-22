@@ -2238,6 +2238,7 @@ function phoneAfterLoad(){
   const p = new URLSearchParams(location.search);
   if(p.get("do")){ QUICK_FLASH = runAction(p); TAB = "quick"; save(); }
   if(p.get("view")==="quick") TAB = "quick";
+  if(PHX.welcome && PHONE_FRESH && !pGet("dh.welcomed")) TAB = "quick";
   if(location.search) history.replaceState(null, "", location.pathname + (TAB==="quick" ? "#quick" : ""));
   if(navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(()=>{});
   if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
