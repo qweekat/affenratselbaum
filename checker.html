@@ -156,6 +156,7 @@ footer a, .lede a { color: var(--accent); }
 
   <div class="tabs" role="tablist">
     <button class="tab" role="tab" id="tab-scan" aria-controls="scan" aria-selected="true">Check a written plan</button>
+    <button class="tab" role="tab" id="tab-fix" aria-controls="fix" aria-selected="false">Fix a meal</button>
     <button class="tab" role="tab" id="tab-day" aria-controls="day" aria-selected="false">Build and score a day</button>
   </div>
 
@@ -182,6 +183,25 @@ footer a, .lede a { color: var(--accent); }
       </div>
     </div>
     <p class="muted small">This checks words, not amounts. It can't tell how much sugar is in a dish or spot an ingredient a recipe leaves out. To check amounts, fiber, and glycemic load, use <strong>Build and score a day</strong>.</p>
+  </section>
+
+  <!-- Fix -->
+  <section class="panel" id="fix" role="tabpanel" aria-labelledby="tab-fix" hidden>
+    <div class="split">
+      <div class="card">
+        <label class="lbl" for="fix-text">Type the meal's ingredients, separated by commas</label>
+        <textarea id="fix-text" spellcheck="false" style="min-height: 140px"></textarea>
+        <div class="row">
+          <button class="btn" id="fix-example">Load example</button>
+          <button class="btn ghost" id="fix-clear">Clear</button>
+        </div>
+      </div>
+      <div class="card" aria-live="polite">
+        <h2>To make it fit</h2>
+        <div class="hits" id="fix-out"></div>
+      </div>
+    </div>
+    <p class="muted small">This looks at which foods are in the meal, not the amounts. For exact fiber and glycemic load, add the meal in <strong>Build and score a day</strong>.</p>
   </section>
 
   <!-- Day -->
@@ -905,6 +925,59 @@ Dinner: Baked salmon with roasted sweet potato, broccoli, and a squeeze of lemon
   document.getElementById('day-sample').onclick = () => { state.meals = JSON.parse(JSON.stringify(SAMPLE)); save(); renderDay(); };
   document.getElementById('day-clear').onclick = () => { state.meals = blankDay(); save(); renderDay(); };
 
+  // ---------- Fix a meal: swap, trim, and add suggestions from the ingredient list ----------
+  const FIX_EXAMPLE = 'oatmeal, dates, walnuts, sunflower seeds, pumpkin seeds, flaxseed, chia seeds';
+  const CAT = {
+    protein: /\b(?:salmon|sablefish|black cod|sardines?|cod|tuna|trout|halibut|fish|chicken|beef|bison|lamb|venison|elk|mozzarella|feta|cream cheese|yogurt|yoghurt|cottage cheese|ricotta)\b/i,
+    bean: /\b(?:chickpeas?|garbanzos?|hummus|black beans?|anasazi|bolita|edamame|tofu|soybeans?|beans?)\b/i,
+    nut: /\b(?:walnuts?|pecans?|hazelnuts?|sunflower(?: seeds?)?|pumpkin seeds?|pepitas?|hemp(?: hearts| seeds)?|sesame(?: seeds)?|tahini|chia(?: seeds?)?|flax(?:seed|seeds| seeds?)?|nuts?|seeds?)\b/gi,
+    starch: /\b(?:oat ?meal|oats?|porridge|quinoa|rice|buckwheat|millet|amaranth|sweet potato(?:es)?|butternut|acorn squash|winter squash|pumpkin(?! seeds?)|peas(?!\w)|banana|persimmons?|chickpea flour|polenta|potato(?:es)?|bread|pasta|tortillas?)\b/gi,
+    fiber: /\b(?:chia|flax|psyllium|inulin|oat bran|rice bran|raspberr|blackberr|artichoke|chickpea|black bean|beans?|edamame|lentil|persimmon|kiwi|squash|sweet potato)/i,
+    veg: /\b(?:spinach|chard|zucchini|squash|asparagus|artichoke|okra|cucumber|snap peas|snow peas|lettuce|endive|dandelion|greens|onions?|leeks?|garlic|jicama|beets?|tomato(?:es)?|olives|salad)\b/i,
+    sweet: /\b(?:oat ?meal|oats|porridge|berr(?:y|ies)|raspberr\w*|blackberr\w*|blueberr\w*|strawberr\w*|chia pudding|yogurt|smoothie|persimmon|kiwi|banana|dates?|stevia)\b/i,
+  };
+  const fixTa = document.getElementById('fix-text');
+  fixTa.value = state.fixText ?? FIX_EXAMPLE;
+  function renderFix() {
+    const text = fixTa.value.trim();
+    const out = document.getElementById('fix-out');
+    if (!text) { out.innerHTML = '<p class="muted">Type a meal on the left, like "oatmeal, berries, chia seeds".</p>'; return; }
+    const items = [];
+    const add = (level, title, why) => items.push({ level, title, why });
+    // Swap: anything on your lists
+    const groups = new Map();
+    for (const h of scan(text)) { const g = groups.get(h.rule) || { rule: h.rule, words: new Set() }; g.words.add(h.word.toLowerCase()); groups.set(h.rule, g); }
+    for (const g of [...groups.values()].sort((a, b) => ORDER.indexOf(a.rule.level) - ORDER.indexOf(b.rule.level))) {
+      if (g.rule.level === 'note') continue;
+      const verb = g.rule.level === 'avoid' ? 'Swap out' : g.rule.level === 'ask' ? 'Check' : 'Go easy on';
+      let why = g.rule.why;
+      if (g.rule.label === 'Dried fruit' || g.rule.label === 'Sweets and sugar') why += ' For sweetness, use ½ cup frozen raspberries or blackberries and a few drops of stevia.';
+      add(g.rule.level, `${verb}: ${[...g.words].join(', ')}`, why);
+    }
+    const nuts = [...new Set((text.match(CAT.nut) || []).map(x => x.toLowerCase().replace(/s$/, '')))];
+    const starches = [...new Set((text.match(CAT.starch) || []).map(x => x.toLowerCase()))];
+    const hasProtein = CAT.protein.test(text), hasBean = CAT.bean.test(text), isSweet = CAT.sweet.test(text);
+    // Trim
+    if (nuts.length > 2) add('limit', `Trim the nuts and seeds: you have ${nuts.length} (${nuts.join(', ')})`,
+      `Your limit is about ${fmt(R.nutsSeedsTbsp)} tbsp a day in total, because they are high in arginine. Pick two at 1 tbsp each. Chia and flax add the most fiber.`);
+    else if (nuts.length) add('note', `Nuts and seeds: ${nuts.join(', ')}`, `Keep them to about ${fmt(R.nutsSeedsTbsp)} tbsp total for the day.`);
+    if (starches.length > 1) add('limit', `Pick one starch: ${starches.join(', ')}`, 'Two starches in one meal push the glycemic load up. Keep one, about ½ cup cooked.');
+    if (starches.some(x => /oat/.test(x))) add('note', 'Oats: use ⅓ cup certified gluten-free', 'A smaller portion keeps the glycemic load low. 1 tbsp oat bran adds fiber without much starch.');
+    if (hasBean && nuts.length) add('note', 'Beans plus nuts or seeds', 'Both are high in arginine. Count this as your bean serving and most of your seed handful for the day.');
+    // Add
+    if (!hasProtein) add('ask', 'Add a lysine-rich protein', isSweet
+      ? 'Stir in 2 tbsp cream cheese or ½ cup plain whole yogurt, or eat it next to a little salmon or sardines. Your plan pairs every carb with protein.'
+      : 'Add fish, chicken, beef, lamb, or fresh cheese. Your plan pairs every carb with protein, and it keeps beans and seeds in balance.');
+    if (!CAT.fiber.test(text)) add('ask', 'Add fiber', 'Stir in 1 tbsp chia or 1 tsp psyllium (with a glass of water), or add ½ cup berries or artichoke hearts.');
+    if (!isSweet && !CAT.veg.test(text)) add('ask', 'Add a non-starchy vegetable', 'Spinach, zucchini, asparagus, snap peas, or artichoke. Eat it first; the meal raises blood sugar less that way.');
+    if (isSweet && !/stevia/i.test(text) && !groups.size) add('note', 'Sweeten with stevia if needed', 'Skip cinnamon and vanilla; try cardamom, ginger, or cloves.');
+    out.innerHTML = items.length ? items.map(i => `<div class="hit ${i.level === 'ask' ? 'note' : i.level}"><div><div class="t">${esc(i.title)}</div><div class="why">${esc(i.why)}</div></div></div>`).join('')
+      : '<div class="empty">This meal fits your plan as written. Check amounts in Build and score a day.</div>';
+  }
+  fixTa.addEventListener('input', () => { state.fixText = fixTa.value; save(); renderFix(); });
+  document.getElementById('fix-example').onclick = () => { fixTa.value = FIX_EXAMPLE; state.fixText = null; save(); renderFix(); };
+  document.getElementById('fix-clear').onclick = () => { fixTa.value = ''; state.fixText = ''; save(); renderFix(); fixTa.focus(); };
+
   // ---------- Tabs ----------
   function showTab(id) {
     state.tab = id; save();
@@ -916,9 +989,11 @@ Dinner: Baked salmon with roasted sweet potato, broccoli, and a squeeze of lemon
   }
   document.querySelectorAll('.tab').forEach(t => t.onclick = () => showTab(t.getAttribute('aria-controls')));
   const fromHash = location.hash.slice(1);
-  showTab(fromHash === 'day' || fromHash === 'scan' ? fromHash : (state.tab === 'day' ? 'day' : 'scan'));
+  const TABS = ['scan', 'fix', 'day'];
+  showTab(TABS.includes(fromHash) ? fromHash : (TABS.includes(state.tab) ? state.tab : 'scan'));
 
   renderScan();
+  renderFix();
   renderDay();
 })();
 </script>
