@@ -302,18 +302,21 @@ footer a, .lede a { color: var(--accent); }
     ['avoid', 'alcohol|wine|beer|liquor|vodka|whiske?y|rum|tequila|cocktails?|sake|hard cider|cider|mead', 'Alcohol', 'Break the Mold avoids all alcohol.'],
     ['avoid', 'kombucha|kvass|jun tea', 'Fermented drinks', 'Break the Mold avoids fermented drinks.'],
     ['avoid', 'black tea|oolong|chai|earl grey|english breakfast', 'Black or oolong tea', 'Break the Mold avoids these fermented teas, and your plan skips caffeine.'],
-    ['limit', 'agave(?: syrup| nectar)?', 'Agave syrup', 'Mostly fructose, which the liver turns into fat. Your plan swaps it for stevia. Agave inulin is different and fine.'],
+    ['limit', 'agave(?: syrup| nectar)?', 'Agave syrup', 'Mostly fructose, which the liver turns into fat. Sweeten with berries or a little ripe persimmon instead. Agave inulin is different and fine.'],
     ['limit', 'date (?:syrup|sugar)', 'Date syrup', 'Keep it rare. Break the Mold lists sweets as Tier 1.'],
     ['avoid', 'juices?|nectar(?!ines?)','Fruit juice', 'Break the Mold avoids fruit juice, and it\'s hard on the liver. Lime juice is fine.'],
     ['avoid', 'sodas?|soft drinks?|sweet tea|energy drinks?|sports drinks?|colas?', 'Sweetened drinks', 'Break the Mold avoids anything sweetened.'],
     ['avoid', 'ghee|butter', 'Butter', 'Your plan swaps butter for 1 to 2 tsp of olive oil.'],
     ['avoid', 'lentils?|dal|dhal', 'Lentils', 'They bother your gut. Chickpeas or black beans instead.'],
-    ['avoid', 'monk ?fruit|luo han guo', 'Monk fruit', 'Hard on your gut. Stevia instead. Watch for it in "zero sugar" blends.'],
+    ['avoid', 'monk ?fruit|luo han guo', 'Monk fruit', 'Hard on your gut. Watch for it in "zero sugar" blends.'],
+    ['avoid', 'chamomile|camomile|manzanilla', 'Chamomile', 'It doesn\'t sit well with you. Common in sleepy-time and calming tea blends, so check the label.'],
+    ['note', 'echinacea|calendula|arnica|feverfew|yarrow|mugwort|wormwood', 'Ragweed-family herb', 'Same plant family as chamomile and stevia, which bother you. Try a small amount first.'],
+    ['limit', 'stevia|truvia|pure via|reb ?a|rebaudioside', 'Stevia', 'Now and then only. Used often, it brings on your ragweed-type symptoms (stevia is in the ragweed family).'],
     ['avoid', 'pomegranates?', 'Pomegranate', 'Your plan skips it.'],
     ['avoid', 'cinnamon', 'Cinnamon', 'On your avoid list.'],
     ['avoid', 'vanilla', 'Vanilla', 'On your avoid list. Often in protein bars, granola, and yogurt.'],
     ['avoid', 'coconut(?: oil| milk| cream| flour| sugar| water| flakes)?|copra', 'Coconut', 'On your avoid list.'],
-    ['avoid', 'brown sugar|cane sugar|coconut sugar|powdered sugar|sugar|honey|maple(?: syrup)?|molasses|corn syrup|candy|candies|syrup|frosting|icing|jam|jelly|caramel|dessert|ice cream|sorbet', 'Sweets and sugar', 'Break the Mold Tier 1 avoids sweets. Stevia is fine.'],
+    ['avoid', 'brown sugar|cane sugar|coconut sugar|powdered sugar|sugar|honey|maple(?: syrup)?|molasses|corn syrup|candy|candies|syrup|frosting|icing|jam|jelly|caramel|dessert|ice cream|sorbet', 'Sweets and sugar', 'Break the Mold Tier 1 avoids sweets. Sweeten with berries, a little ripe persimmon or kiwi, and warm spices like cardamom or ginger.'],
     ['ask', 'pasta|spaghetti|noodles?|macaroni|ramen|lasagna', 'Pasta', 'Usually wheat. Gluten-free pasta is still a refined starch, so ask before using it.'],
     ['ask', 'pears?|quince', 'Pear or quince', 'Close relatives of apple. Ask your allergist first. Persimmon or berries instead.'],
     ['ask', 'egg whites?|meringue', 'Egg whites', 'Allergy unless baked into something.'],
@@ -743,8 +746,8 @@ Dinner: Baked salmon with roasted sweet potato, broccoli, and a squeeze of lemon
     ['garlic', 'Garlic or ginger', '1 tsp', 1, 0.1, null, {}],
     ['cumin', 'Cumin, turmeric, oregano, other single spices', 'pinch', 0, 0, null, {}],
     ['cilantro', 'Cilantro', '2 tbsp', 0, 0, null, {}],
-    ['stevia', 'Stevia', 'few drops', 0, 0, null, {}],
-    ['agave', 'Agave syrup', '1 tsp', 5, 0, 15, { s: 'limit', w: 'Mostly fructose. Your plan swaps it for stevia.' }],
+    ['stevia', 'Stevia', 'few drops', 0, 0, null, { s: 'limit', w: 'Now and then only. Often brings on your ragweed-type symptoms.' }],
+    ['agave', 'Agave syrup', '1 tsp', 5, 0, 15, { s: 'limit', w: 'Mostly fructose, hard on the liver. Use fruit for sweetness.' }],
     ['datesyrup', 'Date syrup', '1 tsp', 5.3, 0, 50, { s: 'limit', w: 'Keep rare.', est: 1 }],
     ['dandeliontea', 'Roasted dandelion root tea', '1 cup', 0, 0, null, {}],
   ].map(([id, name, unit, c, f, gi, o]) => ({ id, name, unit, c, f, gi, ...o }));
@@ -753,7 +756,7 @@ Dinner: Baked salmon with roasted sweet potato, broccoli, and a squeeze of lemon
   const MEAL_NAMES = ['Breakfast', 'Lunch', 'Snack', 'Dinner'];
   const blankDay = () => MEAL_NAMES.map(n => ({ name: n, items: [] }));
   const SAMPLE = [
-    { name: 'Breakfast', items: [['raspberries', 0.5], ['chia', 1], ['stevia', 1], ['psyllium', 2]] },
+    { name: 'Breakfast', items: [['raspberries', 0.5], ['chia', 1], ['psyllium', 2]] },
     { name: 'Lunch', items: [['chickpeas', 1], ['cucumber', 1], ['artichoke', 1], ['mozz', 1], ['oliveoil', 2], ['lime', 1], ['cilantro', 1], ['cumin', 1]] },
     { name: 'Snack', items: [['persimmon', 0.5], ['mozz', 1]] },
     { name: 'Dinner', items: [['sablefish', 1], ['acorn', 2], ['snappeas', 1], ['garlic', 1], ['lime', 1]] },
@@ -951,7 +954,7 @@ Dinner: Baked salmon with roasted sweet potato, broccoli, and a squeeze of lemon
       if (g.rule.level === 'note') continue;
       const verb = g.rule.level === 'avoid' ? 'Swap out' : g.rule.level === 'ask' ? 'Check' : 'Go easy on';
       let why = g.rule.why;
-      if (g.rule.label === 'Dried fruit' || g.rule.label === 'Sweets and sugar') why += ' For sweetness, use ½ cup frozen raspberries or blackberries and a few drops of stevia.';
+      if (g.rule.label === 'Dried fruit' || g.rule.label === 'Sweets and sugar') why += ' For sweetness, use ½ cup frozen raspberries or blackberries, or a little ripe persimmon, with cardamom or ginger.';
       add(g.rule.level, `${verb}: ${[...g.words].join(', ')}`, why);
     }
     const nuts = [...new Set((text.match(CAT.nut) || []).map(x => x.toLowerCase().replace(/s$/, '')))];
@@ -970,7 +973,7 @@ Dinner: Baked salmon with roasted sweet potato, broccoli, and a squeeze of lemon
       : 'Add fish, chicken, beef, lamb, or fresh cheese. Your plan pairs every carb with protein, and it balances the arginine in beans and seeds.');
     if (!CAT.fiber.test(text)) add('ask', 'Add fiber', 'Stir in 1 tbsp chia or 1 tsp psyllium (with a glass of water), or add ½ cup berries or artichoke hearts.');
     if (!isSweet && !CAT.veg.test(text)) add('ask', 'Add a non-starchy vegetable', 'Spinach, zucchini, asparagus, snap peas, or artichoke. Eat it first; the meal raises blood sugar less that way.');
-    if (isSweet && !/stevia/i.test(text) && !groups.size) add('note', 'Sweeten with stevia if needed', 'Skip cinnamon and vanilla; try cardamom, ginger, or cloves.');
+    if (isSweet && !groups.size) add('note', 'Sweeten with fruit and spice', 'Berries or a little ripe persimmon, plus cardamom, ginger, or cloves. Keep stevia occasional, and skip cinnamon and vanilla.');
     out.innerHTML = items.length ? items.map(i => `<div class="hit ${i.level === 'ask' ? 'note' : i.level}"><div><div class="t">${esc(i.title)}</div><div class="why">${esc(i.why)}</div></div></div>`).join('')
       : '<div class="empty">This meal fits your plan as written. Check amounts in Build and score a day.</div>';
   }

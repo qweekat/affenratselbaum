@@ -162,8 +162,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.18.3";
+const APP_VERSION = "1.19.0";
 const CHANGES = [
+  {v:"1.19.0", date:"2026-10-23", items:["Your own teas: morning water now pairs with Neural Detox or Blood & Balm. Optional tea reminders (RootFire Brew, iced Vital Flow or Honeyed Love) are under Supplements & routine, off until you turn them on.","Two tea questions for your provider (astragalus, lemon balm) are on your doctor list.","Pantry: label items you saved now have an edit button, to add ingredients the photo missed. The checks run again.","Stevia is no longer suggested as a sweetener, and the checker flags chamomile."]},
   {v:"1.18.3", date:"2026-10-23", items:["Fix: with a second window or a paired phone open, a change (like Change just today) could say Saved and then disappear. Now changes from both are kept."]},
   {v:"1.18.2", date:"2026-10-22", items:["Fix: a time or note you were still typing is now kept if you close the window, switch away, or install an update."]},
   {v:"1.18.1", date:"2026-10-22", items:["Fix: an old window or a phone left open could write older data over your newer changes on the laptop. Now it picks up the newer changes instead."]},
@@ -768,7 +769,7 @@ function defaultDoctor(){ return []; }
 
 function defaults(){
   return {
-    version: 14, nudge: {on:true, days:7, snooze:{}}, clinicQs: true, flare: {on:false, until:"", started:"", saved:null},
+    version: 15, nudge: {on:true, days:7, snooze:{}}, clinicQs: true, flare: {on:false, until:"", started:"", saved:null},
     clock: defaultClock(),
     stock: {}, stockAsOf: "", lastGrain: "",
     miss: defaultMiss(),
@@ -865,6 +866,15 @@ function merge(saved){
   }
   if(out.version<13){ out.on = Object.assign({feel:true}, out.on); out.version = 13; }
   if(out.version<14){ out.nudge = Object.assign({on:true, days:7, snooze:{}}, out.nudge); out.version = 14; }
+  if(out.version<15){ 
+    const dr = defaultRoutine(), mw = (out.routine||[]).find(r=>r.id==="morningwater"), nmw = dr.find(r=>r.id==="morningwater");
+    if(mw && nmw && /dandelion root tea/.test(mw.how||"")){ mw.name = nmw.name; mw.how = nmw.how; mw.notes = nmw.notes; }
+    const have = new Set((out.routine||[]).map(r=>r.id));
+    for(const r of dr) if(/^tea_/.test(r.id) && !have.has(r.id)) out.routine.push(r);
+    const hq = new Set((out.doctor||[]).map(q=>q.id));
+    for(const q of defaultDoctor()) if(/^q_tea/.test(q.id) && !hq.has(q.id)) (out.doctor=out.doctor||[]).push(q);
+    out.version = 15;
+  }
   out.clock = Object.assign(defaultClock(), out.clock||{});
   out.flare = Object.assign({on:false, until:"", started:"", saved:null}, out.flare||{});
   if(!out.clinicQs){ 
@@ -1098,7 +1108,7 @@ function freqHtml(x, i, attr){
 
 function itemsFor(d, plain){
   const dow = d.getDay(), T = dayTimes(d), items = [];
-  const clockTime = id=> T.wake ? ({psyllium:T.psyllium, morningwater:T.wake, fast:T.closes})[id] : null;
+  const clockTime = id=> T.wake ? ({psyllium:T.psyllium, morningwater:T.wake, fast:T.closes, tea_rootfire:T.lunch, tea_iced:T.snack})[id] : null;
   const add = o=>items.push(o);
   if(S.on.supps) for(const s of S.supplements){
     if(!s.active || !dueOn(s,d)) continue;

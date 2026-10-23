@@ -389,18 +389,21 @@ async function readLabelOnPhone(blob, el){
     ['avoid', 'alcohol|wine|beer|liquor|vodka|whiske?y|rum|tequila|cocktails?|sake|hard cider|cider|mead', 'Alcohol', 'Break the Mold avoids all alcohol.'],
     ['avoid', 'kombucha|kvass|jun tea', 'Fermented drinks', 'Break the Mold avoids fermented drinks.'],
     ['avoid', 'black tea|oolong|chai|earl grey|english breakfast', 'Black or oolong tea', 'Break the Mold avoids these fermented teas, and your plan skips caffeine.'],
-    ['limit', 'agave(?: syrup| nectar)?', 'Agave syrup', 'Mostly fructose, which the liver turns into fat. Your plan swaps it for stevia. Agave inulin is different and fine.'],
+    ['limit', 'agave(?: syrup| nectar)?', 'Agave syrup', 'Mostly fructose, which the liver turns into fat. Sweeten with berries or a little ripe persimmon instead. Agave inulin is different and fine.'],
     ['limit', 'date (?:syrup|sugar)', 'Date syrup', 'Keep it rare. Break the Mold lists sweets as Tier 1.'],
     ['avoid', 'juices?|nectar(?!ines?)','Fruit juice', 'Break the Mold avoids fruit juice, and it\'s hard on the liver. Lime juice is fine.'],
     ['avoid', 'sodas?|soft drinks?|sweet tea|energy drinks?|sports drinks?|colas?', 'Sweetened drinks', 'Break the Mold avoids anything sweetened.'],
     ['avoid', 'ghee|butter', 'Butter', 'Your plan swaps butter for 1 to 2 tsp of olive oil.'],
     ['avoid', 'lentils?|dal|dhal', 'Lentils', 'They bother your gut. Chickpeas or black beans instead.'],
-    ['avoid', 'monk ?fruit|luo han guo', 'Monk fruit', 'Hard on your gut. Stevia instead. Watch for it in "zero sugar" blends.'],
+    ['avoid', 'monk ?fruit|luo han guo', 'Monk fruit', 'Hard on your gut. Watch for it in "zero sugar" blends.'],
+    ['avoid', 'chamomile|camomile|manzanilla', 'Chamomile', 'It doesn\'t sit well with you. Common in sleepy-time and calming tea blends, so check the label.'],
+    ['note', 'echinacea|calendula|arnica|feverfew|yarrow|mugwort|wormwood', 'Ragweed-family herb', 'Same plant family as chamomile and stevia, which bother you. Try a small amount first.'],
+    ['limit', 'stevia|truvia|pure via|reb ?a|rebaudioside', 'Stevia', 'Now and then only. Used often, it brings on your ragweed-type symptoms (stevia is in the ragweed family).'],
     ['avoid', 'pomegranates?', 'Pomegranate', 'Your plan skips it.'],
     ['avoid', 'cinnamon', 'Cinnamon', 'On your avoid list.'],
     ['avoid', 'vanilla', 'Vanilla', 'On your avoid list. Often in protein bars, granola, and yogurt.'],
     ['avoid', 'coconut(?: oil| milk| cream| flour| sugar| water| flakes)?|copra', 'Coconut', 'On your avoid list.'],
-    ['avoid', 'brown sugar|cane sugar|coconut sugar|powdered sugar|sugar|honey|maple(?: syrup)?|molasses|corn syrup|candy|candies|syrup|frosting|icing|jam|jelly|caramel|dessert|ice cream|sorbet', 'Sweets and sugar', 'Break the Mold Tier 1 avoids sweets. Stevia is fine.'],
+    ['avoid', 'brown sugar|cane sugar|coconut sugar|powdered sugar|sugar|honey|maple(?: syrup)?|molasses|corn syrup|candy|candies|syrup|frosting|icing|jam|jelly|caramel|dessert|ice cream|sorbet', 'Sweets and sugar', 'Break the Mold Tier 1 avoids sweets. Sweeten with berries, a little ripe persimmon or kiwi, and warm spices like cardamom or ginger.'],
     ['ask', 'pasta|spaghetti|noodles?|macaroni|ramen|lasagna', 'Pasta', 'Usually wheat. Gluten-free pasta is still a refined starch, so ask before using it.'],
     ['ask', 'pears?|quince', 'Pear or quince', 'Close relatives of apple. Persimmon or berries instead.'],
     ['ask', 'egg whites?|meringue', 'Egg whites', 'Allergy unless baked into something.'],
@@ -763,8 +766,8 @@ var HH = (function(){
     ['garlic', 'Garlic or ginger', '1 tsp', 1, 0.1, null, {}],
     ['cumin', 'Cumin, turmeric, oregano, other single spices', 'pinch', 0, 0, null, {}],
     ['cilantro', 'Cilantro', '2 tbsp', 0, 0, null, {}],
-    ['stevia', 'Stevia', 'few drops', 0, 0, null, {}],
-    ['agave', 'Agave syrup', '1 tsp', 5, 0, 15, { s: 'limit', w: 'Mostly fructose. Your plan swaps it for stevia.' }],
+    ['stevia', 'Stevia', 'few drops', 0, 0, null, { s: 'limit', w: 'Now and then only. Often brings on your ragweed-type symptoms.' }],
+    ['agave', 'Agave syrup', '1 tsp', 5, 0, 15, { s: 'limit', w: 'Mostly fructose, hard on the liver. Use fruit for sweetness.' }],
     ['datesyrup', 'Date syrup', '1 tsp', 5.3, 0, 50, { s: 'limit', w: 'Keep rare.', est: 1 }],
     ['dandeliontea', 'Roasted dandelion root tea', '1 cup', 0, 0, null, {}],
     ['pacha', 'Pacha sprouted buckwheat bread', '1 slice', 18, 2, 50, { est: 1 }],
@@ -822,7 +825,7 @@ var HH = (function(){
     ['sesameoil', 'Sesame oil', 'spice', 0, '', '', 1], ['turmeric', 'Turmeric', 'spice', 0, '', '', 1], ['cumin', 'Cumin', 'spice', 0, '', '', 1],
     ['coriander', 'Coriander', 'spice', 0, '', '', 1], ['oregano', 'Mexican oregano', 'spice', 0, 'oregano', '', 1], ['thyme', 'Thyme', 'spice', 0, '', '', 1],
     ['sage', 'Sage', 'spice', 0, '', '', 1], ['bay', 'Bay leaves', 'spice', 0, '', '', 1], ['cloves', 'Ground cloves', 'spice', 0, '', '', 1],
-    ['garlicpowder', 'Garlic powder', 'spice', 0, '', '', 1], ['epazote', 'Epazote', 'spice', 0, '', '', 1], ['stevia', 'Stevia', 'spice', 0, '', '', 1],
+    ['garlicpowder', 'Garlic powder', 'spice', 0, '', '', 1], ['epazote', 'Epazote', 'spice', 0, '', '', 1], ['stevia', 'Stevia', 'spice', 0, '', '', 0],
     ['rice', 'Rice', 'his', 0], ['potatoes', 'Potatoes', 'his', 1],
   ].map(([id, n, c, local, alias = '', make = '', staple = 0]) => ({ id, n, c, local: !!local, alias, make, staple: !!staple }));
 
@@ -861,8 +864,8 @@ var HH = (function(){
       steps: 'Rinse well. Simmer in 4.5 cups water for 25 min. Freeze in 1/2 cup portions.' },
     { id: 'r_buckwheat', n: 'Buckwheat groats pot', t: 'batch', makes: '10 to 12 half-cup portions · 12 min', ings: [['buckwheat', '2 cups']],
       steps: 'Simmer in 4 cups water for 12 min. Freeze in 1/2 cup portions.' },
-    { id: 'r_chiajam', n: 'Chia berry jam', t: 'batch', makes: 'about 8 servings · no cooking', ings: [['raspberries', '2 cups'], ['chia', '1/4 cup'], ['stevia', 'a few drops']],
-      steps: 'Mash berries with 1/2 cup water, stir in chia and stevia, refrigerate. Sets in an hour, keeps 5 days.' },
+    { id: 'r_chiajam', n: 'Chia berry jam', t: 'batch', makes: 'about 8 servings · no cooking', ings: [['raspberries', '2 cups'], ['chia', '1/4 cup']],
+      steps: 'Mash berries with 1/2 cup water, stir in chia, refrigerate. Ripe berries are sweet enough on their own. Sets in an hour, keeps 5 days.' },
 
     // Breakfast: your usual pattern. Carbs stay for later in the day.
     { id: 'b_usual', n: 'Your usual breakfast', t: 'breakfast', makes: 'no cooking',
@@ -1034,7 +1037,7 @@ var HH = (function(){
           const w = i.custom ? warnFor(i.n + ' ' + (i.label?.ingredients || '')) : null;
           return `<label><input type="checkbox" data-item="${i.id}" ${has(i.id) ? 'checked' : ''}><span>${esc(i.n)}${i.local ? ' <span class="loc">local now</span>' : ''}
             ${labelLine(i.label)}${w ? `<br><span class="warn-line ${w.lvl}">${esc(w.text)}</span>` : ''}
-            ${i.custom ? ` <button class="btn ghost sm" data-del-custom="${i.id}" aria-label="Remove ${esc(i.n)}">remove</button>` : ''}</span></label>`;
+            ${i.custom ? ` <button class="btn ghost sm" data-edit-custom="${i.id}" aria-label="Edit ${esc(i.n)}">edit</button> <button class="btn ghost sm" data-del-custom="${i.id}" aria-label="Remove ${esc(i.n)}">remove</button>` : ''}</span></label>`;
         }).join('')}</div></div>`);
     }
     document.getElementById('pantry-groups').innerHTML = out.join('') || '<p class="empty">Nothing matches.</p>';
@@ -1047,6 +1050,19 @@ var HH = (function(){
     save(); renderCounts();
   });
   document.getElementById('pantry-groups').addEventListener('click', e => {
+    const ed = e.target.dataset.editCustom;
+    if (ed) {
+      // Open a saved item in the label form, to fill in what the photo missed. Checks run again as you type.
+      e.preventDefault();
+      const c = state.custom.find(x => x.id === ed);
+      if (!c) return;
+      const l = c.label || {}, fields = {};
+      for (const [k] of LABEL_FIELDS) fields[k] = l[k] ?? '';
+      label = { name: c.n, fields, ingredients: l.ingredients || '', missing: [], suspect: [], editId: ed };
+      renderLabel();
+      document.getElementById('label-form').scrollIntoView({ block: 'start', behavior: 'smooth' });
+      return;
+    }
     const id = e.target.dataset.delCustom;
     if (!id) return;
     e.preventDefault();
@@ -1056,7 +1072,7 @@ var HH = (function(){
   });
   document.getElementById('btn-staples').addEventListener('click', () => {
     ITEMS.filter(i => i.staple).forEach(i => state.pantry[i.id] = 1);
-    save(); render(); toast('Spices, oils and stevia ticked');
+    save(); render(); toast('Spices and oils ticked');
   });
   document.getElementById('btn-clear-pantry').addEventListener('click', () => {
     if (!confirm('Untick everything in your pantry?')) return;
@@ -1172,7 +1188,7 @@ var HH = (function(){
     const el = document.getElementById('label-form');
     if (!label) { el.innerHTML = ''; return; }
     el.innerHTML = `<div class="card" style="background:var(--sunk)">
-      <h3>Check these against the label</h3>
+      <h3>${label.editId ? 'Edit ' + esc(label.name || 'this item') : 'Check these against the label'}</h3>
       <p class="small muted">Photo reading often mixes up numbers, like 5g read as 59 or 0 read as O. Fix anything that looks off, then save.</p>
       <div class="row"><input type="text" data-lf="name" value="${esc(label.name)}" placeholder="Product name" aria-label="Product name"></div>
       <div class="checks">${LABEL_FIELDS.map(([k, t, ty]) => `<label style="flex-direction:column;gap:2px;cursor:default"><span class="small ${label.missing.includes(k) || label.suspect.includes(k) ? 'warn-line limit' : 'muted'}">${t}${label.missing.includes(k) ? ' (not found)' : label.suspect.includes(k) ? ' (looks off, check it)' : ''}</span>
@@ -1180,7 +1196,7 @@ var HH = (function(){
       <label class="small muted" for="lf-ing">Ingredients</label>
       <textarea id="lf-ing" data-lf="ingredients" style="min-height:80px">${esc(label.ingredients)}</textarea>
       <div id="label-check">${labelChecks()}</div>
-      <div class="row"><button class="btn primary" id="btn-label-save">Save to my pantry</button><button class="btn ghost sm" id="btn-label-cancel">Cancel</button></div>
+      <div class="row"><button class="btn primary" id="btn-label-save">${label.editId ? 'Save changes' : 'Save to my pantry'}</button><button class="btn ghost sm" id="btn-label-cancel">Cancel</button></div>
     </div>`;
   }
   const labelEl = document.getElementById('label-form');
@@ -1201,11 +1217,15 @@ var HH = (function(){
       if (!n) { toast('Give it a name first'); return; }
       const fields = {};
       for (const [k, , ty] of LABEL_FIELDS) { const v = label.fields[k]; fields[k] = ty === 'num' ? (v === '' || v == null || isNaN(+v) ? null : +v) : (v || ''); }
-      const id = 'x_' + n.toLowerCase().replace(/[^a-z0-9]+/g, '_') + '_' + Date.now().toString(36);
-      state.custom.push({ id, n, label: { ...fields, ingredients: label.ingredients.trim() } });
-      state.pantry[id] = 1;
+      const old = label.editId && state.custom.find(c => c.id === label.editId);
+      if (old) { old.n = n; old.label = { ...fields, ingredients: label.ingredients.trim() }; }
+      else {
+        const id = 'x_' + n.toLowerCase().replace(/[^a-z0-9]+/g, '_') + '_' + Date.now().toString(36);
+        state.custom.push({ id, n, label: { ...fields, ingredients: label.ingredients.trim() } });
+        state.pantry[id] = 1;
+      }
       label = null; renderLabel();
-      save(); rebuild(); render(); toast(`Added ${n} to your pantry`);
+      save(); rebuild(); render(); toast(old ? `Saved changes to ${n}` : `Added ${n} to your pantry`);
     }
   });
   const labelLine = l => {
@@ -1680,11 +1700,11 @@ var HH = (function(){
     'Dried fruit': ['fresh berries', 'persimmon'], 'Aged cheese': ['fresh sheep feta', 'fresh mozzarella', 'cream cheese'],
     'Cheese (which kind?)': ['fresh mozzarella', 'fresh sheep feta', 'cream cheese'], 'Peanuts': ['pumpkin seeds', 'sunflower seeds'],
     'Pistachios': ['pumpkin seeds', 'walnuts'], 'Brazil nuts': ['walnuts', 'pecans'], 'Alcohol': ['safe broth', 'water with lime'],
-    'Fermented drinks': ['sparkling water with lime'], 'Black or oolong tea': ['roasted dandelion root tea'], 'Agave syrup': ['stevia'],
-    'Date syrup': ['stevia'], 'Fruit juice': ['whole fruit', 'lime juice'], 'Sweetened drinks': ['sparkling water with lime'],
-    'Butter': ['olive oil'], 'Lentils': ['chickpeas', 'black beans'], 'Monk fruit': ['stevia'], 'Pomegranate': ['berries', 'cranberries'],
+    'Fermented drinks': ['sparkling water with lime'], 'Black or oolong tea': ['roasted dandelion root tea'], 'Agave syrup': ['berries', 'ripe persimmon'],
+    'Date syrup': ['berries', 'ripe persimmon'], 'Fruit juice': ['whole fruit', 'lime juice'], 'Sweetened drinks': ['sparkling water with lime'],
+    'Butter': ['olive oil'], 'Lentils': ['chickpeas', 'black beans'], 'Monk fruit': ['berries', 'ripe persimmon'], 'Pomegranate': ['berries', 'cranberries'],
     'Cinnamon': ['cloves', 'ginger', 'cardamom'], 'Vanilla': ['leave out', 'cardamom'], 'Coconut': ['pumpkin seeds', 'olive oil'],
-    'Sweets and sugar': ['stevia'], 'Pasta': ['quinoa', 'buckwheat groats'], 'Pear or quince': ['persimmon', 'berries'],
+    'Sweets and sugar': ['berries', 'ripe persimmon'], 'Pasta': ['quinoa', 'buckwheat groats'], 'Pear or quince': ['persimmon', 'berries'],
     'Eggs': ['flax egg (1 tbsp ground flax + 3 tbsp water)'], 'Egg whites': ['flax egg (1 tbsp ground flax + 3 tbsp water)'],
     'Broth or stock': ['Bonafide Provisions broth', 'Pacific chicken broth', 'homemade poaching broth'],
     'Blends, sauces, and dressings': ['single spices you know are safe', 'olive oil and lime'], 'Fermented foods': ['plain whole yogurt', 'salt and safe broth'],
