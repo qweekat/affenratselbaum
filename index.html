@@ -162,8 +162,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.18.2";
+const APP_VERSION = "1.18.3";
 const CHANGES = [
+  {v:"1.18.3", date:"2026-10-23", items:["Fix: with a second window or a paired phone open, a change (like Change just today) could say Saved and then disappear. Now changes from both are kept."]},
   {v:"1.18.2", date:"2026-10-22", items:["Fix: a time or note you were still typing is now kept if you close the window, switch away, or install an update."]},
   {v:"1.18.1", date:"2026-10-22", items:["Fix: an old window or a phone left open could write older data over your newer changes on the laptop. Now it picks up the newer changes instead."]},
   {v:"1.18.0", date:"2026-10-22", items:["Backups: new Combine with a backup file, to bring your phone and laptop copies together without losing either."]},
@@ -885,7 +886,7 @@ async function load(){
     try{
       const r = await fetch("/api/state",{cache:"no-store"});
       const j = await r.json();
-      if(j && j.server){ SERVER = true; LAPTOP = !!j.laptop; SERVER_REV = j.rev ?? null; S = merge(j.state || local); return; }
+      if(j && j.server){ SERVER = true; LAPTOP = !!j.laptop; SERVER_REV = j.rev ?? null; S = merge(j.state || local); BASE = j.state ? copyOf(S) : null; return; }
     }catch(e){}
   }
   S = merge(local);
@@ -899,7 +900,32 @@ function rollCook(){
   if(moved){ S.nextCook.date = ymd(d); }
   return moved;
 }
-let saveTimer = null, SERVER_REV = null;
+let saveTimer = null, SERVER_REV = null, BASE = null; 
+const copyOf = x=>JSON.parse(JSON.stringify(x));
+
+function merge3(base, mine, theirs){
+  const same = (a,b)=>JSON.stringify(a)===JSON.stringify(b);
+  if(same(mine,base)) return theirs;
+  if(same(theirs,base) || mine===undefined || theirs===undefined) return mine;
+  const isObj = x=>x && typeof x==="object" && !Array.isArray(x);
+  if(isObj(mine) && isObj(theirs)){
+    const b = isObj(base)?base:{}, out = {};
+    for(const k of new Set([...Object.keys(mine),...Object.keys(theirs)])){
+      if(!(k in mine) && k in b) { if(!same(theirs[k],b[k])) out[k]=theirs[k]; continue; }   // I removed it, they didn't touch it
+      if(!(k in theirs) && k in b) { if(!same(mine[k],b[k])) out[k]=mine[k]; continue; }
+      const v = merge3(b[k], mine[k], theirs[k]); if(v!==undefined) out[k]=v; }
+    return out;
+  }
+  const ids = a=>Array.isArray(a) && a.every(x=>isObj(x) && x.id!=null);
+  if(ids(mine) && ids(theirs)){
+    const b = ids(base)?base:[], inBase = new Set(b.map(x=>x.id)), inMine = new Set(mine.map(x=>x.id));
+    const bById = Object.fromEntries(b.map(x=>[x.id,x])), tById = Object.fromEntries(theirs.map(x=>[x.id,x]));
+    const out = mine.map(x=> x.id in tById ? merge3(bById[x.id], x, tById[x.id]) : (inBase.has(x.id) ? null : x)).filter(Boolean);
+    for(const x of theirs) if(!inMine.has(x.id) && !inBase.has(x.id)) out.push(x);
+    return out;
+  }
+  return mine;
+}
 function save(){
   pruneLog();
   try{ const cd = nextCookDate(parseYmd(ymd(new Date()))); if(cd) S.cookNext = {date:ymd(cd), items:cookPlanFor(cd).map(x=>({id:x.id==="r_grain"?(x.grain==="buckwheat"?"r_buckwheat":"r_quinoa"):x.id, batches:x.batches}))}; }catch(e){}
@@ -918,11 +944,11 @@ async function pushState(closing){
       const r = await fetch("/api/state",{method:"PUT",keepalive,headers:{"Content-Type":"application/json"},body});
       const j = await r.json().catch(()=>({}));
       if(r.status===409 && j.state){
-        SERVER_REV = j.rev; S = merge(j.state); lsSet(S); render();
-        toast("Updated with changes from your other window or phone. If your last change is missing, please make it again.");
+        const theirs = merge(copyOf(j.state));
+        S = merge(copyOf(merge3(BASE, S, theirs))); SERVER_REV = j.rev; BASE = copyOf(theirs); lsSet(S); render(); save();
         return;
       }
-      if(j.rev!=null) SERVER_REV = j.rev;
+      if(j.rev!=null){ SERVER_REV = j.rev; BASE = JSON.parse(body).state; }
       setSync();
     }catch(e){ setSync("Could not reach the reminder service. Changes are saved in this browser."); }
 }
@@ -2224,7 +2250,7 @@ document.addEventListener("visibilitychange", async ()=>{
   if(document.visibilityState==="hidden"){ flushNow(false); return; }
   if(document.visibilityState!=="visible" || !SERVER) return;
   if(view.contains(document.activeElement) && document.activeElement.matches("input[type=text],textarea")) return;
-  try{ const j = await (await fetch("/api/state",{cache:"no-store"})).json(); if(j && j.state){ S = merge(j.state); SERVER_REV = j.rev ?? SERVER_REV; render(); } }catch(e){}
+  try{ const j = await (await fetch("/api/state",{cache:"no-store"})).json(); if(j && j.state && j.rev!==SERVER_REV && !saveTimer){ const theirs = merge(copyOf(j.state)); S = merge(copyOf(merge3(BASE, S, theirs))); BASE = copyOf(theirs); SERVER_REV = j.rev ?? SERVER_REV; lsSet(S); if(JSON.stringify(S)!==JSON.stringify(BASE)) save(); render(); } }catch(e){}
 });
 let lastDay = ymd(new Date());
 setInterval(()=>{ if(checkFlare()){ save(); render(); } if(sweepMissed()){ save(); if(TAB==="notes") return; } if(TAB==="today"||TAB==="tomorrow"){ if(ymd(new Date())!==lastDay){ lastDay=ymd(new Date()); } if(!view.contains(document.activeElement)||document.activeElement===document.body) render(); } }, 60000);
