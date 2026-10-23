@@ -146,6 +146,7 @@ footer { color: var(--muted); font-size: 0.85rem; display: flex; flex-direction:
       <div class="row">
         <input type="search" id="pantry-search" placeholder="Find an item…" aria-label="Find an item">
         <button class="btn sm" id="btn-staples">I have my usual spices and oils</button>
+        <label class="small"><input type="checkbox" id="staples-soft"> Count a meal as ready even if a spice or oil isn't ticked</label>
         <button class="btn sm ghost" id="btn-clear-pantry">Clear pantry</button>
       </div>
       <div class="row">
@@ -828,6 +829,30 @@ var HH = (function(){
     ['garlicpowder', 'Garlic powder', 'spice', 0, '', '', 1], ['epazote', 'Epazote', 'spice', 0, '', '', 1], ['stevia', 'Stevia', 'spice', 0, '', '', 0],
     ['rice', 'Rice', 'his', 0], ['potatoes', 'Potatoes', 'his', 1],
   ].map(([id, n, c, local, alias = '', make = '', staple = 0]) => ({ id, n, c, local: !!local, alias, make, staple: !!staple }));
+  // What else counts as each item, so things you type in ("kabocha", "black cod", "romaine") count for the meals that use them.
+  // [words that match, words that rule it out]. Plurals match too.
+  const MATCH = {
+    butternut: ['butternut|kabocha|delicata|winter squash', 'seed|soup'], acorn: ['acorn squash'], piepumpkin: ['pie pumpkin|sugar pumpkin|pumpkin', 'seed|pie|spice|canned|can'],
+    beets: ['beets?|beetroot', 'sugar|powder'], leeks: ['leeks?'], onion: ['onion|shallot|scallion|green onion', 'powder|salt'], garlic: ['garlic', 'powder|salt'],
+    chard: ['chard|kale|collards?|bok choy|mustard greens|cooking greens|beet greens'], spinach: ['spinach'], zucchini: ['zucchini|courgette|yellow squash|summer squash'],
+    sweetpotato: ['sweet potato|yam'], cucumber: ['cucumber|persian cucumber'], lime: ['lime|lemon', 'grass|leaf|leaves'], snappeas: ['snap peas?|snow peas?|sugar snaps?'],
+    ginger: ['ginger', 'ale|powder|ground'], cilantro: ['cilantro'], basil: ['basil|chives|parsley|dill|mint', 'tea|dried'], persimmon: ['persimmon|fuyu|hachiya'],
+    kiwi: ['kiwi'], raspberries: ['raspberr(?:y|ies)|blackberr(?:y|ies)|blueberr(?:y|ies)|strawberr(?:y|ies)|mixed berries|berries', 'jam|jelly|juice'], asparagus: ['asparagus'],
+    chicken: ['chicken', 'broth|stock|bouillon|sausage'], bison: ['bison|ground beef|lean beef|beef|elk|venison', 'broth|stock|jerky'], lamb: ['lamb'],
+    sablefish: ['sablefish|black cod|cod|halibut|snapper|haddock|pollock|wild fish', 'canned|can|oil'], trout: ['trout|arctic char|fresh salmon|salmon fillet'],
+    salmoncan: ['canned salmon|tinned salmon|salmon', 'fillet|fresh|smoked'], sardines: ['sardines?|mackerel|tinned fish'],
+    driedbeans: ['anasazi|bolita|dried beans|pinto', 'green|canned'], blackbeans: ['black beans?'], chickpeas: ['chickpeas?|garbanzos?', 'flour'],
+    pumpkincan: ['canned pumpkin|pumpkin puree|pumpkin purée'], artichoke: ['artichoke'], quinoa: ['quinoa', 'flour|pasta'], buckwheat: ['buckwheat|kasha', 'flour|bread|noodle'],
+    broth: ['broth|stock|bone broth', 'cube'], chia: ['chia'], psyllium: ['psyllium'], tahini: ['tahini'], walnuts: ['walnuts?'], edamame: ['edamame'], chickpeaflour: ['chickpea flour|garbanzo flour|besan'],
+    pacha: ['pacha'], creamcheese: ['cream cheese'], mozz: ['mozzarella|burrata'], feta: ['feta'], yogurt: ['yogh?urt|skyr|kefir'],
+    salt: ['salt', 'garlic|celery'], pepper: ['black pepper|peppercorns?'], oliveoil: ['olive oil|avocado oil'], sesameoil: ['sesame oil'], turmeric: ['turmeric'], cumin: ['cumin'],
+    coriander: ['coriander'], oregano: ['oregano'], thyme: ['thyme'], sage: ['sage'], bay: ['bay leaf|bay leaves'], cloves: ['cloves', 'garlic'], garlicpowder: ['garlic powder|granulated garlic'],
+    epazote: ['epazote'], rice: ['rice', 'vinegar|milk|noodle|cake|flour|paper|cracker'], potatoes: ['potato', 'sweet|chip'],
+  };
+  const MATCH_RE = Object.fromEntries(Object.entries(MATCH).map(([id, [yes, no]]) => [id, [
+    new RegExp('(?<![a-z])(?:' + yes + ')(?:e?s)?(?![a-z])', 'i'), no ? new RegExp(no, 'i') : null]]));
+  // Starter items that a thing you typed in counts as.
+  function matchIds(name) { return Object.entries(MATCH_RE).filter(([, [y, n]]) => y.test(name) && !(n && n.test(name))).map(([id]) => id); }
 
   // ---------- Recipes ----------
   // ings: [ids (one id, or several that can stand in for each other), amount, flag]
@@ -948,36 +973,74 @@ var HH = (function(){
   let state = {};
   try { state = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) {}
   state = Object.assign({ pantry: {}, custom: [], plan: {}, mine: [], tab: 'pantry', filter: 'all', got: {}, days: 7 }, state);
-  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
+  let memo = null;   // what you have and how items sit with your rules, worked out again after each change
+  const save = () => { memo = null; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
 
   let ITEM = {}, RECIPE = {};
   function rebuild() {
     ITEM = Object.fromEntries(ITEMS.map(i => [i.id, i]));
     for (const c of state.custom) ITEM[c.id] = { id: c.id, n: c.n, c: 'other', alias: '', make: '', custom: true, label: c.label };
     RECIPE = Object.fromEntries([...RECIPES, ...state.mine].map(r => [r.id, r]));
+    memo = null;
   }
   rebuild();
 
-  const has = id => !!state.pantry[id];
+  function getMemo() {
+    if (memo) return memo;
+    // Things you typed in count for the starter items they match, so "kabocha" covers butternut squash.
+    const via = {};
+    for (const c of state.custom) if (state.pantry[c.id]) for (const id of matchIds(c.n)) (via[id] = via[id] || []).push(c.n);
+    return (memo = { via, hits: {} });
+  }
+  const has = id => !!state.pantry[id] || !!getMemo().via[id];
+  const coveredBy = id => !state.pantry[id] && getMemo().via[id];
+  // Spices and oils you haven't ticked don't stop a meal from counting as ready, unless you turn that off.
+  const softStaples = () => state.staplesSoft !== false;
+  const hardBuy = nd => [...nd.buy.keys()].filter(id => !(softStaples() && ITEM[id] && ITEM[id].staple));
+  // How an item sits with your food rules. A batch base takes on its ingredients' flags.
+  function itemHits(id, seen) {
+    const m = getMemo().hits;
+    if (m[id]) return m[id];
+    const it = ITEM[id], base = it && it.make && RECIPE[it.make];
+    seen = seen || new Set();
+    if (base && seen.has(base.id)) return [];
+    const own = scan(it ? it.n + ' ' + (it.label?.ingredients || '') : id);
+    if (base) { seen.add(base.id); own.push(...recipeHits(base, seen).hits); }
+    return (m[id] = own);
+  }
   const idsOf = e => Array.isArray(e[0]) ? e[0] : [e[0]];
+  // Stand-ins that your rules say to avoid are skipped when another one fits.
+  const okIds = e => { const ids = idsOf(e); const ok = ids.filter(id => worst(itemHits(id)) !== 'avoid'); return ok.length ? ok : ids; };
+  // A meal's flags: each ingredient counts by its mildest stand-in. Optional ones and his add-ons don't count against the meal.
+  function recipeHits(r, seen) {
+    const hits = [], rank = l => l ? ORDER.indexOf(l) : 99;
+    for (const e of r.ings) {
+      if (e[2]) continue;
+      let bestHits = [], bestRank = -1;
+      for (const id of idsOf(e)) { const h = itemHits(id, seen && new Set(seen)), rk = rank(worst(h)); if (rk > bestRank) { bestRank = rk; bestHits = h; } }
+      hits.push(...bestHits);
+    }
+    return { hits, lvl: worst(hits) };
+  }
   const counted = e => !e[2];
 
   // What a recipe still needs. Made items (batch bases) expand into their own ingredients.
   function baseGaps(rid) {
     const r = RECIPE[rid];
-    return r ? r.ings.filter(counted).filter(e => !idsOf(e).some(has)) : [];
+    return r ? r.ings.filter(counted).filter(e => !okIds(e).some(has)) : [];
   }
   // Batch recipes in the current plan get cooked anyway, so meals lean on them.
   let cooking = new Set();
   function optionCost(id) {
     if (has(id)) return 0;
     const it = ITEM[id];
+    if (it && it.staple && softStaples()) return 0.1;
     if (it && it.make && cooking.has(it.make)) return 0.4;
     if (it && it.make) { const g = baseGaps(it.make).length; return g === 0 ? 0.5 : g + 0.25; }
     return 1;
   }
   function pick(e) {
-    const ids = idsOf(e);
+    const ids = okIds(e);
     if (ids.some(has)) return null;
     let best = ids[0], cost = Infinity;
     for (const id of ids) { const c = optionCost(id); if (c < cost) { cost = c; best = id; } }
@@ -1029,13 +1092,15 @@ var HH = (function(){
     for (const [cid, cname] of CATS) {
       const items = Object.values(ITEM).filter(i => i.c === cid && (!q || (i.n + ' ' + i.alias).toLowerCase().includes(q)));
       if (!items.length) continue;
-      const n = items.filter(i => has(i.id)).length;
+      const n = items.filter(i => state.pantry[i.id]).length;
       out.push(`<div class="card"><div class="section-h"><h2>${esc(cname)}</h2><span class="small muted">${n} of ${items.length}</span></div>
         ${cid === 'cooked' ? '<p class="small muted">Tick what\'s in your freezer or fridge after a cook day. Untick it when the last bag is gone.</p>' : ''}
         ${cid === 'his' ? '<p class="small muted">Only for his plate. Potatoes are Break the Mold Tier 1 for you.</p>' : ''}
         <div class="checks">${items.map(i => {
           const w = i.custom ? warnFor(i.n + ' ' + (i.label?.ingredients || '')) : null;
-          return `<label><input type="checkbox" data-item="${i.id}" ${has(i.id) ? 'checked' : ''}><span>${esc(i.n)}${i.local ? ' <span class="loc">local now</span>' : ''}
+          const cov = coveredBy(i.id), as = i.custom ? matchIds(i.n).map(id => ITEM[id] && ITEM[id].n).filter(Boolean) : [];
+          return `<label><input type="checkbox" data-item="${i.id}" ${state.pantry[i.id] ? 'checked' : ''}><span>${esc(i.n)}${i.local ? ' <span class="loc">local now</span>' : ''}
+            ${cov ? `<br><span class="small muted">Covered by ${esc(cov.join(', '))}</span>` : ''}${as.length ? `<br><span class="small muted">Counts as ${esc(as.join(', '))}</span>` : ''}
             ${labelLine(i.label)}${w ? `<br><span class="warn-line ${w.lvl}">${esc(w.text)}</span>` : ''}
             ${i.custom ? ` <button class="btn ghost sm" data-edit-custom="${i.id}" aria-label="Edit ${esc(i.n)}">edit</button> <button class="btn ghost sm" data-del-custom="${i.id}" aria-label="Remove ${esc(i.n)}">remove</button>` : ''}</span></label>`;
         }).join('')}</div></div>`);
@@ -1074,6 +1139,9 @@ var HH = (function(){
     ITEMS.filter(i => i.staple).forEach(i => state.pantry[i.id] = 1);
     save(); render(); toast('Spices and oils ticked');
   });
+  const softEl = document.getElementById('staples-soft');
+  softEl.checked = softStaples();
+  softEl.addEventListener('change', () => { state.staplesSoft = softEl.checked; save(); render(); });
   document.getElementById('btn-clear-pantry').addEventListener('click', () => {
     if (!confirm('Untick everything in your pantry?')) return;
     state.pantry = {}; save(); render();
@@ -1243,9 +1311,10 @@ var HH = (function(){
   }
   function mealCard(r) {
     const nd = needs(r);
-    const nBuy = nd.buy.size;
+    const hard = hardBuy(nd), nBuy = hard.length;
+    const soft = [...nd.buy.keys()].filter(id => !hard.includes(id));
     const counts = r.ings.filter(e => counted(e) && e[2] !== 'his');
-    const haveN = counts.filter(e => idsOf(e).some(has)).length;
+    const haveN = counts.filter(e => okIds(e).some(has)).length;
     const pct = counts.length ? haveN / counts.length * 100 : 100;
     const pn = r.plate ? plateNums(r.plate) : null;
     const pills = [`<span class="pill plain">${esc(TYPE_NAME[r.t])}</span>`];
@@ -1262,9 +1331,9 @@ var HH = (function(){
       const g = baseGaps(b).length;
       return `<b>${esc(RECIPE[b].n)}</b> ${g ? `<span class="muted">(needs ${g} item${g > 1 ? 's' : ''})</span>` : '<span class="muted">(you have everything)</span>'}`;
     });
-    const buyList = [...nd.buy.keys()].map(id => esc(ITEM[id]?.n || id));
+    const buyList = hard.map(id => esc(ITEM[id]?.n || id));
     const ingList = r.ings.map(e => {
-      const ok = idsOf(e).some(has);
+      const ok = okIds(e).some(has);
       const names = idsOf(e).map(id => ITEM[id]?.n || id).join(' or ');
       const tag = e[2] === 'opt' ? ' <span class="muted">(optional)</span>' : e[2] === 'his' ? ' <span class="muted">(his)</span>' : '';
       return `<li class="${ok ? 'have' : 'miss'}">${ok ? '✓' : '○'} ${esc(names)}, ${esc(e[1])}${tag}</li>`;
@@ -1277,6 +1346,7 @@ var HH = (function(){
       ${!nBuy && !nd.cook.size ? '<p class="need"><b>You have everything.</b></p>' : ''}
       ${cookList.length ? `<p class="need">Cook first: ${cookList.join(', ')}</p>` : ''}
       ${buyList.length ? `<p class="need">Buy: ${buyList.join(', ')}</p>` : ''}
+      ${soft.length ? `<p class="small muted">Check you have: ${soft.map(id => esc(ITEM[id].n)).join(', ')}</p>` : ''}
       ${r.his ? `<p class="small muted">He adds ${esc(r.his)}.</p>` : ''}
       ${r.shared || r.t === 'batch' ? HH.tableHtml(hhText(r), HHH, { title: 'At the table' }) : ''}
       <details><summary>Ingredients and steps</summary><ul>${ingList}</ul>${r.steps ? `<p class="small" style="margin-top:6px">${esc(r.steps)}</p>` : ''}</details>
@@ -1290,13 +1360,15 @@ var HH = (function(){
     const f = document.getElementById('meal-filter');
     f.innerHTML = [['all', 'All'], ...TYPES].map(([k, n]) => `<button class="chip" data-filter="${k}" aria-pressed="${state.filter === k}">${esc(n)}</button>`).join('');
     const list = Object.values(RECIPE).filter(r => state.filter === 'all' ? r.t !== 'batch' : r.t === state.filter);
-    const scored = list.map(r => { const nd = needs(r); return { r, buy: nd.buy.size, cook: nd.cook.size }; })
+    const all = list.map(r => { const nd = needs(r); return { r, buy: hardBuy(nd).length, cook: nd.cook.size, off: recipeHits(r).lvl === 'avoid' }; })
       .sort((a, b) => a.buy - b.buy || a.cook - b.cook || a.r.n.localeCompare(b.r.n));
+    const scored = all.filter(x => !x.off);
     const groups = [
       ['Ready now', scored.filter(x => x.buy === 0 && x.cook === 0)],
       ['Ready after a batch cook', scored.filter(x => x.buy === 0 && x.cook > 0)],
       ['Missing 1 or 2 things', scored.filter(x => x.buy > 0 && x.buy <= 2)],
       ['Missing more', scored.filter(x => x.buy > 2)],
+      ["Doesn't fit your food rules", all.filter(x => x.off)],
     ];
     document.getElementById('meal-groups').innerHTML = groups.filter(g => g[1].length).map(([h, xs]) =>
       `<div class="section-h"><h2>${h}</h2><span class="small muted">${xs.length}</span></div><div class="grid">${xs.map(x => mealCard(x.r)).join('')}</div>`
@@ -1454,11 +1526,12 @@ var HH = (function(){
     const days = Math.max(1, +state.days || 7);
     const plan = {};
     let beans = 0;
-    const score = r => { const nd = needs(r); return nd.buy.size + nd.cook.size * 0.3; };
+    const score = r => { const nd = needs(r); return hardBuy(nd).length + nd.cook.size * 0.3; };
     const beanOf = r => r.plate ? plateNums(r.plate).beans : 0;
     // Dinners first, since lunch can pick up a bean serving if dinner didn't.
     for (const [type, perRecipe] of [['breakfast', days], ['dinner', 2], ['lunch', 2], ['snack', 2], ['evening', days]]) {
-      const pool = Object.values(RECIPE).filter(r => r.t === type);
+      const typed = Object.values(RECIPE).filter(r => r.t === type), fits = typed.filter(r => recipeHits(r).lvl !== 'avoid');
+      const pool = fits.length ? fits : typed;
       for (let d = 0; d < days && pool.length; d++) {
         const ranked = pool.map(r => {
           const used = plan[r.id] || 0;
@@ -1871,7 +1944,7 @@ var HH = (function(){
   // ---------- Render ----------
   function renderCounts() {
     document.getElementById('n-pantry').textContent = Object.keys(state.pantry).filter(id => ITEM[id]).length;
-    document.getElementById('n-ready').textContent = Object.values(RECIPE).filter(r => r.t !== 'batch').filter(r => { const nd = needs(r); return !nd.buy.size && !nd.cook.size; }).length;
+    document.getElementById('n-ready').textContent = Object.values(RECIPE).filter(r => r.t !== 'batch' && recipeHits(r).lvl !== 'avoid' && !hardBuy(needs(r)).length).length;
     document.getElementById('n-plan').textContent = planEntries().reduce((a, [, n]) => a + n, 0);
   }
   function render() {
