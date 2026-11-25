@@ -163,8 +163,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.25.0";
+const APP_VERSION = "1.26.0";
 const CHANGES = [
+  {v:"1.26.0", date:"2026-11-24", items:["Quick: Change a meal. Swap one of today's meals, or type a new one. Meals you type are saved to your meal options so you can pick them again, here and in Change just today."]},
   {v:"1.25.0", date:"2026-11-24", items:["Warning boxes are now one line you can tap to open: the home-screen data warning and the spacing check."]},
   {v:"1.24.0", date:"2026-11-24", items:["Removed the Pending box and its labels from supplements and the checklist. Taking it now is what turns a supplement on or off."]},
   {v:"1.23.1", date:"2026-11-24", items:["Backup files are now named allsystemsyou-backup-(date). Older daily-helper backups still open the same way."]},
@@ -674,8 +675,16 @@ const SLOTS = [["b","Breakfast"],["l","Lunch"],["s","Snack"],["d","Dinner"],["e"
 function plannerMine(){
   try{ const p = JSON.parse(localStorage.getItem("pantryplanner.v1")||"null"); return (p&&Array.isArray(p.mine))? p.mine : []; }catch(e){ return []; }
 }
+
+function myMeals(){ return S.myMeals = S.myMeals||[]; }
+function addMyMeal(slot, name){
+  name = String(name||"").trim(); if(!name) return "";
+  const ex = myMeals().find(m=>m.t===slot && m.n.toLowerCase()===name.toLowerCase()); if(ex) return ex.id;
+  const id = "my_"+Date.now().toString(36); myMeals().push({id, t:slot, n:name}); return id;
+}
 function recipe(id){
   if(RECIPES[id]) return RECIPES[id];
+  const mm = (S.myMeals||[]).find(r=>r.id===id); if(mm) return {t:mm.t, n:mm.n, d:"", you:"", his:"", pull:[]};
   const m = plannerMine().find(r=>r.id===id);
   if(m) return {t:(m.t||"d")[0], n:m.n, d:"", you:"", his:"", pull:[]};
   return null;
@@ -683,6 +692,7 @@ function recipe(id){
 function recipeOptions(slot){
   const all = Object.entries(RECIPES).filter(([,r])=>r.t===slot).map(([id,r])=>[id,r.n]);
   for(const m of plannerMine()) if((m.t||"")[0]===slot && !RECIPES[m.id]) all.push([m.id, m.n+" (yours)"]);
+  for(const m of (S.myMeals||[])) if(m.t===slot && !all.some(x=>x[0]===m.id)) all.push([m.id, m.n+" (yours)"]);
   return all;
 }
 
@@ -1358,6 +1368,19 @@ function prnHtml(key, lg){
       <small class="muted">${mine.length?"Taken "+mine.length+(max?" of "+max:"")+" today: "+mine.map(x=>niceTime(x.t)).join(", "):(max?"Up to "+max+" a day. Not taken today.":"Not taken today.")}</small>
       ${full?`<br><small style="color:var(--rust,#a4462e)"><b>That's your most for today.</b></small>`:""}</div>
       <div class="chips" style="gap:8px"><button class="btn ${full?"ghost":""}" data-prn="${esc(s.id)}" data-day="${key}">${full?"Took another":"Took it"}</button>${mine.length?`<button class="linkbtn" data-prnundo="${esc(s.id)}" data-day="${key}">Undo</button>`:""}</div></div>`; }).join("")}</div></section>`;
+}
+
+let QM = null;
+const QM_DONE = {b:"meal:b", l:"meal:l", d:"meal:d", s:"snack", e:"treat"};
+function quickMealHtml(key){
+  if(!QM) return `<div><button class="linkbtn" data-qmopen="${key}">Ate something else? Change a meal</button></div>`;
+  const k = QM.k, cur = idsFor(parseYmd(key))[k]||"";
+  return `<div class="stack" style="gap:8px;margin-top:8px">
+    <label>Which meal<select id="qm-slot" data-qmslot="1">${SLOTS.map(([s,l])=>`<option value="${s}" ${s===k?"selected":""}>${l}</option>`).join("")}</select></label>
+    <label>Change to<select id="qm-pick">${recipeOptions(k).map(([id,n])=>`<option value="${esc(id)}" ${id===cur?"selected":""}>${esc(n)}</option>`).join("")}</select></label>
+    <label>Or type a new one<input type="text" id="qm-new" placeholder="What you're having"></label>
+    <small class="muted">A new one is saved to your meal options, so next time you can pick it.</small>
+    <div class="chips" style="gap:8px"><button class="btn" data-qmsave="${key}">Save for today</button><button class="btn ghost" data-qmcancel="1">Cancel</button></div></div>`;
 }
 function renderDay(offset){
   const d = addDays(new Date(), offset), key = ymd(d), lg = S.log[key]||{done:{},water:0};
@@ -2091,6 +2114,7 @@ document.querySelector("nav.tabs").addEventListener("click",e=>{
 });
 view.addEventListener("change",e=>{
   const t = e.target;
+  if(t.dataset.qmslot){ QM = {k:t.value}; render(); return; }
   if(t.dataset.done==="cook"){ const lg = dayLog(t.dataset.day);
     if(t.checked && !lg.cooked){ const items = cookPlanFor(parseYmd(t.dataset.day)); lg.cooked = items.map(x=>({id:x.id, n:BASES[x.id].yield*x.batches}));
       for(const x of lg.cooked) S.stock[x.id]=(Number(S.stock[x.id])||0)+x.n; const g=items.find(x=>x.id==="r_grain"); if(g) S.lastGrain=g.grain; }
@@ -2122,7 +2146,8 @@ view.addEventListener("change",e=>{
       delete o.ids[k]; delete o.text[k];
       if(t.value==="__skip") o.ids[k]=""; else if(t.value==="__text") o.text[k]=" "; else if(t.value) o.ids[k]=t.value; }
     if(t.dataset.ovtext!==undefined){ o.text=o.text||{}; o.text[t.dataset.ovtext]=t.value.trim()||" ";
-      if(t.value.trim()) (S.notes=S.notes||[]).push({id:"n"+Date.now(), about:"Ate instead", feel:"", date:t.dataset.day, time:"", text:SLOTS.find(x=>x[0]===t.dataset.ovtext)[1]+": "+t.value.trim()}); }
+      if(t.value.trim()){ (S.notes=S.notes||[]).push({id:"n"+Date.now(), about:"Ate instead", feel:"", date:t.dataset.day, time:"", text:SLOTS.find(x=>x[0]===t.dataset.ovtext)[1]+": "+t.value.trim()});
+        const k = t.dataset.ovtext, id = addMyMeal(k, t.value); delete o.text[k]; o.ids=o.ids||{}; o.ids[k]=id; } }
     for(const f of ["ids","text"]) if(o[f] && !Object.keys(o[f]).length) delete o[f];
     if(!Object.keys(o).length) delete D[t.dataset.day];
     save(); render(); toast("Saved"); return; }
@@ -2145,6 +2170,13 @@ view.addEventListener("change",e=>{
 view.addEventListener("toggle",e=>{ if(e.target.dataset && e.target.dataset.feelbox) FEEL_OPEN = e.target.open; }, true);
 view.addEventListener("click",async e=>{
   const t = e.target;
+  if(t.dataset.qmopen){ const lg = S.log[t.dataset.qmopen]||{done:{}}; QM = {k:(SLOTS.find(([s])=>!(lg.done||{})[QM_DONE[s]])||SLOTS[0])[0]}; render(); return; }
+  if(t.dataset.qmcancel){ QM = null; render(); return; }
+  if(t.dataset.qmsave){ const key = t.dataset.qmsave, k = QM.k, typed = (document.getElementById("qm-new")||{}).value||"";
+    const id = typed.trim() ? addMyMeal(k, typed) : (document.getElementById("qm-pick")||{}).value;
+    if(!id){ toast("Pick a meal or type one"); return; }
+    const D = (S.dayOver=S.dayOver||{}), o = D[key] = D[key]||{}; o.ids = o.ids||{}; o.ids[k] = id; if(o.text){ delete o.text[k]; if(!Object.keys(o.text).length) delete o.text; }
+    QM = null; save(); render(); toast("Today's "+SLOTS.find(x=>x[0]===k)[1].toLowerCase()+": "+((recipe(id)||{}).n||"changed")); return; }
   if(t.dataset.prn){ const lg = dayLog(t.dataset.day), n = new Date(); (lg.prn = lg.prn||[]).push({id:t.dataset.prn, t:fromMins(n.getHours()*60+n.getMinutes())}); save(); render(); toast("Logged"); return; }
   if(t.dataset.prnundo){ const lg = dayLog(t.dataset.day), k = (lg.prn||[]).map(x=>x.id).lastIndexOf(t.dataset.prnundo); if(k>=0) lg.prn.splice(k,1); save(); render(); return; }
   if(t.dataset.iedit){ EDIT_ITEM = t.dataset.day+"|"+t.dataset.iedit; render(); const f=document.getElementById("ie-time"); if(f) f.closest("li").scrollIntoView({block:"center"}); return; }
@@ -2428,7 +2460,7 @@ function renderQuick(){
     ${welcomeHtml()}
     ${STANDALONE?whereHtml():""}
     ${PHX.waterHtml(lg)}
-    <section class="panel"><h2>Meals</h2>${meals.length?`<div class="qlist">${meals.map(i=>qRow(i,key,lg)).join("")}</div>`:`<p class="muted" style="margin:0">No meals planned for today.</p>`}</section>
+    <section class="panel"><h2>Meals</h2>${meals.length?`<div class="qlist">${meals.map(i=>qRow(i,key,lg)).join("")}</div>`:`<p class="muted" style="margin:0">No meals planned for today.</p>`}${typeof quickMealHtml==="function"?quickMealHtml(key):""}</section>
     <section class="panel"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><h2>Supplements</h2>${dueNow?`<button class="btn" data-qsupps="1">Took all due now (${dueNow})</button>`:""}</div>
       ${supps.length?`<div class="qlist">${supps.map(i=>qRow(i,key,lg)).join("")}</div>`:`<p class="muted" style="margin:0">No supplements on today's list.</p>`}</section>
     ${typeof prnHtml==="function"?prnHtml(key,lg):""}
