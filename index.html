@@ -88,6 +88,7 @@ li.freezer .t,li.cook .t{color:var(--dusk)}
 li.is-done .title,li.is-done .detail{color:var(--done);text-decoration:line-through}
 input[type="checkbox"]{width:22px;height:22px;accent-color:var(--juniper);margin:2px 0 0}
 .warnbox{background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:8px 12px;font-size:.93rem}
+details.warnbox>summary{cursor:pointer;list-style-position:outside;margin-left:16px}
 label{display:grid;gap:4px;font-weight:700;font-size:.93rem}
 input[type="text"],input[type="time"],input[type="date"],input[type="number"],select,textarea{font:inherit;font-weight:400;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 9px;width:100%;min-width:0}
 textarea{min-height:80px;resize:vertical}
@@ -162,8 +163,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.24.0";
+const APP_VERSION = "1.25.0";
 const CHANGES = [
+  {v:"1.25.0", date:"2026-11-24", items:["Warning boxes are now one line you can tap to open: the home-screen data warning and the spacing check."]},
   {v:"1.24.0", date:"2026-11-24", items:["Removed the Pending box and its labels from supplements and the checklist. Taking it now is what turns a supplement on or off."]},
   {v:"1.23.1", date:"2026-11-24", items:["Backup files are now named allsystemsyou-backup-(date). Older daily-helper backups still open the same way."]},
   {v:"1.23.0", date:"2026-11-24", items:["As needed supplements: tick As needed on a supplement and it leaves your checklist and reminders. Tap Took it on Today or Quick to log the time. You can set a most per day and get a warning when you reach it."]},
@@ -1391,7 +1393,7 @@ function renderDay(offset){
   if(flareOn(d)) h += `<div class="warnbox"><b>Flare-up mode through ${esc(DAYS_LONG[parseYmd(S.flare.until).getDay()])} ${esc(S.flare.until.slice(5).replace("-","/"))}.</b> No nuts, seeds, chia, flax, beans, chickpeas, edamame, soy, legume noodles, chocolate or oats. Keep quinoa and buckwheat small. Lean on ${LYSINE_FOODS}. <button class="linkbtn" data-goflare="1">Change or end it</button></div>`;
   else if(offset===0) h += `<div><button class="linkbtn" data-goflare="1">Need a food break? Turn off some foods for a while</button></div>`;
   if(next) h += `<div class="next"><b>Next: ${niceTime(next.time)}</b> · ${esc(next.title)}</div>`;
-  if(warns.length) h += `<div class="warnbox"><b>Spacing check.</b> Your rule keeps psyllium and other binders at least ${Math.round((Number(S.rules.spacingMin)||120)/6)/10} hours from medicines and supplements. ${warns.map(esc).join(" ")}</div>`;
+  if(warns.length) h += `<details class="warnbox"><summary><b>Spacing check: ${warns.length} ${warns.length===1?"thing is":"things are"} too close together.</b> Tap for more.</summary><p style="margin:6px 0 0">Your rule keeps psyllium and other binders at least ${Math.round((Number(S.rules.spacingMin)||120)/6)/10} hours from medicines and supplements.</p><ul style="margin:6px 0 0;padding-left:20px">${warns.map(w=>`<li>${esc(w)}</li>`).join("")}</ul></details>`;
   { const ov = dayOver(d), wk = ((S.week[d.getDay()]||{}).ids)||{}, DT = dayTimes(d), any = Object.keys(ov).length;
     const tin = (f,label,val)=>`<label>${label}<input type="time" id="ov-${f}-${key}" data-ov="${f}" data-day="${key}" value="${esc(ov[f]||"")}" placeholder="${esc(val||"")}">${!ov[f]&&val?`<small class="muted" style="font-weight:400">Now ${niceTime(val)}</small>`:""}</label>`;
     const sel = (k,label)=>{ const cur = (ov.text||{})[k] ? "__text" : (ov.ids&&k in ov.ids ? (ov.ids[k]||"__skip") : "");
@@ -1701,7 +1703,7 @@ function nudgeItem(key){ const [kind,id] = [key.slice(0,key.indexOf(":")), key.s
 function renderSupps(){
   let h = `<div class="stack"><section class="panel"><h2>Supplements and medicine</h2>
   <p class="muted" style="margin:0">Type times like <b>8:00, 6:30pm</b>, or leave Times blank and pick how many times a day.</p>
-  ${spacingWarnings().map(w=>`<div class="warnbox">${esc(w)}</div>`).join("")}`;
+  ${(w=>w.length?`<details class="warnbox"><summary><b>Spacing check: ${w.length} ${w.length===1?"thing is":"things are"} too close together.</b> Tap for more.</summary><ul style="margin:6px 0 0;padding-left:20px">${w.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></details>`:"")(spacingWarnings())}`;
   S.supplements.forEach((s,i)=>{
     const bad = badTimes(s.times);
     h += `<div class="supp">
@@ -2322,7 +2324,8 @@ const TOUCH = matchMedia("(pointer: coarse)").matches;
 const STANDALONE = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
 function whereHtml(){
   return STANDALONE
-    ? `<div class="warnbox"><b>You're in the home-screen app.</b> On iPhone it keeps its own copy of your data, separate from Safari, and the one-tap shortcuts write to Safari's copy. Pick one place to use: Safari is the one that works with shortcuts. Deleting this icon deletes this copy, so save a backup first.</div>`
+    ? `<details class="warnbox"><summary><b>Deleting this icon deletes your data.</b> Tap for more.</summary>
+      <ul style="margin:6px 0 0;padding-left:20px;display:grid;gap:4px"><li>Your data is saved only in this home-screen app, on this phone.</li><li>Save a backup before you delete the icon or switch phones: More, then Backups.</li><li>Safari keeps a separate copy. One-tap Shortcuts write to Safari, not here, so use the Quick tab instead.</li></ul></details>`
     : `<p class="muted" style="margin:0">You're in Safari. Shortcuts write here too. If you add a home-screen icon, turn off <b>Open as Web App</b> so it opens this same copy.</p>`;
 }
 let QUICK_FLASH = "";
