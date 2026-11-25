@@ -162,8 +162,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.23.0";
+const APP_VERSION = "1.23.1";
 const CHANGES = [
+  {v:"1.23.1", date:"2026-11-24", items:["Backup files are now named allsystemsyou-backup-(date). Older daily-helper backups still open the same way."]},
   {v:"1.23.0", date:"2026-11-24", items:["As needed supplements: tick As needed on a supplement and it leaves your checklist and reminders. Tap Took it on Today or Quick to log the time. You can set a most per day and get a warning when you reach it."]},
   {v:"1.22.3", date:"2026-11-24", items:["Supplements and routine: one Every day box instead of ticking each day. Untick it to pick days."]},
   {v:"1.22.2", date:"2026-11-24", items:["Supplements no longer ask Where. They go with you, so their reminders always come 10 and 5 minutes before (or whatever you set for at-home)."]},
@@ -2183,7 +2184,7 @@ view.addEventListener("click",async e=>{
     if(t.dataset.lbfile==="csv") saveFile(nm+".csv", rowsCsv(r), "text/csv"); else saveFile(nm+".txt", lookbackText(), "text/plain"); return; }
   if(t.dataset.visitfile){ const nm="doctor-visit-"+ymd(new Date());
     if(t.dataset.visitfile==="csv") saveFile(nm+"-last-2-weeks.csv", rowsCsv(visitData().rows), "text/csv"); else saveFile(nm+".txt", visitText(), "text/plain"); return; }
-  if(t.dataset.backupdl){ saveFile("daily-helper-backup-"+ymd(new Date())+".json", JSON.stringify(snapshot()), "application/json"); return; }
+  if(t.dataset.backupdl){ saveFile("allsystemsyou-backup-"+ymd(new Date())+".json", JSON.stringify(snapshot()), "application/json"); return; }
   if(t.dataset.restoreask){ RESTORE_ASK=t.dataset.restoreask; render(); return; }
   if(t.dataset.restorecancel){ RESTORE_ASK=null; render(); return; }
   if(t.dataset.restoreday){ const d=t.dataset.restoreday;
