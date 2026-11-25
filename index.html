@@ -162,8 +162,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.22.3";
+const APP_VERSION = "1.23.0";
 const CHANGES = [
+  {v:"1.23.0", date:"2026-11-24", items:["As needed supplements: tick As needed on a supplement and it leaves your checklist and reminders. Tap Took it on Today or Quick to log the time. You can set a most per day and get a warning when you reach it."]},
   {v:"1.22.3", date:"2026-11-24", items:["Supplements and routine: one Every day box instead of ticking each day. Untick it to pick days."]},
   {v:"1.22.2", date:"2026-11-24", items:["Supplements no longer ask Where. They go with you, so their reminders always come 10 and 5 minutes before (or whatever you set for at-home)."]},
   {v:"1.22.1", date:"2026-11-24", items:["Phone: updates now show up the next time you open the app, instead of getting stuck on the old version."]},
@@ -1124,7 +1125,7 @@ function itemsFor(d, plain){
   const clockTime = id=> T.wake ? ({psyllium:T.psyllium, morningwater:T.wake, fast:T.closes, tea_rootfire:T.lunch, tea_iced:T.snack, tea_slumber:T.bed&&fromMins(mins(T.bed)-45)})[id] : null;
   const add = o=>items.push(o);
   if(S.on.supps) for(const s of S.supplements){
-    if(!s.active || !dueOn(s,d)) continue;
+    if(!s.active || s.asNeeded || !dueOn(s,d)) continue;
     const ts = parseTimes(s.times).length ? parseTimes(s.times) : (clockTime(s.id) ? [clockTime(s.id)] : []);
     const dose = suppDose(s,d);
     const detail = [dose, s.how].filter(Boolean).join(". ");
@@ -1343,6 +1344,17 @@ function feelHtml(key, lg){
     </details></div>`;
 }
 
+
+function prnHtml(key, lg){
+  const list = S.supplements.filter(s=>s.active && s.asNeeded); if(!list.length) return "";
+  const taken = lg.prn||[];
+  return `<section class="panel"><h2>As needed</h2><div class="stack" style="gap:10px">${list.map(s=>{
+    const mine = taken.filter(x=>x.id===s.id), max = Number(s.maxPerDay)||0, full = max>0 && mine.length>=max;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div><b>${esc(s.name)}</b>${s.dose?` <small class="muted">${esc(s.dose)}</small>`:""}<br>
+      <small class="muted">${mine.length?"Taken "+mine.length+(max?" of "+max:"")+" today: "+mine.map(x=>niceTime(x.t)).join(", "):(max?"Up to "+max+" a day. Not taken today.":"Not taken today.")}</small>
+      ${full?`<br><small style="color:var(--rust,#a4462e)"><b>That's your most for today.</b></small>`:""}</div>
+      <div class="chips" style="gap:8px"><button class="btn ${full?"ghost":""}" data-prn="${esc(s.id)}" data-day="${key}">${full?"Took another":"Took it"}</button>${mine.length?`<button class="linkbtn" data-prnundo="${esc(s.id)}" data-day="${key}">Undo</button>`:""}</div></div>`; }).join("")}</div></section>`;
+}
 function renderDay(offset){
   const d = addDays(new Date(), offset), key = ymd(d), lg = S.log[key]||{done:{},water:0};
   const {timed, untimed} = itemsFor(d);
@@ -1418,6 +1430,7 @@ function renderDay(offset){
       ${ed?"":`<button class="linkbtn" data-iedit="${esc(it.id)}" data-day="${key}" style="margin-right:14px">Change</button>`}${offset===0&&!done&&!ms&&!it.skip&&missable(it)?`<button class="linkbtn" data-miss="${esc(it.id)}" data-day="${key}" style="margin-right:14px">Missed it</button>`:""}${it.kind==="supp"||it.kind==="routine"||it.kind==="meal"?`<button class="linkbtn" data-noteabout="${esc(it.kind==="meal"?it.title.replace(/^[^:]+: /,""):it.title)}">Add a note</button>`:""}</div></li>`;
   }
   h += `</ol></section>`;
+  if(offset===0) h += prnHtml(key, lg);
   h += ovBox + factsBox;
   if(untimed.length){
     h += `<section class="panel"><h2>No time set yet</h2><small class="muted">These won't remind you until they have a time. Add times on the Supplements &amp; routine tab.</small><ol class="day">`;
@@ -1617,7 +1630,7 @@ function lookbackText(){
 function visitData(){
   const rows = rangeRows(parseYmd(ymd(new Date())), 14), sm = summary(rows);
   const open = (S.doctor||[]).filter(x=>x.status!=="answered");
-  const supps = S.supplements.filter(x=>x.active).map(x=>({n:x.name, dose:suppDose(x,new Date())||x.dose||"", times:x.times||(Number(x.perDay)>1?x.perDay+" times a day":""), pending:!!x.pending}));
+  const supps = S.supplements.filter(x=>x.active).map(x=>({n:x.name, dose:suppDose(x,new Date())||x.dose||"", times:x.asNeeded?"as needed"+(Number(x.maxPerDay)?", up to "+x.maxPerDay+" a day":""):x.times||(Number(x.perDay)>1?x.perDay+" times a day":""), pending:!!x.pending}));
   const labs = []; const seen = new Set();
   for(const x of [...(S.labs||[])].sort((a,b)=>b.date.localeCompare(a.date))){ if(seen.has(x.name)) continue; seen.add(x.name);
     const hi = x.high!=null&&x.high!==""&&Number(x.value)>Number(x.high), lo = x.low!=null&&x.low!==""&&Number(x.value)<Number(x.low);
@@ -1701,6 +1714,8 @@ function renderSupps(){
       ${freqHtml(s,i,"s")}
       <div class="row">
         <label class="inline"><input type="checkbox" data-s="${i}" data-f="pending" ${s.pending?"checked":""}> Pending</label>
+        <label class="inline"><input type="checkbox" data-s="${i}" data-f="asNeeded" ${s.asNeeded?"checked":""}> As needed (no reminders)</label>
+        ${s.asNeeded?`<label class="inline">Most per day <input type="number" min="0" max="20" style="width:4.5em" data-s="${i}" data-f="maxPerDay" value="${esc(s.maxPerDay||"")}" placeholder="any"></label>`:""}
         <label class="inline"><input type="checkbox" data-s="${i}" data-f="binder" ${s.binder?"checked":""}> Fiber or binder (keep 2 h apart)</label>
         <label class="inline"><input type="checkbox" data-s="${i}" data-f="active" ${s.active?"checked":""}> Taking it now</label>
         <button class="btn ghost" data-del="${i}">Remove</button>
@@ -2127,6 +2142,8 @@ view.addEventListener("change",e=>{
 view.addEventListener("toggle",e=>{ if(e.target.dataset && e.target.dataset.feelbox) FEEL_OPEN = e.target.open; }, true);
 view.addEventListener("click",async e=>{
   const t = e.target;
+  if(t.dataset.prn){ const lg = dayLog(t.dataset.day), n = new Date(); (lg.prn = lg.prn||[]).push({id:t.dataset.prn, t:fromMins(n.getHours()*60+n.getMinutes())}); save(); render(); toast("Logged"); return; }
+  if(t.dataset.prnundo){ const lg = dayLog(t.dataset.day), k = (lg.prn||[]).map(x=>x.id).lastIndexOf(t.dataset.prnundo); if(k>=0) lg.prn.splice(k,1); save(); render(); return; }
   if(t.dataset.iedit){ EDIT_ITEM = t.dataset.day+"|"+t.dataset.iedit; render(); const f=document.getElementById("ie-time"); if(f) f.closest("li").scrollIntoView({block:"center"}); return; }
   if(t.dataset.iecancel){ EDIT_ITEM = null; render(); return; }
   { const g = t.closest("[data-goto]"); if(g){ EDIT_ITEM = null; TAB = g.dataset.goto; render(); window.scrollTo(0,0); return; } }
@@ -2410,6 +2427,7 @@ function renderQuick(){
     <section class="panel"><h2>Meals</h2>${meals.length?`<div class="qlist">${meals.map(i=>qRow(i,key,lg)).join("")}</div>`:`<p class="muted" style="margin:0">No meals planned for today.</p>`}</section>
     <section class="panel"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><h2>Supplements</h2>${dueNow?`<button class="btn" data-qsupps="1">Took all due now (${dueNow})</button>`:""}</div>
       ${supps.length?`<div class="qlist">${supps.map(i=>qRow(i,key,lg)).join("")}</div>`:`<p class="muted" style="margin:0">No supplements on today's list.</p>`}</section>
+    ${typeof prnHtml==="function"?prnHtml(key,lg):""}
     ${backupNudge()}
     <div><button class="linkbtn" data-goto="today">See the full day</button></div>
     <div>${openOnHtml()}</div>
