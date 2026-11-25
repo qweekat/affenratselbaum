@@ -1,8 +1,8 @@
 /* Keeps all systems you working with no signal. App pages come from the phone's copy first and refresh in the background;
    fonts and the label reader are kept after their first download. Version changes with every build. */
-const CACHE = "dh-phone-b0afbae2c0";
+const CACHE = "dh-phone-ea6b3f07ff";
 const FILES = ["./", "index.html", "pantry.html", "checker.html", "manifest.webmanifest", "icon-180.png", "icon-512.png", "qrcode.js"];
-self.addEventListener("install", e=>{ e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)).then(()=>self.skipWaiting())); });
+self.addEventListener("install", e=>{ e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES.map(f=>new Request(f,{cache:"reload"})))).then(()=>self.skipWaiting())); });
 self.addEventListener("activate", e=>{ e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())); });
 self.addEventListener("fetch", e=>{
   const r = e.request; if(r.method!=="GET") return;
@@ -11,7 +11,8 @@ self.addEventListener("fetch", e=>{
   const key = same ? new Request(u.origin + u.pathname) : r;
   e.respondWith(caches.open(CACHE).then(async c=>{
     const hit = await c.match(key);
-    const net = fetch(r).then(res=>{ if(res && (res.ok || res.type==="opaque")) c.put(key, res.clone()); return res; }).catch(()=>null);
+    // Ask the server each time (not the browser's 10-minute copy), so updates show up on the next open.
+    const net = (same ? fetch(u.href, {cache:"no-cache", credentials:"same-origin"}) : fetch(r)).then(res=>{ if(res && (res.ok || res.type==="opaque")) c.put(key, res.clone()); return res; }).catch(()=>null);
     if(hit){ e.waitUntil(net); return hit; }
     return (await net) || (await c.match(new Request(u.origin + u.pathname.replace(/[^/]*$/, "")))) || Response.error();
   }));

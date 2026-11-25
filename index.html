@@ -162,8 +162,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.22.0";
+const APP_VERSION = "1.22.1";
 const CHANGES = [
+  {v:"1.22.1", date:"2026-11-24", items:["Phone: updates now show up the next time you open the app, instead of getting stuck on the old version."]},
   {v:"1.22.0", date:"2026-11-24", items:["Phone: new setting to always open the app on Quick, with its one-tap buttons. It's on the Quick tab and under Phone shortcuts. If you leave the app for 5 minutes or more, it goes back to Quick."]},
   {v:"1.21.0", date:"2026-11-24", items:["Every other day: pick the first day you take it, instead of it always starting the day you turned it on.","How many times a day: take something 2, 3 or 4 times a day without picking clock times. Leave Times blank and it shows up that many times on your list to tick off."]},
   {v:"1.20.0", date:"2026-10-23", items:["Pantry finds more meals you can make: things you typed in count (kabocha covers squash, black cod covers sablefish, kale covers chard), and spices or oils you haven't ticked no longer hold a meal back. Meals that need a batch cook count as ready.","Meals that break your food rules move to their own group, stand-ins you avoid are skipped, and Fill leaves those meals out."]},
@@ -2355,7 +2356,13 @@ function phoneAfterLoad(){
   if(needsSetup() || pGet("dh.openOn")==="quick") TAB = "quick";
   if(location.search) history.replaceState(null, "", location.pathname + (TAB==="quick" ? "#quick" : ""));
   if(navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(()=>{});
-  if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
+  if("serviceWorker" in navigator){
+    const had = !!navigator.serviceWorker.controller; let reloading = false;
+    navigator.serviceWorker.addEventListener("controllerchange", ()=>{ if(had && !reloading){ reloading = true; location.reload(); } });
+    navigator.serviceWorker.register("sw.js").then(reg=>{
+      document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) reg.update().catch(()=>{}); });
+    }).catch(()=>{});
+  }
   let hiddenAt = 0;
   document.addEventListener("visibilitychange", ()=>{
     if(document.hidden){ hiddenAt = Date.now(); return; }
