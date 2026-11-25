@@ -162,8 +162,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.20.0";
+const APP_VERSION = "1.21.0";
 const CHANGES = [
+  {v:"1.21.0", date:"2026-11-24", items:["Every other day: pick the first day you take it, instead of it always starting the day you turned it on.","How many times a day: take something 2, 3 or 4 times a day without picking clock times. Leave Times blank and it shows up that many times on your list to tick off."]},
   {v:"1.20.0", date:"2026-10-23", items:["Pantry finds more meals you can make: things you typed in count (kabocha covers squash, black cod covers sablefish, kale covers chard), and spices or oils you haven't ticked no longer hold a meal back. Meals that need a batch cook count as ready.","Meals that break your food rules move to their own group, stand-ins you avoid are skipped, and Fill leaves those meals out."]},
   {v:"1.19.1", date:"2026-10-23", items:["Optional bedtime tea reminder: Waxing Slumber (stevia-free batch), a small cup before bed. Off until you turn it on."]},
   {v:"1.19.0", date:"2026-10-23", items:["Your own teas: morning water now pairs with Neural Detox or Blood & Balm. Optional tea reminders (RootFire Brew, iced Vital Flow or Honeyed Love) are under Supplements & routine, off until you turn them on.","Two tea questions for your provider (astragalus, lemon balm) are on your doctor list.","Pantry: label items you saved now have an edit button, to add ingredients the photo missed. The checks run again.","Stevia is no longer suggested as a sweetener, and the checker flags chamomile."]},
@@ -1105,7 +1106,10 @@ function dueOn(x, d){
 function freqHtml(x, i, attr){
   return `<div class="row">${DAYS.map((n,dw)=>`<label class="inline"><input type="checkbox" data-${attr}day="${i}" value="${dw}" ${!x.alt&&(x.days||[]).includes(dw)?"checked":""} ${x.alt?"disabled":""}> ${n}</label>`).join("")}
     <label class="inline"><input type="checkbox" data-${attr}alt="${i}" ${x.alt?"checked":""}> Every other day</label></div>
-    <small class="muted">${x.alt?"Every other day, starting "+esc(x.altFrom||"today")+".":(x.days||[]).length?x.days.length+" days a week.":"Every day."}</small>`;
+    <small class="muted">${x.alt?"Every other day.":(x.days||[]).length?x.days.length+" days a week.":"Every day."}</small>
+    ${x.alt?`<label class="inline">First day to take it <input type="date" data-${attr}altfrom="${i}" value="${esc(x.altFrom||ymd(new Date()))}"></label><small class="muted">Pick a day you take it. The app counts every other day from there.</small>`:""}
+    <label class="inline">How many times a day <select data-${attr}per="${i}">${[1,2,3,4].map(n=>`<option value="${n}" ${(Number(x.perDay)||1)===n?"selected":""}>${n}</option>`).join("")}</select></label>
+    <small class="muted">If you leave Times blank, it shows up this many times on your list, with no clock time. Tick each one off as you take it.</small>`;
 }
 
 
@@ -1118,7 +1122,7 @@ function itemsFor(d, plain){
     const ts = parseTimes(s.times).length ? parseTimes(s.times) : (clockTime(s.id) ? [clockTime(s.id)] : []);
     const dose = suppDose(s,d);
     const detail = [dose, s.how].filter(Boolean).join(". ");
-    if(!ts.length){ add({id:"supp:"+s.id, time:null, kind:"supp", title:s.name, detail, pending:s.pending}); continue; }
+    if(!ts.length){ const n=Math.max(1,Math.min(4,Number(s.perDay)||1)); for(let k=1;k<=n;k++) add({id:"supp:"+s.id+(n>1?":n"+k:""), time:null, kind:"supp", title:s.name+(n>1?" ("+k+" of "+n+")":""), detail, pending:s.pending}); continue; }
     ts.forEach(t=>add({id:"supp:"+s.id+":"+t, time:t, kind:"supp", title:s.name, detail, pending:s.pending, suppId:s.id, binder:!!s.binder, where:s.where||"home"}));
   }
   const wk = S.week[dow]||{ids:{}}, ids = idsFor(d), ovt = dayOver(d).text||{};
@@ -1137,7 +1141,7 @@ function itemsFor(d, plain){
   if(S.on.routine!==false) for(const r of (S.routine||[])){
     if(!r.active || !dueOn(r,d)) continue;
     const ts = parseTimes(r.times).length ? parseTimes(r.times) : (clockTime(r.id) ? [clockTime(r.id)] : []);
-    if(!ts.length){ add({id:"rt:"+r.id, time:null, kind:"routine", title:r.name, detail:r.how}); continue; }
+    if(!ts.length){ const n=Math.max(1,Math.min(4,Number(r.perDay)||1)); for(let k=1;k<=n;k++) add({id:"rt:"+r.id+(n>1?":n"+k:""), time:null, kind:"routine", title:r.name+(n>1?" ("+k+" of "+n+")":""), detail:r.how}); continue; }
     ts.forEach(t=>add({id:"rt:"+r.id+":"+t, time:t, kind:"routine", title:r.name, detail:r.how, pending:r.pending, weekly:!!(r.days&&r.days.length), where:r.where||"home", routineId:r.id}));
   }
   const sess = cookSession(d);
@@ -1607,7 +1611,7 @@ function lookbackText(){
 function visitData(){
   const rows = rangeRows(parseYmd(ymd(new Date())), 14), sm = summary(rows);
   const open = (S.doctor||[]).filter(x=>x.status!=="answered");
-  const supps = S.supplements.filter(x=>x.active).map(x=>({n:x.name, dose:suppDose(x,new Date())||x.dose||"", times:x.times||"", pending:!!x.pending}));
+  const supps = S.supplements.filter(x=>x.active).map(x=>({n:x.name, dose:suppDose(x,new Date())||x.dose||"", times:x.times||(Number(x.perDay)>1?x.perDay+" times a day":""), pending:!!x.pending}));
   const labs = []; const seen = new Set();
   for(const x of [...(S.labs||[])].sort((a,b)=>b.date.localeCompare(a.date))){ if(seen.has(x.name)) continue; seen.add(x.name);
     const hi = x.high!=null&&x.high!==""&&Number(x.value)>Number(x.high), lo = x.low!=null&&x.low!==""&&Number(x.value)<Number(x.low);
@@ -2073,7 +2077,9 @@ view.addEventListener("change",e=>{
   if(t.dataset.r!==undefined){ const r=S.routine[+t.dataset.r]; r[t.dataset.f] = t.type==="checkbox"? t.checked : t.value; save(); if(t.type==="checkbox"||t.dataset.f==="times") renderSupps(); return; }
   for(const [attr,list] of [["r","routine"],["s","supplements"]]){
     if(t.dataset[attr+"day"]!==undefined){ const x=S[list][+t.dataset[attr+"day"]], dw=+t.value; x.days=(x.days||[]).filter(v=>v!==dw); if(t.checked) x.days.push(dw); x.days.sort(); save(); renderSupps(); return; }
-    if(t.dataset[attr+"alt"]!==undefined){ const x=S[list][+t.dataset[attr+"alt"]]; x.alt=t.checked; if(t.checked) x.altFrom=ymd(new Date()); save(); renderSupps(); return; }
+    if(t.dataset[attr+"alt"]!==undefined){ const x=S[list][+t.dataset[attr+"alt"]]; x.alt=t.checked; if(t.checked && !x.altFrom) x.altFrom=ymd(new Date()); save(); renderSupps(); return; }
+    if(t.dataset[attr+"altfrom"]!==undefined){ const x=S[list][+t.dataset[attr+"altfrom"]]; if(parseYmd(t.value)) x.altFrom=t.value; save(); renderSupps(); return; }
+    if(t.dataset[attr+"per"]!==undefined){ const x=S[list][+t.dataset[attr+"per"]]; x.perDay=Math.max(1,Math.min(4,Number(t.value)||1)); save(); renderSupps(); return; }
   }
   if(t.dataset.s!==undefined){ const s=S.supplements[+t.dataset.s]; s[t.dataset.f] = t.type==="checkbox"? t.checked : t.value; save(); if(t.type==="checkbox"||t.dataset.f==="times") renderSupps(); return; }
   if(t.dataset.wid){ const w=S.week[t.dataset.wid]=S.week[t.dataset.wid]||{ids:{}}; (w.ids=w.ids||{})[t.dataset.slot]=t.value; save(); renderWeek(); return; }
