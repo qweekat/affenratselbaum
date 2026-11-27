@@ -166,8 +166,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.37.0";
+const APP_VERSION = "1.37.1";
 const CHANGES = [
+  {v:"1.37.1", date:"2026-11-27", items:["Fixed: on iPhone, time pickers (wake up, bed, meal times, supplement times) closed after the first turn of the wheel. Now the time saves when you tap Done."]},
   {v:"1.37.0", date:"2026-11-27", items:["Lite is now a tab on the main bar, next to Today. The app opens on whichever of Lite or the other tabs you used last."]},
   {v:"1.36.1", date:"2026-11-27", items:["Fixed: supplements ticked on the full checklist now count as done in the Light view too."]},
   {v:"1.36.0", date:"2026-11-27", items:["Light view: \"Done eating for today\" ticks Kitchen closes in the full app.","Water you add ticks the Glass of water items on the checklist, one for each share of your goal."]},
@@ -2409,6 +2410,15 @@ document.querySelector("nav.tabs").addEventListener("click",e=>{
   const b = e.target.closest("button[data-tab]"); if(!b) return;
   TAB = b.dataset.tab; liteReset(); try{ localStorage.setItem("dh.view", TAB==="lite"?"lite":""); }catch(_){} try{ sessionStorage.setItem("dh-tab",TAB); }catch(_){} render(); window.scrollTo(0,0);
 });
+
+document.addEventListener("change", e=>{
+  const t = e.target;
+  if(t && t.type==="time" && document.activeElement===t && !t._timeHold){ e.stopImmediatePropagation(); t._timePending = true; }
+}, true);
+document.addEventListener("focusout", e=>{
+  const t = e.target;
+  if(t && t.type==="time" && t._timePending){ t._timePending = false; t._timeHold = true; t.dispatchEvent(new Event("change", {bubbles:true})); t._timeHold = false; }
+}, true);
 view.addEventListener("change",e=>{
   const t = e.target;
   if((TAB==="lite" || LITE.eat) && liteChange(t)) return;
