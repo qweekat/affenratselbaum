@@ -165,8 +165,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.36.0";
+const APP_VERSION = "1.36.1";
 const CHANGES = [
+  {v:"1.36.1", date:"2026-11-27", items:["Fixed: supplements ticked on the full checklist now count as done in the Light view too."]},
   {v:"1.36.0", date:"2026-11-27", items:["Light view: \"Done eating for today\" ticks Kitchen closes in the full app.","Water you add ticks the Glass of water items on the checklist, one for each share of your goal."]},
   {v:"1.35.0", date:"2026-11-27", items:["Partial servings: pick ¼, ½, ¾, 1½ and so on for each food, or step with − and +."]},
   {v:"1.34.1", date:"2026-11-27", items:["Meals have a time you can change when you log them or tap Edit. Edit also lets you switch which meal it was. Supplement countdowns follow the time you set."]},
@@ -1643,12 +1644,18 @@ function pantryList(){
 }
 
 function liteSupps(key){
-  const d = parseYmd(key), lg = S.log[key]||{}, ev = lg.ev||{}, done = lg.lite||{}, out = [];
+  const d = parseYmd(key), lg = S.log[key]||{}, ev = lg.ev||{}, done = lg.lite||{}, fdone = lg.done||{}, out = [];
+  const {timed, untimed} = itemsFor(d), full = [...timed, ...untimed];
   for(const s of S.supplements){
     if(!s.active || s.asNeeded || !dueOn(s,d)) continue;
-    const ws = s.whens||[], h = Number(s.afterH)||0;
-    if(!ws.length){ out.push({s, a:"", k:s.id+"@any", due:null, h:0, done:!!done[s.id+"@any"]}); continue; }
-    for(const a of ws){ const at = ev[a]; out.push({s, a, k:s.id+"@"+a, due: at ? mins(at)+Math.round(h*60) : null, h, done:!!done[s.id+"@"+a]}); }
+    const ws = s.whens||[], h = Number(s.afterH)||0, mine = [];
+    if(!ws.length) mine.push({s, a:"", k:s.id+"@any", due:null, h:0, done:!!done[s.id+"@any"]});
+    for(const a of ws){ const at = ev[a]; mine.push({s, a, k:s.id+"@"+a, due: at ? mins(at)+Math.round(h*60) : null, h, done:!!done[s.id+"@"+a]}); }
+    
+    const fi = full.filter(i=>i.id==="supp:"+s.id || i.id.startsWith("supp:"+s.id+":")), fd = fi.filter(i=>fdone[i.id]).length;
+    let extra = (fi.length && fd===fi.length) ? mine.length : fd - mine.filter(x=>x.done).length;
+    for(const x of mine) if(extra>0 && !x.done){ x.done = true; x.viaFull = true; extra--; }
+    out.push(...mine);
   }
   return out;
 }
