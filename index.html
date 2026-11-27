@@ -166,8 +166,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.39.0";
+const APP_VERSION = "1.39.1";
 const CHANGES = [
+  {v:"1.39.1", date:"2026-11-27", items:["Fixed: \"Always open the app on Lite\" was ignored when opening from the home-screen icon, which always asked for Quick."]},
   {v:"1.39.0", date:"2026-11-27", items:["Alerts while the app is open: when a countdown (like 2 h after lunch) or a set reminder comes due, a banner shows with a chime, plus an iPhone notification if you allow them. Settings and a test button are on Lite under \"Alerts while the app is open\"."]},
   {v:"1.38.1", date:"2026-11-27", items:["Fixed: More no longer jumps to Lite. Pick one start page: \"Always open the app on Quick\" (on Quick) or \"on Lite\" (on Lite). Ticking one switches off the other. With neither ticked, the app opens on Today."]},
   {v:"1.38.0", date:"2026-11-27", items:["Lite: add a supplement or powder (like a fiber powder) right under \"Set when you take each one\", then tick when you take it."]},
@@ -2779,8 +2780,10 @@ function phoneAfterLoad(){
   const p = new URLSearchParams(location.search);
   if(p.get("do")){ QUICK_FLASH = runAction(p); TAB = "quick"; save(); }
   if(p.get("view")==="quick") TAB = "quick";
-  const asked = window.HASH_TAB || (["today","tomorrow","more","quick","lite"].includes(location.hash.slice(1)) ? location.hash.slice(1) : "");
+  
+  const asked = window.HASH_TAB || (["today","tomorrow","more","lite"].includes(location.hash.slice(1)) ? location.hash.slice(1) : "");
   const openOn = pGet("dh.openOn");
+  if(p.get("view") || p.get("do")) window.FROM_SHORTCUT = true;
   if(needsSetup()) TAB = "quick"; else if(!asked && !p.get("view") && !p.get("do") && (openOn==="quick" || (openOn==="lite" && typeof renderLite==="function"))) TAB = openOn;
   if(location.search) history.replaceState(null, "", location.pathname + (TAB==="quick" ? "#quick" : ""));
   if(navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(()=>{});
@@ -2913,6 +2916,9 @@ view.addEventListener("change", e=>{ if(PHX.isRestore(e.target)) pSet("dh.welcom
   try{ TAB = sessionStorage.getItem("dh-tab") || "today"; }catch(_){}
   try{ localStorage.removeItem("dh.view"); }catch(_){}
   { const h = location.hash.slice(1); if(["today","quick","tomorrow","more"].includes(h)){ TAB = h; window.HASH_TAB = h; history.replaceState(null, "", location.pathname + location.search); } }
+  
+  if(window.HASH_TAB==="quick" && !window.FROM_SHORTCUT){ let on = ""; try{ on = localStorage.getItem("dh.openOn")||""; }catch(_){}
+    if(on==="lite" && typeof renderLite==="function") TAB = "lite"; else if(on!=="quick") TAB = "today"; }
   if(HHUI.takeHash()) TAB = "household";
   await load(); phoneAfterLoad(); dailyLocalBackup(); mountHousehold(); const ended = checkFlare(); const rolled = rollCook() || ended; const used = useUpStock(); const swept = sweepMissed(); setSync(); render();
   if(SERVER || rolled || swept || used) save(); // refresh the 60-day reminder schedule on every open
