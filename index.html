@@ -166,8 +166,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.40.0";
+const APP_VERSION = "1.41.0";
 const CHANGES = [
+  {v:"1.41.0", date:"2026-11-27", items:["Fill in past days: on Today, tap \"‹ Day before\" to go back (up to 60 days). Tick the checklist, add water, log meals and as-needed doses for that day. \"Back to today\" returns."]},
   {v:"1.40.0", date:"2026-11-27", items:["Today, Quick and Lite stay in step both ways: ticking Kitchen closes, a meal, a glass of water or a supplement in one shows in the others, and unticking takes it back everywhere."]},
   {v:"1.39.1", date:"2026-11-27", items:["Fixed: \"Always open the app on Lite\" was ignored when opening from the home-screen icon, which always asked for Quick."]},
   {v:"1.39.0", date:"2026-11-27", items:["Alerts while the app is open: when a countdown (like 2 h after lunch) or a set reminder comes due, a banner shows with a chime, plus an iPhone notification if you allow them. Settings and a test button are on Lite under \"Alerts while the app is open\"."]},
@@ -1430,7 +1431,9 @@ function quickMealHtml(key){
     <small class="muted">A new one is saved to your meal options, so next time you can pick it.</small>
     <div class="chips" style="gap:8px"><button class="btn" data-qmsave="${key}">Save for today</button><button class="btn ghost" data-qmcancel="1">Cancel</button></div></div>`;
 }
+let DAY_BACK = 0;
 function renderDay(offset){
+  if(offset===0 && DAY_BACK>0) offset = -DAY_BACK;
   const d = addDays(new Date(), offset), key = ymd(d), lg = S.log[key]||{done:{},water:0};
   const {timed, untimed} = itemsFor(d);
   const f = fiberInfo(d), sess = cookSession(d), glasses = Math.ceil(S.waterGoal/S.glassOz);
@@ -1441,12 +1444,14 @@ function renderDay(offset){
   const oz = Number(lg.oz)||0, goal = Number(S.waterGoal)||80, sizes = (S.waterSizes&&S.waterSizes.length?S.waterSizes:[4,8]);
   let h = `<div class="stack">
   <section class="panel">
-    <h2>${DAYS_LONG[d.getDay()]}, ${d.toLocaleDateString(undefined,{month:"long",day:"numeric"})}</h2>
-    ${offset===0?`<div class="stack" style="gap:8px" id="waterBox">
+    ${offset<=0?`<div style="display:flex;gap:6px;justify-content:space-between;align-items:center;flex-wrap:nowrap"><button class="btn ghost" style="padding:8px 10px;white-space:nowrap" data-dayback="1" aria-label="Day before">‹ Day before</button>${offset<0?`<button class="linkbtn" style="white-space:nowrap" data-daytoday="1">Today</button><button class="btn ghost" style="padding:8px 10px;white-space:nowrap" data-dayfwd="1" aria-label="Next day">Next day ›</button>`:""}</div>`:""}
+    <h2>${offset<0?(offset===-1?"Yesterday, ":"")+DAYS_LONG[d.getDay()]:DAYS_LONG[d.getDay()]}, ${d.toLocaleDateString(undefined,{month:"long",day:"numeric"})}</h2>
+    ${offset<0?`<small class="muted">You're filling in a past day. Ticks, water and meals here go on that day.</small>`:""}
+    ${offset<=0?`<div class="stack" style="gap:8px" id="waterBox">
       <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap"><b>Water</b><span><span class="wtotal">${r1w(oz)}</span> <span class="muted">of ${esc(goal)} oz${oz>=goal?" · goal reached":""}</span></span></div>
       <div class="wbar" role="progressbar" aria-label="Water today" aria-valuemin="0" aria-valuemax="${esc(goal)}" aria-valuenow="${esc(oz)}"><span style="width:${Math.min(100,oz/goal*100)}%"></span></div>
-      <div class="sips">${sizes.map(n=>`<button class="sip" data-sip="${esc(n)}" aria-label="Add ${esc(n)} ounces of water">+${esc(n)} oz</button>`).join("")}</div>
-      ${(lg.sips||[]).length?`<div><button class="linkbtn" data-unsip="1">Undo last (${esc(lg.sips[lg.sips.length-1])} oz)</button></div>`:""}
+      <div class="sips">${sizes.map(n=>`<button class="sip" data-sip="${esc(n)}" data-day="${key}" aria-label="Add ${esc(n)} ounces of water">+${esc(n)} oz</button>`).join("")}</div>
+      ${(lg.sips||[]).length?`<div><button class="linkbtn" data-unsip="1" data-day="${key}">Undo last (${esc(lg.sips[lg.sips.length-1])} oz)</button></div>`:""}
     </div>`:""}
   </section>`;
   const factsBox = `<details class="panel"><summary><b>Fiber, psyllium and limits</b>${sess?` <span class="chip dusk">Cook day</span>`:""}</summary>
@@ -1460,7 +1465,7 @@ function renderDay(offset){
     <small class="muted">This week: ${esc(f.adds)}. Stop raising fiber if bloating or cramping gets worse.</small>
     <small class="muted">This week: ${esc(f.adds)}. Stop raising fiber if bloating or cramping gets worse.</small>
   </details>`;
-  if(offset===0) h += nudgeHtml() + `<div class="stack" style="gap:4px"><div><button class="btn" data-liteeat="1">Log what I ate</button></div>${ateListHtml(key)}</div>`;
+  if(offset<=0) h += (offset===0?nudgeHtml():"") + `<div class="stack" style="gap:4px"><div><button class="btn" data-liteeat="1" data-day="${key}">Log what I ate</button></div>${ateListHtml(key)}</div>`;
   if(flareOn(d)) h += `<div class="warnbox"><b>Flare-up mode through ${esc(DAYS_LONG[parseYmd(S.flare.until).getDay()])} ${esc(S.flare.until.slice(5).replace("-","/"))}.</b> No nuts, seeds, chia, flax, beans, chickpeas, edamame, soy, legume noodles, chocolate or oats. Keep quinoa and buckwheat small. Lean on ${LYSINE_FOODS}. <button class="linkbtn" data-goflare="1">Change or end it</button></div>`;
   else if(offset===0) h += `<div><button class="linkbtn" data-goflare="1">Need a food break? Turn off some foods for a while</button></div>`;
   if(next) h += `<div class="next"><b>Next: ${niceTime(next.time)}</b> · ${esc(next.title)}</div>`;
@@ -1474,7 +1479,7 @@ function renderDay(offset){
       ...SLOTS.filter(([k])=>(ov.text||{})[k]&&ov.text[k].trim()).map(([k,l])=>l.toLowerCase()+": "+ov.text[k].trim()),
       ...SLOTS.filter(([k])=>ov.ids&&k in ov.ids).map(([k,l])=>l.toLowerCase()+": "+(ov.ids[k]?(recipe(ov.ids[k])||{n:ov.ids[k]}).n:"skipped")),
       Object.keys(ov.items||{}).length ? Object.keys(ov.items).length+" checklist item"+(Object.keys(ov.items).length>1?"s":"")+" changed" : ""].filter(Boolean);
-    var ovBox = `<details class="panel" id="ovBox" ${OV_OPEN===key?"open":""}><summary><b>Change just ${offset===0?"today":"tomorrow"}</b>${any?` <span class="chip dusk">changed</span>`:""}</summary>
+    var ovBox = `<details class="panel" id="ovBox" ${OV_OPEN===key?"open":""}><summary><b>Change just ${offset===0?"today":offset<0?"that day":"tomorrow"}</b>${any?` <span class="chip dusk">changed</span>`:""}</summary>
       ${sumBits.length?`<p style="margin:0"><b>Changed:</b> ${esc(sumBits.join(", "))}.</p>`:""}
       <p class="muted" style="margin:0">Only this day changes. Your usual week stays the same. Set when you woke or ate, and the rest of the day moves to match.</p>
       <div class="grid2">${tin("wake","Woke up",S.clock&&S.clock.on?(S.clock.wake):"")}${tin("first","First meal",DT.breakfast)}${tin("lunch","Lunch",DT.lunch)}${tin("dinner","Dinner",DT.dinner)}</div>
@@ -1482,7 +1487,7 @@ function renderDay(offset){
       <div class="chips" style="gap:8px"><button class="btn" data-ovsave="${key}">Save</button>${any?`<button class="btn ghost" data-ovreset="${key}">Back to the usual day</button>`:""}</div>
       <small class="muted">Changes also save by themselves when you leave a box.</small>
     </details>`; }
-  h += `<section class="panel"><h2>${offset===0?"Today's checklist":"Tomorrow"}</h2><ol class="day">`;
+  h += `<section class="panel"><h2>${offset===0?"Today's checklist":offset<0?"Checklist for that day":"Tomorrow"}</h2><ol class="day">`;
   for(const it of timed){
     const done = !!lg.done[it.id], ms0 = (lg.missed||{})[it.id], ms = ms0 && !ms0.undone ? ms0 : null;
     const ed = EDIT_ITEM===key+"|"+it.id;
@@ -1500,12 +1505,12 @@ function renderDay(offset){
         <div class="chips" style="gap:8px"><button class="btn" data-iesave="${esc(it.id)}" data-day="${key}">Save</button><button class="btn ghost" data-iecancel="1">Cancel</button><button class="btn ghost" data-iereset="${esc(it.id)}" data-day="${key}">Undo changes</button></div>
         <button class="linkbtn" data-goto="${it.kind==="supp"||it.kind==="routine"?"supps":it.kind==="water"||it.id.startsWith("walk")||it.kind==="cook"?"settings":"week"}">Change it for every day instead</button>
       </div>`:""}
-      ${it.kind==="feel"&&offset===0?feelHtml(key, lg):""}
+      ${it.kind==="feel"&&offset<=0?feelHtml(key, lg):""}
       ${it.list?`<ul class="detail">${it.list.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}
       ${ed?"":`<button class="linkbtn" data-iedit="${esc(it.id)}" data-day="${key}" style="margin-right:14px">Change</button>`}${offset===0&&!done&&!ms&&!it.skip&&missable(it)?`<button class="linkbtn" data-miss="${esc(it.id)}" data-day="${key}" style="margin-right:14px">Missed it</button>`:""}${it.kind==="supp"||it.kind==="routine"||it.kind==="meal"?`<button class="linkbtn" data-noteabout="${esc(it.kind==="meal"?it.title.replace(/^[^:]+: /,""):it.title)}">Add a note</button>`:""}</div></li>`;
   }
   h += `</ol></section>`;
-  if(offset===0) h += prnHtml(key, lg);
+  if(offset<=0) h += prnHtml(key, lg);
   h += ovBox + factsBox;
   if(untimed.length){
     h += `<section class="panel"><h2>No time set yet</h2><small class="muted">These won't remind you until they have a time. Add times on the Supplements &amp; routine tab.</small><ol class="day">`;
@@ -1633,8 +1638,8 @@ const LITE_MEALS = [["b","Breakfast"],["l","Lunch"],["s","Snack"],["d","Dinner"]
 const LITE_AFTER = [[0,"with it"],[0.5,"30 min after"],[1,"1 h after"],[2,"2 h after"],[3,"3 h after"]];
 const PANTRY_NAMES = {"butternut": "Butternut squash", "acorn": "Acorn squash", "piepumpkin": "Pie pumpkin", "beets": "Beets", "leeks": "Leeks", "onion": "Onions", "garlic": "Garlic", "chard": "Chard", "spinach": "Spinach", "zucchini": "Zucchini", "sweetpotato": "Sweet potatoes", "cucumber": "Cucumbers", "lime": "Limes", "snappeas": "Snap or snow peas", "ginger": "Ginger", "jalapeno": "Jalapeño or serrano (yours)", "cilantro": "Cilantro", "basil": "Basil or chives", "persimmon": "Persimmons", "kiwi": "Kiwi", "raspberries": "Frozen raspberries or blackberries", "asparagus": "Asparagus", "chicken": "Skinless chicken breast or thigh", "bison": "Ground bison or lean beef", "lamb": "Lamb stew meat", "sablefish": "Sablefish", "trout": "Trout", "salmoncan": "Canned salmon", "sardines": "Sardines", "m_chickenstew": "Chicken butternut stew", "m_bison": "Bison zucchini skillet meat", "m_lambstew": "Lamb chickpea pumpkin stew", "m_shredded": "Shredded chicken", "m_patties": "Sage bison breakfast patties", "m_beans": "Cooked Anasazi or bolita beans", "m_quinoa": "Cooked quinoa", "m_buckwheat": "Cooked buckwheat groats", "m_roastveg": "Roasted sweet potato and beets", "m_chiajam": "Chia berry jam", "m_broth": "Homemade chicken broth (from poaching)", "driedbeans": "Dried Anasazi or bolita beans", "blackbeans": "Canned black beans", "chickpeas": "Canned chickpeas", "pumpkincan": "Canned pumpkin", "artichoke": "Artichoke hearts in water", "quinoa": "Quinoa (dry)", "buckwheat": "Buckwheat groats (dry)", "broth": "Bonafide or Pacific chicken broth", "chia": "Chia seeds", "psyllium": "Psyllium husk", "tahini": "Tahini", "walnuts": "Walnuts", "edamame": "Frozen shelled edamame", "chickpeaflour": "Chickpea flour", "pacha": "Pacha sprouted buckwheat bread", "creamcheese": "Cream cheese", "mozz": "Fresh mozzarella", "feta": "Fresh sheep feta", "yogurt": "Plain whole yogurt", "rice": "Rice", "potatoes": "Potatoes"};
 let LITE_SET_OPEN = false;
-let LITE = {eat:null, pick:{}, other:"", meal:"", edit:-1, time:""};
-const liteReset = ()=>{ LITE = {eat:null, pick:{}, other:"", meal:"", edit:-1, time:""}; };
+let LITE = {eat:null, pick:{}, other:"", meal:"", edit:-1, time:"", day:""};
+const liteReset = ()=>{ LITE = {eat:null, pick:{}, other:"", meal:"", edit:-1, time:"", day:""}; };
 const liteName = a=>(LITE_ANCHORS.find(x=>x[0]===a)||[a,a])[1];
 function liteItemName(id, plist){
   if(id.startsWith("n:")) return id.slice(2);
@@ -1650,8 +1655,9 @@ function liteMealOpts(slot){
 function ateListHtml(key, panel){
   const lg = S.log[key]||{}, ate = lg.ate||[];
   if(!ate.length) return "";
-  const rows = ate.map((a,i)=>`<div class="lrow"><div><b>${esc((LITE_MEALS.find(m=>m[0]===a.m)||[0,"Meal"])[1])}</b> <small class="muted">${niceTime(a.t)}</small><br><small>${esc(a.items.map(x=>x.n+qLabel(x.q)).join(", ")||"(nothing listed)")}</small></div><span class="chips" style="gap:10px"><button class="linkbtn" data-liteedit="${i}">Edit</button><button class="linkbtn" data-liteatedel="${i}">Remove</button></span></div>`).join("");
-  return panel ? `<section class="panel"><h2>Eaten today</h2>${rows}</section>` : `<div class="stack" style="gap:4px"><b>Eaten today</b>${rows}</div>`;
+  const rows = ate.map((a,i)=>`<div class="lrow"><div><b>${esc((LITE_MEALS.find(m=>m[0]===a.m)||[0,"Meal"])[1])}</b> <small class="muted">${niceTime(a.t)}</small><br><small>${esc(a.items.map(x=>x.n+qLabel(x.q)).join(", ")||"(nothing listed)")}</small></div><span class="chips" style="gap:10px"><button class="linkbtn" data-liteedit="${i}" data-day="${key}">Edit</button><button class="linkbtn" data-liteatedel="${i}" data-day="${key}">Remove</button></span></div>`).join("");
+  const lbl = key===ymd(new Date()) ? "Eaten today" : "Eaten that day";
+  return panel ? `<section class="panel"><h2>${lbl}</h2>${rows}</section>` : `<div class="stack" style="gap:4px"><b>${lbl}</b>${rows}</div>`;
 }
 const liteSavedMeal = ()=> LITE.meal ? (S.myMeals||[]).find(m=>m.id===LITE.meal && (m.items||[]).length) : null;
 const liteItems = ()=>{ const plist = pantryList(); return Object.entries(LITE.pick).map(([id,q])=>({id: id.startsWith("n:")?"":id, n:liteItemName(id, plist), q})); };
@@ -1708,7 +1714,7 @@ function renderLite(){
   if(LITE.eat){
     const plist = pantryList(), picked = LITE.pick;
     view.innerHTML = `<div class="stack lite">
-      <section class="panel"><h2>${LITE.edit>=0?"Change what you ate":"Eating now"}</h2>
+      <section class="panel"><h2>${LITE.edit>=0?"Change what you ate":LITE.day?"What you ate":"Eating now"}</h2>${LITE.day?`<small class="muted">For ${esc(DAYS_LONG[parseYmd(LITE.day).getDay()])}, ${esc(parseYmd(LITE.day).toLocaleDateString(undefined,{month:"long",day:"numeric"}))}</small>`:""}
         <div class="chips" style="gap:8px">${LITE_MEALS.map(([m,n])=>`<button class="btn ${LITE.eat===m?"":"ghost"}" data-liteslot="${m}">${n}</button>`).join("")}</div>
         <label style="display:flex;gap:8px;align-items:center">What time<input type="time" id="lite-time" value="${esc(LITE.time||fromMins(liteNowM()))}" style="width:auto"></label>
         ${Object.keys(picked).length?`<div class="stack" style="gap:6px">${Object.entries(picked).map(([id,q])=>`<div class="lrow"><b>${esc(liteItemName(id, plist))}</b><span class="chips" style="gap:6px;align-items:center;flex-wrap:nowrap;flex-shrink:0"><button class="btn ghost" data-liteminus="${esc(id)}" aria-label="Less">−</button><select data-liteq="${esc(id)}" aria-label="How much" style="width:auto;min-width:64px">${[...new Set([...LITE_STEPS, Number(q)])].sort((a,b)=>a-b).map(v=>`<option value="${v}" ${v===Number(q)?"selected":""}>${fmtQ(v)}</option>`).join("")}</select><button class="btn ghost" data-liteplus="${esc(id)}" aria-label="More">+</button></span></div>`).join("")}</div>`:`<small class="muted">Pick one of your meals, or tap foods from your pantry. Change the amount with − and +, or pick ¼, ½ and so on.</small>`}
@@ -1772,11 +1778,11 @@ function liteAddFood(){
   LITE.pick[id] = (LITE.pick[id]||0)+1; LITE.other = ""; el.value = ""; return true;
 }
 function liteClick(t){
-  const key = ymd(new Date());
+  const key = LITE.day || (t.dataset && t.dataset.day) || ymd(new Date());
   if(t.dataset.liteev){ const lg = dayLog(key); (lg.ev=lg.ev||{})[t.dataset.liteev] = fromMins(liteNowM()); save(); render(); toast(t.dataset.liteev==="wake"?"Good morning":"Good night"); return true; }
   if(t.dataset.liteclosed){ const lg = dayLog(key); (lg.ev=lg.ev||{}).closed = fromMins(liteNowM()); liteKitchen(key, true); save(); render(); toast("Kitchen closed. Ticked in the full app too."); return true; }
   if(t.dataset.liteunev){ const lg = dayLog(key); if(lg.ev) delete lg.ev[t.dataset.liteunev]; if(t.dataset.liteunev==="closed") liteKitchen(key, false); if(QM_DONE[t.dataset.liteunev] && !(lg.ate||[]).some(a=>a.m===t.dataset.liteunev)) delete lg.done[QM_DONE[t.dataset.liteunev]]; save(); render(); return true; }
-  if(t.dataset.liteeat){ const ev = (S.log[key]||{}).ev||{}; LITE = {eat:(LITE_MEALS.find(([m])=>!ev[m])||["s"])[0], pick:{}, other:"", meal:""}; render(); window.scrollTo(0,0); return true; }
+  if(t.dataset.liteeat){ const ev = (S.log[key]||{}).ev||{}; LITE = {eat:(LITE_MEALS.find(([m])=>!ev[m])||["s"])[0], pick:{}, other:"", meal:"", edit:-1, time:"", day:(key===ymd(new Date())?"":key)}; render(); window.scrollTo(0,0); return true; }
   if(t.dataset.liteslot){ LITE.eat = t.dataset.liteslot; if(LITE.meal && LITE.edit<0){ LITE.meal = ""; LITE.pick = {}; } LITE.other = (document.getElementById("lite-other")||{}).value||""; render(); return true; }
   const pk = t.closest && t.closest("[data-litepick]");
   if(pk){ const id = pk.dataset.litepick; LITE.pick[id] = (LITE.pick[id]||0)+1; LITE.other = (document.getElementById("lite-other")||{}).value||""; const y = window.scrollY; render(); window.scrollTo(0,y); return true; }
@@ -1788,7 +1794,7 @@ function liteClick(t){
     render(); window.scrollTo(0,0); return true; }
   if(t.dataset.liteplus||t.dataset.liteminus){ const id = t.dataset.liteplus||t.dataset.liteminus; LITE.pick[id] = liteStep(LITE.pick[id], t.dataset.liteplus?1:-1); if(LITE.pick[id]<=0) delete LITE.pick[id]; LITE.other = (document.getElementById("lite-other")||{}).value||""; render(); return true; }
   if(t.dataset.liteedit!==undefined){ const a = ((S.log[key]||{}).ate||[])[+t.dataset.liteedit]; if(!a) return true;
-    LITE = {eat:a.m, pick:{}, other:"", meal:a.meal||"", edit:+t.dataset.liteedit, time:a.t}; for(const x of a.items) LITE.pick[x.id||("n:"+x.n)] = (LITE.pick[x.id||("n:"+x.n)]||0)+(x.q||1);
+    LITE = {eat:a.m, pick:{}, other:"", meal:a.meal||"", edit:+t.dataset.liteedit, time:a.t, day:(key===ymd(new Date())?"":key)}; for(const x of a.items) LITE.pick[x.id||("n:"+x.n)] = (LITE.pick[x.id||("n:"+x.n)]||0)+(x.q||1);
     render(); window.scrollTo(0,0); return true; }
   if(t.dataset.litemealupd){ const sm = liteSavedMeal(); if(sm){ liteAddFood(); sm.items = liteItems(); save(); toast("Updated \u201c"+sm.n+"\u201d"); } liteReset(); render(); return true; }
   if(t.dataset.litemealdel){ const sm = liteSavedMeal(); if(sm){ S.myMeals = S.myMeals.filter(m=>m!==sm); save(); toast("Removed \u201c"+sm.n+"\u201d from your meals"); } LITE.meal = ""; render(); return true; }
@@ -2453,7 +2459,7 @@ window.addEventListener("hashchange",()=>{ if(HHUI.takeHash()){ TAB = "household
 window.addEventListener("hashchange",()=>{ const h = location.hash.slice(1); if(!["today","quick","tomorrow","more"].includes(h)) return; TAB = h; EDIT_ITEM = null; try{ sessionStorage.setItem("dh-tab",TAB); }catch(_){} history.replaceState(null, "", location.pathname + location.search); render(); window.scrollTo(0,0); });
 document.querySelector("nav.tabs").addEventListener("click",e=>{
   const b = e.target.closest("button[data-tab]"); if(!b) return;
-  TAB = b.dataset.tab; liteReset(); try{ sessionStorage.setItem("dh-tab",TAB); }catch(_){} render(); window.scrollTo(0,0);
+  TAB = b.dataset.tab; liteReset(); DAY_BACK = 0; try{ sessionStorage.setItem("dh-tab",TAB); }catch(_){} render(); window.scrollTo(0,0);
 });
 
 document.addEventListener("change", e=>{
@@ -2541,6 +2547,7 @@ view.addEventListener("click",async e=>{
     if(!id){ toast("Pick a meal or type one"); return; }
     const D = (S.dayOver=S.dayOver||{}), o = D[key] = D[key]||{}; o.ids = o.ids||{}; o.ids[k] = id; if(o.text){ delete o.text[k]; if(!Object.keys(o.text).length) delete o.text; }
     QM = null; save(); render(); toast("Today's "+SLOTS.find(x=>x[0]===k)[1].toLowerCase()+": "+((recipe(id)||{}).n||"changed")); return; }
+  if(t.dataset.dayback||t.dataset.dayfwd||t.dataset.daytoday){ DAY_BACK = t.dataset.daytoday ? 0 : Math.max(0, Math.min(60, DAY_BACK + (t.dataset.dayback?1:-1))); EDIT_ITEM = null; render(); window.scrollTo(0,0); return; }
   if(t.dataset.prn){ const lg = dayLog(t.dataset.day), n = new Date(); (lg.prn = lg.prn||[]).push({id:t.dataset.prn, t:fromMins(n.getHours()*60+n.getMinutes())}); save(); render(); toast("Logged"); return; }
   if(t.dataset.prnundo){ const lg = dayLog(t.dataset.day), k = (lg.prn||[]).map(x=>x.id).lastIndexOf(t.dataset.prnundo); if(k>=0) lg.prn.splice(k,1); save(); render(); return; }
   if(t.dataset.iedit){ EDIT_ITEM = t.dataset.day+"|"+t.dataset.iedit; render(); const f=document.getElementById("ie-time"); if(f) f.closest("li").scrollIntoView({block:"center"}); return; }
@@ -2597,8 +2604,8 @@ view.addEventListener("click",async e=>{
   if(t.dataset.nremovecancel){ NREMOVE = null; render(); return; }
   if(t.dataset.nremove){ const it=nudgeItem(t.dataset.nremove); if(it.x){ const list = it.kind==="rt"?S.routine:S.supplements; list.splice(list.indexOf(it.x),1); NREMOVE=null; save(); render(); toast("Removed "+it.x.name+". You can add it back under More, then Supplements & routine."); } return; }
   if(t.dataset.npause){ const it=nudgeItem(t.dataset.npause); if(it.x){ it.x.active=false; save(); render(); toast("Paused "+it.x.name+". Turn it back on under More, then Supplements & routine."); } return; }
-  if(t.dataset.sip){ const lg=dayLog(ymd(new Date())); const n=Number(t.dataset.sip)||0; lg.sips=lg.sips||[]; lg.sips.push(n); lg.oz=(Number(lg.oz)||0)+n; waterSync(ymd(new Date())); save(); render(); return; }
-  if(t.dataset.unsip){ const lg=dayLog(ymd(new Date())); const n=(lg.sips||[]).pop(); if(n!=null) lg.oz=Math.max(0,(Number(lg.oz)||0)-n); waterSync(ymd(new Date())); save(); render(); toast("Took off "+n+" oz"); return; }
+  if(t.dataset.sip){ const sk = t.dataset.day||ymd(new Date()), lg=dayLog(sk); const n=Number(t.dataset.sip)||0; lg.sips=lg.sips||[]; lg.sips.push(n); lg.oz=(Number(lg.oz)||0)+n; waterSync(sk); save(); render(); return; }
+  if(t.dataset.unsip){ const sk = t.dataset.day||ymd(new Date()), lg=dayLog(sk); const n=(lg.sips||[]).pop(); if(n!=null) lg.oz=Math.max(0,(Number(lg.oz)||0)-n); waterSync(sk); save(); render(); toast("Took off "+n+" oz"); return; }
   if(t.dataset.glass!==undefined){ const lg=dayLog(ymd(new Date())); const n=+t.dataset.glass+1; lg.water = lg.water===n? n-1 : n; save(); render(); return; }
   if(t.dataset.del!==undefined){
     if(t.dataset.armed){ S.supplements.splice(+t.dataset.del,1); save(); renderSupps(); toast("Removed"); }
