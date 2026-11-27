@@ -48,7 +48,7 @@ a{color:var(--juniper);font-weight:700}
 [hidden]{display:none !important}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{font-size:.85rem;padding:2px 10px;border-radius:999px;background:var(--juniper-soft);color:var(--juniper);font-weight:700}
-.lrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0}.lbig{display:grid;gap:10px}.lbig .btn{font-size:1.15rem;padding:14px}.lpick{text-align:left;padding:10px 12px;border:1px solid var(--line,#ddd);border-radius:10px;background:none;font:inherit;color:inherit}.lpick.on{border-color:var(--juniper,#2f6b57);background:var(--juniper-soft,#e6f0ec)}body.lite-on nav.tabs,body.lite-on .dh-bar{display:none}
+.lrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0}.lbig{display:grid;gap:10px}.lbig .btn{font-size:1.15rem;padding:14px}.lpick{text-align:left;padding:10px 12px;border:1px solid var(--line,#ddd);border-radius:10px;background:none;font:inherit;color:inherit}.lpick.on{border-color:var(--juniper,#2f6b57);background:var(--juniper-soft,#e6f0ec)}
 .dgrow{border-top:1px solid var(--line,#ddd);padding:10px 0}.dgrow:first-child{border-top:0}.dgrow>summary{display:flex;gap:10px;align-items:center;cursor:pointer;list-style:none}.dgrow>summary::-webkit-details-marker{display:none}.dgrow .dgmore{margin-left:auto;font-size:.85rem}.dgrow>summary input{flex-shrink:0}
 .chip.pending{background:var(--warn-soft);color:var(--warn)}
 .chip.dusk{background:var(--dusk-soft);color:var(--dusk)}
@@ -154,6 +154,7 @@ table.rep th{color:var(--muted);font-weight:700}
   <nav class="tabs" role="tablist">
     <button role="tab" data-tab="today" aria-selected="true">Today</button>
     <button role="tab" data-tab="quick" aria-selected="false">Quick</button>
+    <button role="tab" data-tab="lite" aria-selected="false">Lite</button>
     <button role="tab" data-tab="tomorrow" aria-selected="false">Tomorrow</button>
     <button role="tab" data-tab="more" aria-selected="false">More</button>
   </nav>
@@ -165,8 +166,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.36.1";
+const APP_VERSION = "1.37.0";
 const CHANGES = [
+  {v:"1.37.0", date:"2026-11-27", items:["Lite is now a tab on the main bar, next to Today. The app opens on whichever of Lite or the other tabs you used last."]},
   {v:"1.36.1", date:"2026-11-27", items:["Fixed: supplements ticked on the full checklist now count as done in the Light view too."]},
   {v:"1.36.0", date:"2026-11-27", items:["Light view: \"Done eating for today\" ticks Kitchen closes in the full app.","Water you add ticks the Glass of water items on the checklist, one for each share of your goal."]},
   {v:"1.35.0", date:"2026-11-27", items:["Partial servings: pick ¼, ½, ¾, 1½ and so on for each food, or step with − and +."]},
@@ -1494,7 +1496,7 @@ function renderDay(offset){
   view.innerHTML = h;
 }
 
-const MENU = [["lite","Light view","Just what's next, by what you're doing"],["diagnoses","My diagnoses","Add a diagnosis any time"],["supps","Supplements & routine","Doses, times, healing steps"],["week","Meals & freezer","Your week, cook day, what's frozen"],
+const MENU = [["diagnoses","My diagnoses","Add a diagnosis any time"],["supps","Supplements & routine","Doses, times, healing steps"],["week","Meals & freezer","Your week, cook day, what's frozen"],
   ["notes","Notes","Symptoms, questions, what you did"],["labs","Labs & visits","Results and doctor list"],["rules","My rules","Food rules, flare-up mode, missed items"],
   ["household","Household","Your husband and others at the table, food cards"],
   ["settings","Times & reminders","Wake time, water, calendar"],["backup","Backups","Saved copies of your data"],["phone","Phone shortcuts","One-tap buttons, reminders, backups"]];
@@ -1723,7 +1725,7 @@ function renderLite(){
         <div class="chips" style="gap:4px 12px">${LITE_ANCHORS.map(([a,n])=>`<label class="inline" style="font-weight:400"><input type="checkbox" data-litewhen="${esc(s.id)}:${a}" ${(s.whens||[]).includes(a)?"checked":""}> ${n}</label>`).join("")}</div>
         <label class="inline" style="font-weight:400">Take it <select data-liteafter="${esc(s.id)}">${LITE_AFTER.map(([v,n])=>`<option value="${v}" ${(Number(s.afterH)||0)===v?"selected":""}>${n}</option>`).join("")}</select></label></div>`).join("")}
     </details>
-    <div class="chips" style="gap:8px;justify-content:center"><button class="btn ghost" data-litefull="1">Open the full app</button>${typeof PHX!=="undefined"?`<a class="btn ghost" href="pantry.html">Pantry</a>`:`<a class="btn ghost" href="/pantry">Pantry</a>`}</div>
+    <div class="chips" style="gap:8px;justify-content:center">${typeof PHX!=="undefined"?`<a class="btn ghost" href="pantry.html">Pantry</a>`:`<a class="btn ghost" href="/pantry">Pantry</a>`}</div>
   </div>`;
 }
 function liteAddFood(){
@@ -1799,7 +1801,7 @@ function renderMore(){
     ${CHANGES.slice(0,3).map(c=>`<div><b>${esc(c.v)}</b> <small class="muted">${esc(c.date.slice(5).replace("-","/"))}</small><ul style="margin:4px 0 0;padding-left:20px">${c.items.map(i=>`<li>${esc(i)}</li>`).join("")}</ul></div>`).join("")}
   </details></div>`;
 }
-function backToMore(){ return TAB!=="more"&&TAB!=="today"&&TAB!=="quick"&&TAB!=="tomorrow" ? `<button class="linkbtn" data-goto="more">← Everything else</button>` : ""; }
+function backToMore(){ return TAB!=="more"&&TAB!=="today"&&TAB!=="quick"&&TAB!=="lite"&&TAB!=="tomorrow" ? `<button class="linkbtn" data-goto="more">← Everything else</button>` : ""; }
 
 
 async function saveFile(name, text, type){
@@ -2342,7 +2344,7 @@ function docText(){
 }
 
 function render(){
-  const navTab = TAB==="today"||TAB==="quick"||TAB==="tomorrow" ? TAB : "more";
+  const navTab = TAB==="today"||TAB==="quick"||TAB==="lite"||TAB==="tomorrow" ? TAB : "more";
   document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected", b.dataset.tab===navTab));
   document.querySelectorAll(".dh-bar a").forEach(a=>{ const h=a.getAttribute("href"), on = h==="index.html#more" ? navTab==="more" : h==="index.html#today" && navTab!=="more"; if(on) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current"); });
   document.body.classList.toggle("lite-on", TAB==="lite"); if(TAB==="lite"){ try{ localStorage.setItem("dh.view","lite"); }catch(_){} }
@@ -2405,7 +2407,7 @@ window.addEventListener("hashchange",()=>{ if(HHUI.takeHash()){ TAB = "household
 window.addEventListener("hashchange",()=>{ const h = location.hash.slice(1); if(!["today","quick","tomorrow","more"].includes(h)) return; TAB = h; EDIT_ITEM = null; try{ sessionStorage.setItem("dh-tab",TAB); }catch(_){} history.replaceState(null, "", location.pathname + location.search); render(); window.scrollTo(0,0); });
 document.querySelector("nav.tabs").addEventListener("click",e=>{
   const b = e.target.closest("button[data-tab]"); if(!b) return;
-  TAB = b.dataset.tab; liteReset(); try{ sessionStorage.setItem("dh-tab",TAB); }catch(_){} render(); window.scrollTo(0,0);
+  TAB = b.dataset.tab; liteReset(); try{ localStorage.setItem("dh.view", TAB==="lite"?"lite":""); }catch(_){} try{ sessionStorage.setItem("dh-tab",TAB); }catch(_){} render(); window.scrollTo(0,0);
 });
 view.addEventListener("change",e=>{
   const t = e.target;
@@ -2774,7 +2776,6 @@ function renderQuick(){
     ${backupNudge()}
     <div><button class="linkbtn" data-goto="today">See the full day</button></div>
     <div>${openOnHtml()}</div>
-    ${typeof renderLite==="function"?`<div><button class="linkbtn" data-goto="lite">Try the light view</button></div>`:""}
   </div>`;
   QUICK_FLASH = "";
 }
