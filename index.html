@@ -166,8 +166,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.37.1";
+const APP_VERSION = "1.38.0";
 const CHANGES = [
+  {v:"1.38.0", date:"2026-11-27", items:["Lite: add a supplement or powder (like a fiber powder) right under \"Set when you take each one\", then tick when you take it."]},
   {v:"1.37.1", date:"2026-11-27", items:["Fixed: on iPhone, time pickers (wake up, bed, meal times, supplement times) closed after the first turn of the wheel. Now the time saves when you tap Done."]},
   {v:"1.37.0", date:"2026-11-27", items:["Lite is now a tab on the main bar, next to Today. The app opens on whichever of Lite or the other tabs you used last."]},
   {v:"1.36.1", date:"2026-11-27", items:["Fixed: supplements ticked on the full checklist now count as done in the Light view too."]},
@@ -1610,6 +1611,7 @@ const LITE_ANCHORS = [["wake","On waking"],["b","Breakfast"],["l","Lunch"],["s",
 const LITE_MEALS = [["b","Breakfast"],["l","Lunch"],["s","Snack"],["d","Dinner"]];
 const LITE_AFTER = [[0,"with it"],[0.5,"30 min after"],[1,"1 h after"],[2,"2 h after"],[3,"3 h after"]];
 const PANTRY_NAMES = {"butternut": "Butternut squash", "acorn": "Acorn squash", "piepumpkin": "Pie pumpkin", "beets": "Beets", "leeks": "Leeks", "onion": "Onions", "garlic": "Garlic", "chard": "Chard", "spinach": "Spinach", "zucchini": "Zucchini", "sweetpotato": "Sweet potatoes", "cucumber": "Cucumbers", "lime": "Limes", "snappeas": "Snap or snow peas", "ginger": "Ginger", "jalapeno": "Jalapeño or serrano (yours)", "cilantro": "Cilantro", "basil": "Basil or chives", "persimmon": "Persimmons", "kiwi": "Kiwi", "raspberries": "Frozen raspberries or blackberries", "asparagus": "Asparagus", "chicken": "Skinless chicken breast or thigh", "bison": "Ground bison or lean beef", "lamb": "Lamb stew meat", "sablefish": "Sablefish", "trout": "Trout", "salmoncan": "Canned salmon", "sardines": "Sardines", "m_chickenstew": "Chicken butternut stew", "m_bison": "Bison zucchini skillet meat", "m_lambstew": "Lamb chickpea pumpkin stew", "m_shredded": "Shredded chicken", "m_patties": "Sage bison breakfast patties", "m_beans": "Cooked Anasazi or bolita beans", "m_quinoa": "Cooked quinoa", "m_buckwheat": "Cooked buckwheat groats", "m_roastveg": "Roasted sweet potato and beets", "m_chiajam": "Chia berry jam", "m_broth": "Homemade chicken broth (from poaching)", "driedbeans": "Dried Anasazi or bolita beans", "blackbeans": "Canned black beans", "chickpeas": "Canned chickpeas", "pumpkincan": "Canned pumpkin", "artichoke": "Artichoke hearts in water", "quinoa": "Quinoa (dry)", "buckwheat": "Buckwheat groats (dry)", "broth": "Bonafide or Pacific chicken broth", "chia": "Chia seeds", "psyllium": "Psyllium husk", "tahini": "Tahini", "walnuts": "Walnuts", "edamame": "Frozen shelled edamame", "chickpeaflour": "Chickpea flour", "pacha": "Pacha sprouted buckwheat bread", "creamcheese": "Cream cheese", "mozz": "Fresh mozzarella", "feta": "Fresh sheep feta", "yogurt": "Plain whole yogurt", "rice": "Rice", "potatoes": "Potatoes"};
+let LITE_SET_OPEN = false;
 let LITE = {eat:null, pick:{}, other:"", meal:"", edit:-1, time:""};
 const liteReset = ()=>{ LITE = {eat:null, pick:{}, other:"", meal:"", edit:-1, time:""}; };
 const liteName = a=>(LITE_ANCHORS.find(x=>x[0]===a)||[a,a])[1];
@@ -1720,11 +1722,16 @@ function renderLite(){
     ${prnHtml(key, lg)}
     ${ateListHtml(key, true)}
     ${unset.length?`<details class="panel"><summary><b>Any time today (${unset.length})</b></summary>${unset.map(x=>liteRow(x,key,true)).join("")}</details>`:""}
-    <details class="panel"><summary><b>Set when you take each one</b></summary>
+    <details class="panel" ${LITE_SET_OPEN?"open":""}><summary><b>Set when you take each one</b></summary>
       <small class="muted">Pick the moments for each supplement. "Hours after" waits that long after the moment, for things like psyllium.</small>
       ${S.supplements.filter(s=>s.active&&!s.asNeeded).map(s=>`<div class="stack" style="gap:4px;border-top:1px solid var(--line,#ddd);padding-top:8px"><b>${esc(s.name)}</b>
         <div class="chips" style="gap:4px 12px">${LITE_ANCHORS.map(([a,n])=>`<label class="inline" style="font-weight:400"><input type="checkbox" data-litewhen="${esc(s.id)}:${a}" ${(s.whens||[]).includes(a)?"checked":""}> ${n}</label>`).join("")}</div>
         <label class="inline" style="font-weight:400">Take it <select data-liteafter="${esc(s.id)}">${LITE_AFTER.map(([v,n])=>`<option value="${v}" ${(Number(s.afterH)||0)===v?"selected":""}>${n}</option>`).join("")}</select></label></div>`).join("")}
+      <div class="stack" style="gap:6px;border-top:1px solid var(--line,#ddd);padding-top:8px"><b>Add a supplement or powder</b>
+        <small class="muted">For something you take every day, like a fiber powder with lunch. Add it here, then tick when you take it.</small>
+        <label>Name<input type="text" id="lite-sname" placeholder="e.g. Fiber powder"></label>
+        <label>How much<input type="text" id="lite-sdose" placeholder="e.g. 1 scoop in water"></label>
+        <div><button class="btn" data-liteaddsupp="1">Add it</button></div></div>
     </details>
     <div class="chips" style="gap:8px;justify-content:center">${typeof PHX!=="undefined"?`<a class="btn ghost" href="pantry.html">Pantry</a>`:`<a class="btn ghost" href="/pantry">Pantry</a>`}</div>
   </div>`;
@@ -1757,6 +1764,12 @@ function liteClick(t){
     render(); window.scrollTo(0,0); return true; }
   if(t.dataset.litemealupd){ const sm = liteSavedMeal(); if(sm){ liteAddFood(); sm.items = liteItems(); save(); toast("Updated \u201c"+sm.n+"\u201d"); } liteReset(); render(); return true; }
   if(t.dataset.litemealdel){ const sm = liteSavedMeal(); if(sm){ S.myMeals = S.myMeals.filter(m=>m!==sm); save(); toast("Removed \u201c"+sm.n+"\u201d from your meals"); } LITE.meal = ""; render(); return true; }
+  if(t.dataset.liteaddsupp){ const g = id=>((document.getElementById(id)||{}).value||"").trim(), name = g("lite-sname");
+    if(!name){ toast("Type a name first"); return true; }
+    S.supplements.push({id:"s"+Date.now(), name, dose:g("lite-sdose"), times:"", how:"", binder:false, active:true, pending:false, notes:"", where:"home", whens:[]});
+    LITE_SET_OPEN = true; save(); render(); LITE_SET_OPEN = false;
+    const row = [...document.querySelectorAll("[data-litewhen]")].pop(); if(row) row.scrollIntoView({block:"center"});
+    toast("Added. Now tick when you take it."); return true; }
   if(t.dataset.liteadd){ if(liteAddFood()){ render(); toast("Added"); } else toast("Type a food first"); return true; }
   if(t.dataset.litecancel){ liteReset(); render(); return true; }
   if(t.dataset.litesave){
