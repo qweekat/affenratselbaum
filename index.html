@@ -48,6 +48,7 @@ a{color:var(--juniper);font-weight:700}
 [hidden]{display:none !important}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{font-size:.85rem;padding:2px 10px;border-radius:999px;background:var(--juniper-soft);color:var(--juniper);font-weight:700}
+.lrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0}.lbig{display:grid;gap:10px}.lbig .btn{font-size:1.15rem;padding:14px}.lpick{text-align:left;padding:10px 12px;border:1px solid var(--line,#ddd);border-radius:10px;background:none;font:inherit;color:inherit}.lpick.on{border-color:var(--juniper,#2f6b57);background:var(--juniper-soft,#e6f0ec)}body.lite-on nav.tabs,body.lite-on .dh-bar{display:none}
 .dgrow{border-top:1px solid var(--line,#ddd);padding:10px 0}.dgrow:first-child{border-top:0}.dgrow>summary{display:flex;gap:10px;align-items:center;cursor:pointer;list-style:none}.dgrow>summary::-webkit-details-marker{display:none}.dgrow .dgmore{margin-left:auto;font-size:.85rem}.dgrow>summary input{flex-shrink:0}
 .chip.pending{background:var(--warn-soft);color:var(--warn)}
 .chip.dusk{background:var(--dusk-soft);color:var(--dusk)}
@@ -164,8 +165,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.31.0";
+const APP_VERSION = "1.32.0";
 const CHANGES = [
+  {v:"1.32.0", date:"2026-11-26", items:["New: Light view (More, then Light view). Tap I'm up or Eating now and it shows what to take with that moment, counts down things like 2 h after lunch, and lets you log food from your pantry with amounts. Set when you take each supplement at the bottom of the Light view. The full app is one tap away."]},
   {v:"1.31.0", date:"2026-11-24", items:["My diagnoses lists every condition, including the ones your plan already covers, ticked. Each one is a single line you tap to open."]},
   {v:"1.30.0", date:"2026-11-24", items:["My diagnoses: add your own diagnosis with its name, foods to avoid or limit, and questions for your doctor."]},
   {v:"1.29.0", date:"2026-11-24", items:["New: My diagnoses, under More. Add a diagnosis any time. Fatty liver is the first: it flags alcohol, sugary drinks, juice, added sugar, refined starches, and fried or processed meat, and adds questions for your doctor. A draft list; turn off any food you want."]},
@@ -1478,7 +1480,7 @@ function renderDay(offset){
   view.innerHTML = h;
 }
 
-const MENU = [["diagnoses","My diagnoses","Add a diagnosis any time"],["supps","Supplements & routine","Doses, times, healing steps"],["week","Meals & freezer","Your week, cook day, what's frozen"],
+const MENU = [["lite","Light view","Just what's next, by what you're doing"],["diagnoses","My diagnoses","Add a diagnosis any time"],["supps","Supplements & routine","Doses, times, healing steps"],["week","Meals & freezer","Your week, cook day, what's frozen"],
   ["notes","Notes","Symptoms, questions, what you did"],["labs","Labs & visits","Results and doctor list"],["rules","My rules","Food rules, flare-up mode, missed items"],
   ["household","Household","Your husband and others at the table, food cards"],
   ["settings","Times & reminders","Wake time, water, calendar"],["backup","Backups","Saved copies of your data"],["phone","Phone shortcuts","One-tap buttons, reminders, backups"]];
@@ -1586,6 +1588,121 @@ function renderDiagnoses(){
   </div>`;
 }
 view.addEventListener("toggle", e=>{ const d = e.target; if(!d.dataset || !d.dataset.dgkey) return; if(d.open) DIAG_OPEN.add(d.dataset.dgkey); else DIAG_OPEN.delete(d.dataset.dgkey); const m = d.querySelector(":scope > summary .dgmore"); if(m) m.textContent = d.open ? "less" : "more"; }, true);
+
+const LITE_ANCHORS = [["wake","On waking"],["b","Breakfast"],["l","Lunch"],["s","Snack"],["d","Dinner"],["bed","Bedtime"]];
+const LITE_MEALS = [["b","Breakfast"],["l","Lunch"],["s","Snack"],["d","Dinner"]];
+const LITE_AFTER = [[0,"with it"],[0.5,"30 min after"],[1,"1 h after"],[2,"2 h after"],[3,"3 h after"]];
+const PANTRY_NAMES = {"butternut": "Butternut squash", "acorn": "Acorn squash", "piepumpkin": "Pie pumpkin", "beets": "Beets", "leeks": "Leeks", "onion": "Onions", "garlic": "Garlic", "chard": "Chard", "spinach": "Spinach", "zucchini": "Zucchini", "sweetpotato": "Sweet potatoes", "cucumber": "Cucumbers", "lime": "Limes", "snappeas": "Snap or snow peas", "ginger": "Ginger", "jalapeno": "Jalapeño or serrano (yours)", "cilantro": "Cilantro", "basil": "Basil or chives", "persimmon": "Persimmons", "kiwi": "Kiwi", "raspberries": "Frozen raspberries or blackberries", "asparagus": "Asparagus", "chicken": "Skinless chicken breast or thigh", "bison": "Ground bison or lean beef", "lamb": "Lamb stew meat", "sablefish": "Sablefish", "trout": "Trout", "salmoncan": "Canned salmon", "sardines": "Sardines", "m_chickenstew": "Chicken butternut stew", "m_bison": "Bison zucchini skillet meat", "m_lambstew": "Lamb chickpea pumpkin stew", "m_shredded": "Shredded chicken", "m_patties": "Sage bison breakfast patties", "m_beans": "Cooked Anasazi or bolita beans", "m_quinoa": "Cooked quinoa", "m_buckwheat": "Cooked buckwheat groats", "m_roastveg": "Roasted sweet potato and beets", "m_chiajam": "Chia berry jam", "m_broth": "Homemade chicken broth (from poaching)", "driedbeans": "Dried Anasazi or bolita beans", "blackbeans": "Canned black beans", "chickpeas": "Canned chickpeas", "pumpkincan": "Canned pumpkin", "artichoke": "Artichoke hearts in water", "quinoa": "Quinoa (dry)", "buckwheat": "Buckwheat groats (dry)", "broth": "Bonafide or Pacific chicken broth", "chia": "Chia seeds", "psyllium": "Psyllium husk", "tahini": "Tahini", "walnuts": "Walnuts", "edamame": "Frozen shelled edamame", "chickpeaflour": "Chickpea flour", "pacha": "Pacha sprouted buckwheat bread", "creamcheese": "Cream cheese", "mozz": "Fresh mozzarella", "feta": "Fresh sheep feta", "yogurt": "Plain whole yogurt", "rice": "Rice", "potatoes": "Potatoes"};
+let LITE = {eat:null, pick:{}, other:""};
+const liteName = a=>(LITE_ANCHORS.find(x=>x[0]===a)||[a,a])[1];
+function liteNowM(){ const n = new Date(); return n.getHours()*60+n.getMinutes(); }
+function pantryList(){
+  let p = null; try{ p = JSON.parse(localStorage.getItem("pantryplanner.v1")||"null"); }catch(_){}
+  const have = (p&&p.pantry)||{}, out = [];
+  for(const [id,n] of Object.entries(PANTRY_NAMES)) out.push({id, n, have:!!have[id]});
+  for(const c of ((p&&p.custom)||[])) out.push({id:c.id, n:c.n, have:!!have[c.id]});
+  return out.sort((a,b)=>(b.have-a.have) || a.n.localeCompare(b.n));
+}
+
+function liteSupps(key){
+  const d = parseYmd(key), lg = S.log[key]||{}, ev = lg.ev||{}, done = lg.lite||{}, out = [];
+  for(const s of S.supplements){
+    if(!s.active || s.asNeeded || !dueOn(s,d)) continue;
+    const ws = s.whens||[], h = Number(s.afterH)||0;
+    if(!ws.length){ out.push({s, a:"", k:s.id+"@any", due:null, h:0, done:!!done[s.id+"@any"]}); continue; }
+    for(const a of ws){ const at = ev[a]; out.push({s, a, k:s.id+"@"+a, due: at ? mins(at)+Math.round(h*60) : null, h, done:!!done[s.id+"@"+a]}); }
+  }
+  return out;
+}
+function liteWhy(x){ return x.a ? (x.h ? (LITE_AFTER.find(v=>v[0]===x.h)||[0,x.h+" h after"])[1]+" "+liteName(x.a).toLowerCase() : (x.a==="wake"||x.a==="bed" ? liteName(x.a).toLowerCase() : "with "+liteName(x.a).toLowerCase())) : "any time today"; }
+function liteIn(m){ const n = Math.max(0, m - liteNowM()), h = Math.floor(n/60); return "in "+(h?h+" h ":"")+(n%60)+" min"; }
+
+function liteMarkFull(key, sid){
+  const lg = dayLog(key), {timed, untimed} = itemsFor(parseYmd(key));
+  const it = [...timed, ...untimed].find(i=>(i.id==="supp:"+sid || i.id.startsWith("supp:"+sid+":")) && !lg.done[i.id]);
+  if(it) lg.done[it.id] = true;
+}
+function liteRow(x, key, btn){
+  return `<div class="lrow"><div><b>${esc(x.s.name)}</b>${suppDose(x.s,new Date())?` <small class="muted">${esc(suppDose(x.s,new Date()))}</small>`:""}<br><small class="muted">${esc(liteWhy(x))}${x.due!=null&&x.due>liteNowM()?" · "+liteIn(x.due):""}</small></div>${btn?`<button class="btn" data-litedone="${esc(x.k)}" data-sid="${esc(x.s.id)}" data-day="${key}">Done</button>`:""}</div>`;
+}
+function renderLite(){
+  const key = ymd(new Date()), lg = S.log[key]||{done:{}}, ev = lg.ev||{}, now = liteNowM();
+  const all = liteSupps(key), open = all.filter(x=>!x.done);
+  const dueNow = open.filter(x=>x.due!=null && x.due<=now), soon = open.filter(x=>x.due!=null && x.due>now).sort((a,b)=>a.due-b.due), unset = open.filter(x=>!x.a);
+  const oz = Number(lg.oz)||0, goal = Number(S.waterGoal)||80;
+  if(LITE.eat){
+    const plist = pantryList(), picked = LITE.pick;
+    view.innerHTML = `<div class="stack lite">
+      <section class="panel"><h2>Eating now</h2>
+        <div class="chips" style="gap:8px">${LITE_MEALS.map(([m,n])=>`<button class="btn ${LITE.eat===m?"":"ghost"}" data-liteslot="${m}">${n}</button>`).join("")}</div>
+        ${Object.keys(picked).length?`<div class="stack" style="gap:6px">${Object.entries(picked).map(([id,q])=>`<div class="lrow"><b>${esc((plist.find(p=>p.id===id)||{n:id}).n)}</b><span class="chips" style="gap:6px;align-items:center"><button class="btn ghost" data-liteminus="${esc(id)}" aria-label="Less">−</button><b>${esc(q)}</b><button class="btn ghost" data-liteplus="${esc(id)}" aria-label="More">+</button></span></div>`).join("")}</div>`:`<small class="muted">Tap what you're eating below. Tap + for more than one.</small>`}
+        <label>Something not on the list<input type="text" id="lite-other" value="${esc(LITE.other)}" placeholder="e.g. leftover stew"></label>
+        <div class="chips" style="gap:8px"><button class="btn" data-litesave="1">Save</button><button class="btn ghost" data-litecancel="1">Cancel</button></div>
+      </section>
+      <section class="panel"><h2>From your pantry</h2>
+        <input type="search" id="lite-q" placeholder="Find a food…" aria-label="Find a food">
+        <div class="stack" style="gap:4px" id="lite-plist">${plist.map(p=>`<button class="lpick ${picked[p.id]?"on":""}" data-litepick="${esc(p.id)}" data-n="${esc(p.n.toLowerCase())}">${esc(p.n)}${p.have?"":` <small class="muted">not in pantry</small>`}${picked[p.id]?` <b>× ${esc(picked[p.id])}</b>`:""}</button>`).join("")}</div>
+      </section></div>`;
+    return;
+  }
+  const evLine = LITE_ANCHORS.filter(([a])=>ev[a]).map(([a,n])=>`<span class="chip">${esc(n)} ${niceTime(ev[a])} <button class="linkbtn" data-liteunev="${a}" aria-label="Clear ${esc(n)}">×</button></span>`).join(" ");
+  view.innerHTML = `<div class="stack lite">
+    <section class="panel"><div class="lbig">
+      ${ev.wake?"":`<button class="btn" data-liteev="wake">I'm up</button>`}
+      <button class="btn" data-liteeat="1">Eating now</button>
+      ${ev.bed?"":`<button class="btn ghost" data-liteev="bed">Going to bed</button>`}
+    </div>${evLine?`<div class="chips" style="gap:6px;margin-top:8px">${evLine}</div>`:""}</section>
+    <section class="panel"><h2>${dueNow.length?"Take now":"Nothing due right now"}</h2>
+      ${dueNow.map(x=>liteRow(x,key,true)).join("")}
+      ${soon.length?`<h3 style="margin:8px 0 0">Coming up</h3>${soon.map(x=>liteRow(x,key,false)).join("")}`:""}
+      ${!dueNow.length&&!soon.length?`<small class="muted">Tap I'm up or Eating now, and what goes with it shows here.</small>`:""}
+    </section>
+    <section class="panel"><div class="lrow"><div><b>Water</b><br><small class="muted">${r1w(oz)} of ${esc(goal)} oz</small></div><button class="btn" data-sip="8">+8 oz</button></div></section>
+    ${prnHtml(key, lg)}
+    ${(lg.ate||[]).length?`<section class="panel"><h2>Eaten today</h2>${lg.ate.map((a,i)=>`<div class="lrow"><div><b>${esc((LITE_MEALS.find(m=>m[0]===a.m)||[0,"Meal"])[1])}</b> <small class="muted">${niceTime(a.t)}</small><br><small>${esc(a.items.map(x=>x.n+(x.q>1?" × "+x.q:"")).join(", "))}</small></div><button class="linkbtn" data-liteatedel="${i}">Remove</button></div>`).join("")}</section>`:""}
+    ${unset.length?`<details class="panel"><summary><b>Any time today (${unset.length})</b></summary>${unset.map(x=>liteRow(x,key,true)).join("")}</details>`:""}
+    <details class="panel"><summary><b>Set when you take each one</b></summary>
+      <small class="muted">Pick the moments for each supplement. "Hours after" waits that long after the moment, for things like psyllium.</small>
+      ${S.supplements.filter(s=>s.active&&!s.asNeeded).map(s=>`<div class="stack" style="gap:4px;border-top:1px solid var(--line,#ddd);padding-top:8px"><b>${esc(s.name)}</b>
+        <div class="chips" style="gap:4px 12px">${LITE_ANCHORS.map(([a,n])=>`<label class="inline" style="font-weight:400"><input type="checkbox" data-litewhen="${esc(s.id)}:${a}" ${(s.whens||[]).includes(a)?"checked":""}> ${n}</label>`).join("")}</div>
+        <label class="inline" style="font-weight:400">Take it <select data-liteafter="${esc(s.id)}">${LITE_AFTER.map(([v,n])=>`<option value="${v}" ${(Number(s.afterH)||0)===v?"selected":""}>${n}</option>`).join("")}</select></label></div>`).join("")}
+    </details>
+    <div class="chips" style="gap:8px;justify-content:center"><button class="btn ghost" data-litefull="1">Open the full app</button>${typeof PHX!=="undefined"?`<a class="btn ghost" href="pantry.html">Pantry</a>`:`<a class="btn ghost" href="/pantry">Pantry</a>`}</div>
+  </div>`;
+}
+function liteClick(t){
+  const key = ymd(new Date());
+  if(t.dataset.liteev){ const lg = dayLog(key); (lg.ev=lg.ev||{})[t.dataset.liteev] = fromMins(liteNowM()); save(); render(); toast(t.dataset.liteev==="wake"?"Good morning":"Good night"); return true; }
+  if(t.dataset.liteunev){ const lg = dayLog(key); if(lg.ev) delete lg.ev[t.dataset.liteunev]; save(); render(); return true; }
+  if(t.dataset.liteeat){ const ev = (S.log[key]||{}).ev||{}; LITE = {eat:(LITE_MEALS.find(([m])=>!ev[m])||["s"])[0], pick:{}, other:""}; render(); window.scrollTo(0,0); return true; }
+  if(t.dataset.liteslot){ LITE.eat = t.dataset.liteslot; LITE.other = (document.getElementById("lite-other")||{}).value||""; render(); return true; }
+  const pk = t.closest && t.closest("[data-litepick]");
+  if(pk){ const id = pk.dataset.litepick; LITE.pick[id] = (LITE.pick[id]||0)+1; LITE.other = (document.getElementById("lite-other")||{}).value||""; const y = window.scrollY; render(); window.scrollTo(0,y); return true; }
+  if(t.dataset.liteplus||t.dataset.liteminus){ const id = t.dataset.liteplus||t.dataset.liteminus; LITE.pick[id] = (LITE.pick[id]||0)+(t.dataset.liteplus?1:-1); if(LITE.pick[id]<=0) delete LITE.pick[id]; LITE.other = (document.getElementById("lite-other")||{}).value||""; render(); return true; }
+  if(t.dataset.litecancel){ LITE = {eat:null, pick:{}, other:""}; render(); return true; }
+  if(t.dataset.litesave){
+    const other = ((document.getElementById("lite-other")||{}).value||"").trim(), plist = pantryList();
+    const items = Object.entries(LITE.pick).map(([id,q])=>({id, n:(plist.find(p=>p.id===id)||{n:id}).n, q}));
+    if(other) items.push({id:"", n:other, q:1});
+    const lg = dayLog(key), m = LITE.eat, t0 = fromMins(liteNowM());
+    (lg.ev=lg.ev||{})[m] = lg.ev[m] || t0;
+    (lg.ate=lg.ate||[]).push({m, t:t0, items});
+    if(QM_DONE[m]) lg.done[QM_DONE[m]] = true;
+    LITE = {eat:null, pick:{}, other:""}; save(); render(); window.scrollTo(0,0); toast("Saved. What goes with it is at the top."); return true; }
+  if(t.dataset.litedone){ const lg = dayLog(t.dataset.day); (lg.lite=lg.lite||{})[t.dataset.litedone] = true; liteMarkFull(t.dataset.day, t.dataset.sid); save(); render(); return true; }
+  if(t.dataset.liteatedel!==undefined){ const lg = dayLog(key); (lg.ate||[]).splice(+t.dataset.liteatedel,1); save(); render(); return true; }
+  if(t.dataset.litefull){ try{ localStorage.setItem("dh.view",""); }catch(_){} TAB = "today"; render(); window.scrollTo(0,0); return true; }
+  return false;
+}
+function liteChange(t){
+  if(t.dataset.litewhen){ const [sid,a] = t.dataset.litewhen.split(":"), s = S.supplements.find(x=>x.id===sid); if(!s) return true;
+    s.whens = (s.whens||[]).filter(x=>x!==a); if(t.checked) s.whens.push(a); s.whens.sort((x,y)=>LITE_ANCHORS.findIndex(v=>v[0]===x)-LITE_ANCHORS.findIndex(v=>v[0]===y)); save(); return true; }
+  if(t.dataset.liteafter){ const s = S.supplements.find(x=>x.id===t.dataset.liteafter); if(s){ s.afterH = Number(t.value)||0; save(); } return true; }
+  return false;
+}
+view.addEventListener("input", e=>{ if(e.target.id!=="lite-q") return; const q = e.target.value.trim().toLowerCase();
+  for(const b of document.querySelectorAll("#lite-plist [data-litepick]")) b.style.display = !q || b.dataset.n.includes(q) ? "" : "none"; });
+setInterval(()=>{ if(TAB==="lite" && !LITE.eat && !document.querySelector("#view input:focus, #view select:focus") && !document.querySelector("#view details[open]")) render(); }, 60000);
 function renderMore(){
   view.innerHTML = `<div class="stack"><section class="panel"><h2>Everything else</h2><small class="muted">Version ${esc(APP_VERSION)} · <a href="#whatsNew" data-whatsnew="1">What's new</a></small><div class="menu">
     ${MENU.map(([id,n,sub])=>`<button data-goto="${id}">${esc(n)}<small>${esc(sub)}</small></button>`).join("")}
@@ -2141,7 +2258,9 @@ function render(){
   const navTab = TAB==="today"||TAB==="quick"||TAB==="tomorrow" ? TAB : "more";
   document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected", b.dataset.tab===navTab));
   document.querySelectorAll(".dh-bar a").forEach(a=>{ const h=a.getAttribute("href"), on = h==="index.html#more" ? navTab==="more" : h==="index.html#today" && navTab!=="more"; if(on) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current"); });
-  if(TAB==="quick") renderQuick();
+  document.body.classList.toggle("lite-on", TAB==="lite"); if(TAB==="lite"){ try{ localStorage.setItem("dh.view","lite"); }catch(_){} }
+  if(TAB==="lite") renderLite();
+  else if(TAB==="quick") renderQuick();
   else if(TAB==="today") renderDay(0);
   else if(TAB==="tomorrow") renderDay(1);
   else if(TAB==="more") renderMore();
@@ -2203,6 +2322,7 @@ document.querySelector("nav.tabs").addEventListener("click",e=>{
 });
 view.addEventListener("change",e=>{
   const t = e.target;
+  if(TAB==="lite" && liteChange(t)) return;
   if(t.dataset.diag){ setDiag(t.dataset.diag, t.checked); render(); toast(t.checked?"Added. Its questions are in your doctor list.":"Removed"); return; }
   if(t.dataset.plandiag){ const k = "plan:"+t.dataset.plandiag; S.diagnoses = (S.diagnoses||[]).filter(x=>x!==k); if(t.checked) S.diagnoses.push(k); save(); render(); return; }
   if(t.dataset.diagrule){ const [id,k] = t.dataset.diagrule.split(":"); setDiagRule(id, k, t.checked); render(); return; }
@@ -2262,6 +2382,7 @@ view.addEventListener("change",e=>{
 view.addEventListener("toggle",e=>{ if(e.target.dataset && e.target.dataset.feelbox) FEEL_OPEN = e.target.open; }, true);
 view.addEventListener("click",async e=>{
   const t = e.target;
+  if(TAB==="lite" && liteClick(t)) return;
   if(t.dataset.diagadd){ const g = id=>((document.getElementById(id)||{}).value||"").trim(), name = g("dg-name");
     if(!name){ toast("Type the diagnosis name"); return; }
     const foods = (lvl, txt)=>txt.split(/[,\n;]+/).map(x=>x.trim()).filter(Boolean).map((f,i)=>[lvl[0]+i+"_"+Date.now().toString(36), lvl, f, f, "From your "+name+" diagnosis."]);
@@ -2509,7 +2630,7 @@ function phoneAfterLoad(){
   const p = new URLSearchParams(location.search);
   if(p.get("do")){ QUICK_FLASH = runAction(p); TAB = "quick"; save(); }
   if(p.get("view")==="quick") TAB = "quick";
-  if(needsSetup() || pGet("dh.openOn")==="quick") TAB = "quick";
+  if(needsSetup()) TAB = "quick"; else if(pGet("dh.view")==="lite") TAB = "lite"; else if(pGet("dh.openOn")==="quick") TAB = "quick";
   if(location.search) history.replaceState(null, "", location.pathname + (TAB==="quick" ? "#quick" : ""));
   if(navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(()=>{});
   if("serviceWorker" in navigator){
@@ -2566,6 +2687,7 @@ function renderQuick(){
     ${backupNudge()}
     <div><button class="linkbtn" data-goto="today">See the full day</button></div>
     <div>${openOnHtml()}</div>
+    ${typeof renderLite==="function"?`<div><button class="linkbtn" data-goto="lite">Try the light view</button></div>`:""}
   </div>`;
   QUICK_FLASH = "";
 }
@@ -2635,6 +2757,7 @@ view.addEventListener("change", e=>{ if(PHX.isRestore(e.target)) pSet("dh.welcom
 
 (async ()=>{
   try{ TAB = sessionStorage.getItem("dh-tab") || "today"; }catch(_){}
+  try{ if(localStorage.getItem("dh.view")==="lite") TAB = "lite"; }catch(_){}
   { const h = location.hash.slice(1); if(["today","quick","tomorrow","more"].includes(h)){ TAB = h; history.replaceState(null, "", location.pathname + location.search); } }
   if(HHUI.takeHash()) TAB = "household";
   await load(); phoneAfterLoad(); dailyLocalBackup(); mountHousehold(); const ended = checkFlare(); const rolled = rollCook() || ended; const used = useUpStock(); const swept = sweepMissed(); setSync(); render();
