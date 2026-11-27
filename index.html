@@ -165,8 +165,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.35.0";
+const APP_VERSION = "1.36.0";
 const CHANGES = [
+  {v:"1.36.0", date:"2026-11-27", items:["Light view: \"Done eating for today\" ticks Kitchen closes in the full app.","Water you add ticks the Glass of water items on the checklist, one for each share of your goal."]},
   {v:"1.35.0", date:"2026-11-27", items:["Partial servings: pick ¼, ½, ¾, 1½ and so on for each food, or step with − and +."]},
   {v:"1.34.1", date:"2026-11-27", items:["Meals have a time you can change when you log them or tap Edit. Edit also lets you switch which meal it was. Supplement countdowns follow the time you set."]},
   {v:"1.34.0", date:"2026-11-27", items:["Eaten today shows on Today, Quick and the Light view, with Edit and Remove for each meal.","Saved meals can be changed: pick one, change foods or amounts, and tick \"Also update my saved meal\" (or update it without logging). You can also remove a saved meal."]},
@@ -1357,6 +1358,13 @@ function setSync(msg){
 }
 function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.hidden=false; clearTimeout(toast.h); toast.h=setTimeout(()=>t.hidden=true,2200); }
 
+
+function waterSync(key){
+  const lg = dayLog(key), {timed, untimed} = itemsFor(parseYmd(key)), ws = [...timed, ...untimed].filter(i=>i.id.startsWith("water:"));
+  if(!ws.length) return;
+  const share = (Number(S.waterGoal)||80)/ws.length, n = Math.min(ws.length, Math.floor(((Number(lg.oz)||0)+0.001)/share));
+  ws.forEach((i,k)=>{ if(k<n) lg.done[i.id] = true; else delete lg.done[i.id]; });
+}
 function dayLog(key){ return S.log[key] = S.log[key] || {done:{}, water:0, oz:0, sips:[]}; }
 const r1w = n=>Math.round(n*10)/10;
 const FEEL_FACES = [[1,"😣","Rough"],[2,"🙁","Low"],[3,"😐","OK"],[4,"🙂","Good"],[5,"😄","Great"]];
@@ -1652,6 +1660,10 @@ function liteMarkFull(key, sid){
   const it = [...timed, ...untimed].find(i=>(i.id==="supp:"+sid || i.id.startsWith("supp:"+sid+":")) && !lg.done[i.id]);
   if(it) lg.done[it.id] = true;
 }
+function liteKitchen(key, on){
+  const lg = dayLog(key), {timed, untimed} = itemsFor(parseYmd(key));
+  for(const i of [...timed, ...untimed]) if(i.id.startsWith("rt:fast")){ if(on) lg.done[i.id] = true; else delete lg.done[i.id]; }
+}
 function liteRow(x, key, btn){
   return `<div class="lrow"><div><b>${esc(x.s.name)}</b>${suppDose(x.s,new Date())?` <small class="muted">${esc(suppDose(x.s,new Date()))}</small>`:""}<br><small class="muted">${esc(liteWhy(x))}${x.due!=null&&x.due>liteNowM()?" · "+liteIn(x.due):""}</small></div>${btn?`<button class="btn" data-litedone="${esc(x.k)}" data-sid="${esc(x.s.id)}" data-day="${key}">Done</button>`:""}</div>`;
 }
@@ -1681,11 +1693,12 @@ function renderLite(){
       </section></div>`;
     return;
   }
-  const evLine = LITE_ANCHORS.filter(([a])=>ev[a]).map(([a,n])=>`<span class="chip">${esc(n)} ${niceTime(ev[a])} <button class="linkbtn" data-liteunev="${a}" aria-label="Clear ${esc(n)}">×</button></span>`).join(" ");
+  const evLine = [...LITE_ANCHORS, ["closed","Kitchen closed"]].filter(([a])=>ev[a]).map(([a,n])=>`<span class="chip">${esc(n)} ${niceTime(ev[a])} <button class="linkbtn" data-liteunev="${a}" aria-label="Clear ${esc(n)}">×</button></span>`).join(" ");
   view.innerHTML = `<div class="stack lite">
     <section class="panel"><div class="lbig">
       ${ev.wake?"":`<button class="btn" data-liteev="wake">I'm up</button>`}
       <button class="btn" data-liteeat="1">Eating now</button>
+      ${ev.closed?"":`<button class="btn ghost" data-liteclosed="1">Done eating for today</button>`}
       ${ev.bed?"":`<button class="btn ghost" data-liteev="bed">Going to bed</button>`}
     </div>${evLine?`<div class="chips" style="gap:6px;margin-top:8px">${evLine}</div>`:""}</section>
     <section class="panel"><h2>${dueNow.length?"Take now":"Nothing due right now"}</h2>
@@ -1716,7 +1729,8 @@ function liteAddFood(){
 function liteClick(t){
   const key = ymd(new Date());
   if(t.dataset.liteev){ const lg = dayLog(key); (lg.ev=lg.ev||{})[t.dataset.liteev] = fromMins(liteNowM()); save(); render(); toast(t.dataset.liteev==="wake"?"Good morning":"Good night"); return true; }
-  if(t.dataset.liteunev){ const lg = dayLog(key); if(lg.ev) delete lg.ev[t.dataset.liteunev]; save(); render(); return true; }
+  if(t.dataset.liteclosed){ const lg = dayLog(key); (lg.ev=lg.ev||{}).closed = fromMins(liteNowM()); liteKitchen(key, true); save(); render(); toast("Kitchen closed. Ticked in the full app too."); return true; }
+  if(t.dataset.liteunev){ const lg = dayLog(key); if(lg.ev) delete lg.ev[t.dataset.liteunev]; if(t.dataset.liteunev==="closed") liteKitchen(key, false); save(); render(); return true; }
   if(t.dataset.liteeat){ const ev = (S.log[key]||{}).ev||{}; LITE = {eat:(LITE_MEALS.find(([m])=>!ev[m])||["s"])[0], pick:{}, other:"", meal:""}; render(); window.scrollTo(0,0); return true; }
   if(t.dataset.liteslot){ LITE.eat = t.dataset.liteslot; if(LITE.meal && LITE.edit<0){ LITE.meal = ""; LITE.pick = {}; } LITE.other = (document.getElementById("lite-other")||{}).value||""; render(); return true; }
   const pk = t.closest && t.closest("[data-litepick]");
@@ -2519,8 +2533,8 @@ view.addEventListener("click",async e=>{
   if(t.dataset.nremovecancel){ NREMOVE = null; render(); return; }
   if(t.dataset.nremove){ const it=nudgeItem(t.dataset.nremove); if(it.x){ const list = it.kind==="rt"?S.routine:S.supplements; list.splice(list.indexOf(it.x),1); NREMOVE=null; save(); render(); toast("Removed "+it.x.name+". You can add it back under More, then Supplements & routine."); } return; }
   if(t.dataset.npause){ const it=nudgeItem(t.dataset.npause); if(it.x){ it.x.active=false; save(); render(); toast("Paused "+it.x.name+". Turn it back on under More, then Supplements & routine."); } return; }
-  if(t.dataset.sip){ const lg=dayLog(ymd(new Date())); const n=Number(t.dataset.sip)||0; lg.sips=lg.sips||[]; lg.sips.push(n); lg.oz=(Number(lg.oz)||0)+n; save(); render(); return; }
-  if(t.dataset.unsip){ const lg=dayLog(ymd(new Date())); const n=(lg.sips||[]).pop(); if(n!=null) lg.oz=Math.max(0,(Number(lg.oz)||0)-n); save(); render(); toast("Took off "+n+" oz"); return; }
+  if(t.dataset.sip){ const lg=dayLog(ymd(new Date())); const n=Number(t.dataset.sip)||0; lg.sips=lg.sips||[]; lg.sips.push(n); lg.oz=(Number(lg.oz)||0)+n; waterSync(ymd(new Date())); save(); render(); return; }
+  if(t.dataset.unsip){ const lg=dayLog(ymd(new Date())); const n=(lg.sips||[]).pop(); if(n!=null) lg.oz=Math.max(0,(Number(lg.oz)||0)-n); waterSync(ymd(new Date())); save(); render(); toast("Took off "+n+" oz"); return; }
   if(t.dataset.glass!==undefined){ const lg=dayLog(ymd(new Date())); const n=+t.dataset.glass+1; lg.water = lg.water===n? n-1 : n; save(); render(); return; }
   if(t.dataset.del!==undefined){
     if(t.dataset.armed){ S.supplements.splice(+t.dataset.del,1); save(); renderSupps(); toast("Removed"); }
