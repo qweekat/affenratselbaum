@@ -165,8 +165,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.33.1";
+const APP_VERSION = "1.34.0";
 const CHANGES = [
+  {v:"1.34.0", date:"2026-11-27", items:["Eaten today shows on Today, Quick and the Light view, with Edit and Remove for each meal.","Saved meals can be changed: pick one, change foods or amounts, and tick \"Also update my saved meal\" (or update it without logging). You can also remove a saved meal."]},
   {v:"1.33.1", date:"2026-11-27", items:["Fixed: a food typed into \"Something not on the list\" now gets added with an Add button (or Enter) and the screen stays open. Typed foods stay on your list for next time, marked (yours)."]},
   {v:"1.33.0", date:"2026-11-27", items:["Log what you ate from both views: pick one of your meals (planned or your own) or tap pantry foods with amounts. Tick \"Save this as a meal\" and it shows under Your meals next time."]},
   {v:"1.32.0", date:"2026-11-26", items:["New: Light view (More, then Light view). Tap I'm up or Eating now and it shows what to take with that moment, counts down things like 2 h after lunch, and lets you log food from your pantry with amounts. Set when you take each supplement at the bottom of the Light view. The full app is one tap away."]},
@@ -1384,7 +1385,7 @@ function prnHtml(key, lg){
 let QM = null;
 const QM_DONE = {b:"meal:b", l:"meal:l", d:"meal:d", s:"snack", e:"treat"};
 function quickMealHtml(key){
-  if(!QM) return `<div class="chips" style="gap:8px;align-items:center"><button class="btn" data-liteeat="1">Log what I ate</button><button class="linkbtn" data-qmopen="${key}">Change a planned meal</button></div>`;
+  if(!QM) return `${ateListHtml(key)}<div class="chips" style="gap:8px;align-items:center"><button class="btn" data-liteeat="1">Log what I ate</button><button class="linkbtn" data-qmopen="${key}">Change a planned meal</button></div>`;
   const k = QM.k, cur = idsFor(parseYmd(key))[k]||"";
   return `<div class="stack" style="gap:8px;margin-top:8px">
     <label>Which meal<select id="qm-slot" data-qmslot="1">${SLOTS.map(([s,l])=>`<option value="${s}" ${s===k?"selected":""}>${l}</option>`).join("")}</select></label>
@@ -1423,7 +1424,7 @@ function renderDay(offset){
     <small class="muted">This week: ${esc(f.adds)}. Stop raising fiber if bloating or cramping gets worse.</small>
     <small class="muted">This week: ${esc(f.adds)}. Stop raising fiber if bloating or cramping gets worse.</small>
   </details>`;
-  if(offset===0) h += nudgeHtml() + `<div class="stack" style="gap:4px"><div><button class="btn" data-liteeat="1">Log what I ate</button></div>${(lg.ate||[]).length?`<small class="muted">Eaten today: ${esc(lg.ate.map(a=>(LITE_MEALS.find(m=>m[0]===a.m)||[0,"Meal"])[1]+" ("+a.items.map(x=>x.n+(x.q>1?" × "+x.q:"")).join(", ")+")").join("; "))}</small>`:""}</div>`;
+  if(offset===0) h += nudgeHtml() + `<div class="stack" style="gap:4px"><div><button class="btn" data-liteeat="1">Log what I ate</button></div>${ateListHtml(key)}</div>`;
   if(flareOn(d)) h += `<div class="warnbox"><b>Flare-up mode through ${esc(DAYS_LONG[parseYmd(S.flare.until).getDay()])} ${esc(S.flare.until.slice(5).replace("-","/"))}.</b> No nuts, seeds, chia, flax, beans, chickpeas, edamame, soy, legume noodles, chocolate or oats. Keep quinoa and buckwheat small. Lean on ${LYSINE_FOODS}. <button class="linkbtn" data-goflare="1">Change or end it</button></div>`;
   else if(offset===0) h += `<div><button class="linkbtn" data-goflare="1">Need a food break? Turn off some foods for a while</button></div>`;
   if(next) h += `<div class="next"><b>Next: ${niceTime(next.time)}</b> · ${esc(next.title)}</div>`;
@@ -1595,8 +1596,8 @@ const LITE_ANCHORS = [["wake","On waking"],["b","Breakfast"],["l","Lunch"],["s",
 const LITE_MEALS = [["b","Breakfast"],["l","Lunch"],["s","Snack"],["d","Dinner"]];
 const LITE_AFTER = [[0,"with it"],[0.5,"30 min after"],[1,"1 h after"],[2,"2 h after"],[3,"3 h after"]];
 const PANTRY_NAMES = {"butternut": "Butternut squash", "acorn": "Acorn squash", "piepumpkin": "Pie pumpkin", "beets": "Beets", "leeks": "Leeks", "onion": "Onions", "garlic": "Garlic", "chard": "Chard", "spinach": "Spinach", "zucchini": "Zucchini", "sweetpotato": "Sweet potatoes", "cucumber": "Cucumbers", "lime": "Limes", "snappeas": "Snap or snow peas", "ginger": "Ginger", "jalapeno": "Jalapeño or serrano (yours)", "cilantro": "Cilantro", "basil": "Basil or chives", "persimmon": "Persimmons", "kiwi": "Kiwi", "raspberries": "Frozen raspberries or blackberries", "asparagus": "Asparagus", "chicken": "Skinless chicken breast or thigh", "bison": "Ground bison or lean beef", "lamb": "Lamb stew meat", "sablefish": "Sablefish", "trout": "Trout", "salmoncan": "Canned salmon", "sardines": "Sardines", "m_chickenstew": "Chicken butternut stew", "m_bison": "Bison zucchini skillet meat", "m_lambstew": "Lamb chickpea pumpkin stew", "m_shredded": "Shredded chicken", "m_patties": "Sage bison breakfast patties", "m_beans": "Cooked Anasazi or bolita beans", "m_quinoa": "Cooked quinoa", "m_buckwheat": "Cooked buckwheat groats", "m_roastveg": "Roasted sweet potato and beets", "m_chiajam": "Chia berry jam", "m_broth": "Homemade chicken broth (from poaching)", "driedbeans": "Dried Anasazi or bolita beans", "blackbeans": "Canned black beans", "chickpeas": "Canned chickpeas", "pumpkincan": "Canned pumpkin", "artichoke": "Artichoke hearts in water", "quinoa": "Quinoa (dry)", "buckwheat": "Buckwheat groats (dry)", "broth": "Bonafide or Pacific chicken broth", "chia": "Chia seeds", "psyllium": "Psyllium husk", "tahini": "Tahini", "walnuts": "Walnuts", "edamame": "Frozen shelled edamame", "chickpeaflour": "Chickpea flour", "pacha": "Pacha sprouted buckwheat bread", "creamcheese": "Cream cheese", "mozz": "Fresh mozzarella", "feta": "Fresh sheep feta", "yogurt": "Plain whole yogurt", "rice": "Rice", "potatoes": "Potatoes"};
-let LITE = {eat:null, pick:{}, other:"", meal:""};
-const liteReset = ()=>{ LITE = {eat:null, pick:{}, other:"", meal:""}; };
+let LITE = {eat:null, pick:{}, other:"", meal:"", edit:-1};
+const liteReset = ()=>{ LITE = {eat:null, pick:{}, other:"", meal:"", edit:-1}; };
 const liteName = a=>(LITE_ANCHORS.find(x=>x[0]===a)||[a,a])[1];
 function liteItemName(id, plist){
   if(id.startsWith("n:")) return id.slice(2);
@@ -1609,6 +1610,14 @@ function liteMealOpts(slot){
   const other = (S.myMeals||[]).filter(m=>!seen.has(m.id) && (m.items||[]).length).map(m=>[m.id, m.n+" (yours, "+((LITE_MEALS.find(x=>x[0]===m.t)||[0,"other"])[1]).toLowerCase()+")"]);
   return [...mine, ...rest, ...other];
 }
+function ateListHtml(key, panel){
+  const lg = S.log[key]||{}, ate = lg.ate||[];
+  if(!ate.length) return "";
+  const rows = ate.map((a,i)=>`<div class="lrow"><div><b>${esc((LITE_MEALS.find(m=>m[0]===a.m)||[0,"Meal"])[1])}</b> <small class="muted">${niceTime(a.t)}</small><br><small>${esc(a.items.map(x=>x.n+(x.q>1?" × "+x.q:"")).join(", ")||"(nothing listed)")}</small></div><span class="chips" style="gap:10px"><button class="linkbtn" data-liteedit="${i}">Edit</button><button class="linkbtn" data-liteatedel="${i}">Remove</button></span></div>`).join("");
+  return panel ? `<section class="panel"><h2>Eaten today</h2>${rows}</section>` : `<div class="stack" style="gap:4px"><b>Eaten today</b>${rows}</div>`;
+}
+const liteSavedMeal = ()=> LITE.meal ? (S.myMeals||[]).find(m=>m.id===LITE.meal && (m.items||[]).length) : null;
+const liteItems = ()=>{ const plist = pantryList(); return Object.entries(LITE.pick).map(([id,q])=>({id: id.startsWith("n:")?"":id, n:liteItemName(id, plist), q})); };
 function liteNowM(){ const n = new Date(); return n.getHours()*60+n.getMinutes(); }
 function pantryList(){
   let p = null; try{ p = JSON.parse(localStorage.getItem("pantryplanner.v1")||"null"); }catch(_){}
@@ -1648,13 +1657,14 @@ function renderLite(){
   if(LITE.eat){
     const plist = pantryList(), picked = LITE.pick;
     view.innerHTML = `<div class="stack lite">
-      <section class="panel"><h2>Eating now</h2>
+      <section class="panel"><h2>${LITE.edit>=0?"Change what you ate":"Eating now"}</h2>
         <div class="chips" style="gap:8px">${LITE_MEALS.map(([m,n])=>`<button class="btn ${LITE.eat===m?"":"ghost"}" data-liteslot="${m}">${n}</button>`).join("")}</div>
         ${Object.keys(picked).length?`<div class="stack" style="gap:6px">${Object.entries(picked).map(([id,q])=>`<div class="lrow"><b>${esc(liteItemName(id, plist))}</b><span class="chips" style="gap:6px;align-items:center"><button class="btn ghost" data-liteminus="${esc(id)}" aria-label="Less">−</button><b>${esc(q)}</b><button class="btn ghost" data-liteplus="${esc(id)}" aria-label="More">+</button></span></div>`).join("")}</div>`:`<small class="muted">Pick one of your meals, or tap foods from your pantry. Tap + for more than one.</small>`}
         <label for="lite-other">Something not on the list</label>
         <div style="display:flex;gap:8px"><input type="text" id="lite-other" style="flex:1" value="${esc(LITE.other)}" placeholder="e.g. leftover stew" enterkeyhint="done"><button class="btn" data-liteadd="1">Add</button></div>
         <small class="muted">Added foods stay on your list for next time.</small>
-        ${Object.keys(picked).length && !(LITE.meal && (S.myMeals||[]).some(m=>m.id===LITE.meal && (m.items||[]).length))?`<label style="display:flex;gap:8px;align-items:center;font-weight:400"><input type="checkbox" id="lite-keep"> Save this as a meal I can pick next time</label><input type="text" id="lite-keepname" placeholder="Name it (optional)" aria-label="Meal name">`:""}
+        ${liteSavedMeal()?`<div class="stack" style="gap:6px;border-top:1px solid var(--line,#ddd);padding-top:8px"><small class="muted">This is your saved meal "${esc(liteSavedMeal().n)}". Change foods or amounts above, then:</small><label style="display:flex;gap:8px;align-items:center;font-weight:400"><input type="checkbox" id="lite-upd"> Also update my saved meal</label><div class="chips" style="gap:12px"><button class="linkbtn" data-litemealupd="1">Update the saved meal only (don't log)</button><button class="linkbtn" data-litemealdel="1">Remove it from my meals</button></div></div>`:""}
+        ${Object.keys(picked).length && !liteSavedMeal()?`<label style="display:flex;gap:8px;align-items:center;font-weight:400"><input type="checkbox" id="lite-keep"> Save this as a meal I can pick next time</label><input type="text" id="lite-keepname" placeholder="Name it (optional)" aria-label="Meal name">`:""}
         <div class="chips" style="gap:8px"><button class="btn" data-litesave="1">Save</button><button class="btn ghost" data-litecancel="1">Cancel</button></div>
       </section>
       ${(()=>{ const mo = liteMealOpts(LITE.eat); return `<section class="panel"><h2>Your meals</h2>${mo.length?`<div class="stack" style="gap:4px">${mo.map(([id,n])=>`<button class="lpick ${LITE.meal===id?"on":""}" data-litemeal="${esc(id)}">${esc(n)}</button>`).join("")}</div>`:`<small class="muted">None yet for this meal. Pick foods below and tick "Save this as a meal".</small>`}</section>`; })()}
@@ -1678,7 +1688,7 @@ function renderLite(){
     </section>
     <section class="panel"><div class="lrow"><div><b>Water</b><br><small class="muted">${r1w(oz)} of ${esc(goal)} oz</small></div><button class="btn" data-sip="8">+8 oz</button></div></section>
     ${prnHtml(key, lg)}
-    ${(lg.ate||[]).length?`<section class="panel"><h2>Eaten today</h2>${lg.ate.map((a,i)=>`<div class="lrow"><div><b>${esc((LITE_MEALS.find(m=>m[0]===a.m)||[0,"Meal"])[1])}</b> <small class="muted">${niceTime(a.t)}</small><br><small>${esc(a.items.map(x=>x.n+(x.q>1?" × "+x.q:"")).join(", "))}</small></div><button class="linkbtn" data-liteatedel="${i}">Remove</button></div>`).join("")}</section>`:""}
+    ${ateListHtml(key, true)}
     ${unset.length?`<details class="panel"><summary><b>Any time today (${unset.length})</b></summary>${unset.map(x=>liteRow(x,key,true)).join("")}</details>`:""}
     <details class="panel"><summary><b>Set when you take each one</b></summary>
       <small class="muted">Pick the moments for each supplement. "Hours after" waits that long after the moment, for things like psyllium.</small>
@@ -1711,15 +1721,22 @@ function liteClick(t){
     else { LITE.meal = id; LITE.pick = {}; if(mm && (mm.items||[]).length) for(const x of mm.items) LITE.pick[x.id||("n:"+x.n)] = x.q||1; else LITE.pick["meal:"+id] = 1; }
     render(); window.scrollTo(0,0); return true; }
   if(t.dataset.liteplus||t.dataset.liteminus){ const id = t.dataset.liteplus||t.dataset.liteminus; LITE.pick[id] = (LITE.pick[id]||0)+(t.dataset.liteplus?1:-1); if(LITE.pick[id]<=0) delete LITE.pick[id]; LITE.other = (document.getElementById("lite-other")||{}).value||""; render(); return true; }
+  if(t.dataset.liteedit!==undefined){ const a = ((S.log[key]||{}).ate||[])[+t.dataset.liteedit]; if(!a) return true;
+    LITE = {eat:a.m, pick:{}, other:"", meal:a.meal||"", edit:+t.dataset.liteedit}; for(const x of a.items) LITE.pick[x.id||("n:"+x.n)] = (LITE.pick[x.id||("n:"+x.n)]||0)+(x.q||1);
+    render(); window.scrollTo(0,0); return true; }
+  if(t.dataset.litemealupd){ const sm = liteSavedMeal(); if(sm){ liteAddFood(); sm.items = liteItems(); save(); toast("Updated \u201c"+sm.n+"\u201d"); } liteReset(); render(); return true; }
+  if(t.dataset.litemealdel){ const sm = liteSavedMeal(); if(sm){ S.myMeals = S.myMeals.filter(m=>m!==sm); save(); toast("Removed \u201c"+sm.n+"\u201d from your meals"); } LITE.meal = ""; render(); return true; }
   if(t.dataset.liteadd){ if(liteAddFood()){ render(); toast("Added"); } else toast("Type a food first"); return true; }
   if(t.dataset.litecancel){ liteReset(); render(); return true; }
   if(t.dataset.litesave){
     const other = ((document.getElementById("lite-other")||{}).value||"").trim(), plist = pantryList();
-    const items = Object.entries(LITE.pick).map(([id,q])=>({id: id.startsWith("n:")?"":id, n:liteItemName(id, plist), q}));
+    const items = liteItems();
     if(other && liteAddFood()) return liteClick(t);
     const lg = dayLog(key), m = LITE.eat, t0 = fromMins(liteNowM());
-    (lg.ev=lg.ev||{})[m] = lg.ev[m] || t0;
-    (lg.ate=lg.ate||[]).push(LITE.meal ? {m, t:t0, items, meal:LITE.meal} : {m, t:t0, items});
+    if(LITE.edit<0) (lg.ev=lg.ev||{})[m] = lg.ev[m] || t0;
+    const entry = LITE.meal ? {m, t:t0, items, meal:LITE.meal} : {m, t:t0, items};
+    if(LITE.edit>=0 && (lg.ate||[])[LITE.edit]){ entry.t = lg.ate[LITE.edit].t; lg.ate[LITE.edit] = entry; } else (lg.ate=lg.ate||[]).push(entry);
+    const upd = document.getElementById("lite-upd"), sm = liteSavedMeal(); if(upd && upd.checked && sm) sm.items = items.map(x=>({id:x.id, n:x.n, q:x.q}));
     if(QM_DONE[m]) lg.done[QM_DONE[m]] = true;
     const keep = document.getElementById("lite-keep"), kname = ((document.getElementById("lite-keepname")||{}).value||"").trim();
     let kept = "";
@@ -2419,7 +2436,7 @@ view.addEventListener("change",e=>{
 view.addEventListener("toggle",e=>{ if(e.target.dataset && e.target.dataset.feelbox) FEEL_OPEN = e.target.open; }, true);
 view.addEventListener("click",async e=>{
   const t = e.target;
-  if((TAB==="lite" || LITE.eat || (t.dataset && t.dataset.liteeat)) && liteClick(t)) return;
+  if((TAB==="lite" || LITE.eat || (t.dataset && (t.dataset.liteeat || t.dataset.liteedit!==undefined || t.dataset.liteatedel!==undefined))) && liteClick(t)) return;
   if(t.dataset.diagadd){ const g = id=>((document.getElementById(id)||{}).value||"").trim(), name = g("dg-name");
     if(!name){ toast("Type the diagnosis name"); return; }
     const foods = (lvl, txt)=>txt.split(/[,\n;]+/).map(x=>x.trim()).filter(Boolean).map((f,i)=>[lvl[0]+i+"_"+Date.now().toString(36), lvl, f, f, "From your "+name+" diagnosis."]);
