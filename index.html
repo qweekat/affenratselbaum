@@ -166,8 +166,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.39.1";
+const APP_VERSION = "1.40.0";
 const CHANGES = [
+  {v:"1.40.0", date:"2026-11-27", items:["Today, Quick and Lite stay in step both ways: ticking Kitchen closes, a meal, a glass of water or a supplement in one shows in the others, and unticking takes it back everywhere."]},
   {v:"1.39.1", date:"2026-11-27", items:["Fixed: \"Always open the app on Lite\" was ignored when opening from the home-screen icon, which always asked for Quick."]},
   {v:"1.39.0", date:"2026-11-27", items:["Alerts while the app is open: when a countdown (like 2 h after lunch) or a set reminder comes due, a banner shows with a chime, plus an iPhone notification if you allow them. Settings and a test button are on Lite under \"Alerts while the app is open\"."]},
   {v:"1.38.1", date:"2026-11-27", items:["Fixed: More no longer jumps to Lite. Pick one start page: \"Always open the app on Quick\" (on Quick) or \"on Lite\" (on Lite). Ticking one switches off the other. With neither ticked, the app opens on Today."]},
@@ -1367,11 +1368,28 @@ function setSync(msg){
 function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.hidden=false; clearTimeout(toast.h); toast.h=setTimeout(()=>t.hidden=true,2200); }
 
 
+function waterItems(key){ const {timed, untimed} = itemsFor(parseYmd(key)); return [...timed, ...untimed].filter(i=>i.id.startsWith("water:")); }
 function waterSync(key){
-  const lg = dayLog(key), {timed, untimed} = itemsFor(parseYmd(key)), ws = [...timed, ...untimed].filter(i=>i.id.startsWith("water:"));
+  const lg = dayLog(key), ws = waterItems(key);
   if(!ws.length) return;
   const share = (Number(S.waterGoal)||80)/ws.length, n = Math.min(ws.length, Math.floor(((Number(lg.oz)||0)+0.001)/share));
-  ws.forEach((i,k)=>{ if(k<n) lg.done[i.id] = true; else delete lg.done[i.id]; });
+  let have = ws.filter(i=>lg.done[i.id]).length;
+  for(const i of ws){ if(have>=n) break; if(!lg.done[i.id]){ lg.done[i.id] = true; have++; } }
+  for(const i of [...ws].reverse()){ if(have<=n) break; if(lg.done[i.id]){ delete lg.done[i.id]; have--; } }
+}
+
+function syncFromTick(key, id, on){
+  const lg = dayLog(key), ev = lg.ev = lg.ev||{}, now = fromMins(new Date().getHours()*60+new Date().getMinutes());
+  const slot = id==="snack" ? "s" : /^meal:[bld]$/.test(id) ? id.slice(5) : "";
+  if(slot){ if(on){ if(!ev[slot]) ev[slot] = now; } else if(!(lg.ate||[]).some(a=>a.m===slot)) delete ev[slot]; }
+  if(id.startsWith("rt:fast")){ if(on){ if(!ev.closed) ev.closed = now; } else delete ev.closed; }
+  if(id.startsWith("water:")){ const ws = waterItems(key); if(ws.length){ const share = Math.ceil((Number(S.waterGoal)||80)/ws.length);
+    lg.sips = lg.sips||[];
+    if(on){ lg.sips.push(share); lg.oz = (Number(lg.oz)||0)+share; } else { lg.oz = Math.max(0,(Number(lg.oz)||0)-share); const j = lg.sips.lastIndexOf(share); if(j>=0) lg.sips.splice(j,1); }
+    lg.done[id] = on; if(!on) delete lg.done[id]; waterSync(key); } }
+  if(id.startsWith("supp:") && !on && lg.lite){ const sid = id.split(":")[1], ks = Object.keys(lg.lite).filter(k=>k.split("@")[0]===sid);
+    const order = k=>{ const a = k.split("@")[1]; const i = LITE_ANCHORS.findIndex(v=>v[0]===a); return i<0?99:i; };
+    ks.sort((a,b)=>order(a)-order(b)); if(ks.length) delete lg.lite[ks[ks.length-1]]; }
 }
 function dayLog(key){ return S.log[key] = S.log[key] || {done:{}, water:0, oz:0, sips:[]}; }
 const r1w = n=>Math.round(n*10)/10;
@@ -1757,7 +1775,7 @@ function liteClick(t){
   const key = ymd(new Date());
   if(t.dataset.liteev){ const lg = dayLog(key); (lg.ev=lg.ev||{})[t.dataset.liteev] = fromMins(liteNowM()); save(); render(); toast(t.dataset.liteev==="wake"?"Good morning":"Good night"); return true; }
   if(t.dataset.liteclosed){ const lg = dayLog(key); (lg.ev=lg.ev||{}).closed = fromMins(liteNowM()); liteKitchen(key, true); save(); render(); toast("Kitchen closed. Ticked in the full app too."); return true; }
-  if(t.dataset.liteunev){ const lg = dayLog(key); if(lg.ev) delete lg.ev[t.dataset.liteunev]; if(t.dataset.liteunev==="closed") liteKitchen(key, false); save(); render(); return true; }
+  if(t.dataset.liteunev){ const lg = dayLog(key); if(lg.ev) delete lg.ev[t.dataset.liteunev]; if(t.dataset.liteunev==="closed") liteKitchen(key, false); if(QM_DONE[t.dataset.liteunev] && !(lg.ate||[]).some(a=>a.m===t.dataset.liteunev)) delete lg.done[QM_DONE[t.dataset.liteunev]]; save(); render(); return true; }
   if(t.dataset.liteeat){ const ev = (S.log[key]||{}).ev||{}; LITE = {eat:(LITE_MEALS.find(([m])=>!ev[m])||["s"])[0], pick:{}, other:"", meal:""}; render(); window.scrollTo(0,0); return true; }
   if(t.dataset.liteslot){ LITE.eat = t.dataset.liteslot; if(LITE.meal && LITE.edit<0){ LITE.meal = ""; LITE.pick = {}; } LITE.other = (document.getElementById("lite-other")||{}).value||""; render(); return true; }
   const pk = t.closest && t.closest("[data-litepick]");
@@ -1802,7 +1820,9 @@ function liteClick(t){
     if(keep && keep.checked && items.length){ const nm = kname || items.map(x=>x.n).join(", "); const id = addMyMeal(m, nm); const mm = myMeals().find(x=>x.id===id); if(mm){ mm.items = items.map(x=>({id:x.id, n:x.n, q:x.q})); kept = nm; } }
     liteReset(); save(); render(); window.scrollTo(0,0); toast(kept ? "Saved, and \u201c"+kept+"\u201d is now one of your meals." : (TAB==="lite" ? "Saved. What goes with it is at the top." : "Saved.")); return true; }
   if(t.dataset.litedone){ const lg = dayLog(t.dataset.day); (lg.lite=lg.lite||{})[t.dataset.litedone] = true; liteMarkFull(t.dataset.day, t.dataset.sid); save(); render(); return true; }
-  if(t.dataset.liteatedel!==undefined){ const lg = dayLog(key); (lg.ate||[]).splice(+t.dataset.liteatedel,1); save(); render(); return true; }
+  if(t.dataset.liteatedel!==undefined){ const lg = dayLog(key), gone = (lg.ate||[]).splice(+t.dataset.liteatedel,1)[0];
+    if(gone && !(lg.ate||[]).some(a=>a.m===gone.m)){ if(QM_DONE[gone.m]) delete lg.done[QM_DONE[gone.m]]; if(lg.ev) delete lg.ev[gone.m]; }
+    save(); render(); return true; }
   if(t.dataset.litefull){ TAB = "today"; render(); window.scrollTo(0,0); return true; }
   return false;
 }
@@ -2456,7 +2476,7 @@ view.addEventListener("change",e=>{
       for(const x of lg.cooked) S.stock[x.id]=(Number(S.stock[x.id])||0)+x.n; const g=items.find(x=>x.id==="r_grain"); if(g) S.lastGrain=g.grain; }
     if(!t.checked && lg.cooked){ for(const x of lg.cooked) S.stock[x.id]=Math.max(0,(Number(S.stock[x.id])||0)-x.n); delete lg.cooked; } }
   if(t.dataset.stock){ S.stock[t.dataset.stock]=Math.max(0,Number(t.value)||0); save(); renderWeek(); return; }
-  if(t.dataset.done){ const lg = dayLog(t.dataset.day); if(t.checked){ lg.done[t.dataset.done]=true; undoMissed(t.dataset.day, t.dataset.done); } else delete lg.done[t.dataset.done]; save(); render(); return; }
+  if(t.dataset.done){ const lg = dayLog(t.dataset.day); if(t.checked){ lg.done[t.dataset.done]=true; undoMissed(t.dataset.day, t.dataset.done); } else delete lg.done[t.dataset.done]; syncFromTick(t.dataset.day, t.dataset.done, t.checked); save(); render(); return; }
   if(t.dataset.r!==undefined){ const r=S.routine[+t.dataset.r]; r[t.dataset.f] = t.type==="checkbox"? t.checked : t.value; save(); if(t.type==="checkbox"||t.dataset.f==="times") renderSupps(); return; }
   for(const [attr,list] of [["r","routine"],["s","supplements"]]){
     if(t.dataset[attr+"day"]!==undefined){ const x=S[list][+t.dataset[attr+"day"]], dw=+t.value; x.days=(x.days||[]).filter(v=>v!==dw); if(t.checked) x.days.push(dw); x.days.sort(); save(); renderSupps(); return; }
@@ -2899,7 +2919,8 @@ PHX.wrapSave();
 view.addEventListener("click", e=>{
   const t = e.target.closest("button"); if(!t) return;
   if(t.dataset.qdone){ const lg = dayLog(t.dataset.day), id = t.dataset.qdone;
-    if(lg.done[id]) delete lg.done[id]; else markDone(t.dataset.day, id); save(); render(); return; }
+    const on = !lg.done[id]; if(on) markDone(t.dataset.day, id); else delete lg.done[id];
+    if(typeof syncFromTick==="function") syncFromTick(t.dataset.day, id, on); save(); render(); return; }
   if(t.dataset.qsupps){ const key = ymd(new Date()), lg = dayLog(key);
     const due = quickItems(new Date()).supps.filter(i=>i.time && !lg.done[i.id] && mins(i.time) <= minutesNow()+60); due.forEach(i=>markDone(key, i.id));
     save(); render(); toast("Checked off "+due.length); return; }
