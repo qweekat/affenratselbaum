@@ -166,8 +166,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.38.0";
+const APP_VERSION = "1.38.1";
 const CHANGES = [
+  {v:"1.38.1", date:"2026-11-27", items:["Fixed: More no longer jumps to Lite. Pick one start page: \"Always open the app on Quick\" (on Quick) or \"on Lite\" (on Lite). Ticking one switches off the other. With neither ticked, the app opens on Today."]},
   {v:"1.38.0", date:"2026-11-27", items:["Lite: add a supplement or powder (like a fiber powder) right under \"Set when you take each one\", then tick when you take it."]},
   {v:"1.37.1", date:"2026-11-27", items:["Fixed: on iPhone, time pickers (wake up, bed, meal times, supplement times) closed after the first turn of the wheel. Now the time saves when you tap Done."]},
   {v:"1.37.0", date:"2026-11-27", items:["Lite is now a tab on the main bar, next to Today. The app opens on whichever of Lite or the other tabs you used last."]},
@@ -1733,6 +1734,7 @@ function renderLite(){
         <label>How much<input type="text" id="lite-sdose" placeholder="e.g. 1 scoop in water"></label>
         <div><button class="btn" data-liteaddsupp="1">Add it</button></div></div>
     </details>
+    ${typeof openOnHtml==="function"?`<div>${openOnHtml("lite")}</div>`:""}
     <div class="chips" style="gap:8px;justify-content:center">${typeof PHX!=="undefined"?`<a class="btn ghost" href="pantry.html">Pantry</a>`:`<a class="btn ghost" href="/pantry">Pantry</a>`}</div>
   </div>`;
 }
@@ -1792,7 +1794,7 @@ function liteClick(t){
     liteReset(); save(); render(); window.scrollTo(0,0); toast(kept ? "Saved, and \u201c"+kept+"\u201d is now one of your meals." : (TAB==="lite" ? "Saved. What goes with it is at the top." : "Saved.")); return true; }
   if(t.dataset.litedone){ const lg = dayLog(t.dataset.day); (lg.lite=lg.lite||{})[t.dataset.litedone] = true; liteMarkFull(t.dataset.day, t.dataset.sid); save(); render(); return true; }
   if(t.dataset.liteatedel!==undefined){ const lg = dayLog(key); (lg.ate||[]).splice(+t.dataset.liteatedel,1); save(); render(); return true; }
-  if(t.dataset.litefull){ try{ localStorage.setItem("dh.view",""); }catch(_){} TAB = "today"; render(); window.scrollTo(0,0); return true; }
+  if(t.dataset.litefull){ TAB = "today"; render(); window.scrollTo(0,0); return true; }
   return false;
 }
 function liteChange(t){
@@ -2361,7 +2363,7 @@ function render(){
   const navTab = TAB==="today"||TAB==="quick"||TAB==="lite"||TAB==="tomorrow" ? TAB : "more";
   document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected", b.dataset.tab===navTab));
   document.querySelectorAll(".dh-bar a").forEach(a=>{ const h=a.getAttribute("href"), on = h==="index.html#more" ? navTab==="more" : h==="index.html#today" && navTab!=="more"; if(on) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current"); });
-  document.body.classList.toggle("lite-on", TAB==="lite"); if(TAB==="lite"){ try{ localStorage.setItem("dh.view","lite"); }catch(_){} }
+  document.body.classList.toggle("lite-on", TAB==="lite");
   if(TAB==="lite" || LITE.eat) renderLite();
   else if(TAB==="quick") renderQuick();
   else if(TAB==="today") renderDay(0);
@@ -2421,7 +2423,7 @@ window.addEventListener("hashchange",()=>{ if(HHUI.takeHash()){ TAB = "household
 window.addEventListener("hashchange",()=>{ const h = location.hash.slice(1); if(!["today","quick","tomorrow","more"].includes(h)) return; TAB = h; EDIT_ITEM = null; try{ sessionStorage.setItem("dh-tab",TAB); }catch(_){} history.replaceState(null, "", location.pathname + location.search); render(); window.scrollTo(0,0); });
 document.querySelector("nav.tabs").addEventListener("click",e=>{
   const b = e.target.closest("button[data-tab]"); if(!b) return;
-  TAB = b.dataset.tab; liteReset(); try{ localStorage.setItem("dh.view", TAB==="lite"?"lite":""); }catch(_){} try{ sessionStorage.setItem("dh-tab",TAB); }catch(_){} render(); window.scrollTo(0,0);
+  TAB = b.dataset.tab; liteReset(); try{ sessionStorage.setItem("dh-tab",TAB); }catch(_){} render(); window.scrollTo(0,0);
 });
 
 document.addEventListener("change", e=>{
@@ -2742,7 +2744,9 @@ function phoneAfterLoad(){
   const p = new URLSearchParams(location.search);
   if(p.get("do")){ QUICK_FLASH = runAction(p); TAB = "quick"; save(); }
   if(p.get("view")==="quick") TAB = "quick";
-  if(needsSetup()) TAB = "quick"; else if(pGet("dh.view")==="lite") TAB = "lite"; else if(pGet("dh.openOn")==="quick") TAB = "quick";
+  const asked = window.HASH_TAB || (["today","tomorrow","more","quick","lite"].includes(location.hash.slice(1)) ? location.hash.slice(1) : "");
+  const openOn = pGet("dh.openOn");
+  if(needsSetup()) TAB = "quick"; else if(!asked && !p.get("view") && !p.get("do") && (openOn==="quick" || (openOn==="lite" && typeof renderLite==="function"))) TAB = openOn;
   if(location.search) history.replaceState(null, "", location.pathname + (TAB==="quick" ? "#quick" : ""));
   if(navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(()=>{});
   if("serviceWorker" in navigator){
@@ -2755,11 +2759,14 @@ function phoneAfterLoad(){
   let hiddenAt = 0;
   document.addEventListener("visibilitychange", ()=>{
     if(document.hidden){ hiddenAt = Date.now(); return; }
-    if(pGet("dh.openOn")==="quick" && hiddenAt && Date.now()-hiddenAt > 5*60000 && TAB!=="quick" && !document.querySelector("input:focus,textarea:focus")){ TAB = "quick"; render(); window.scrollTo(0,0); }
+    const on = pGet("dh.openOn");
+    if((on==="quick" || (on==="lite" && typeof renderLite==="function")) && hiddenAt && Date.now()-hiddenAt > 5*60000 && TAB!==on && !document.querySelector("input:focus,textarea:focus")){ TAB = on; render(); window.scrollTo(0,0); }
   });
 }
-function openOnHtml(){
-  return `<label class="inline"><input type="checkbox" data-openon="1" ${pGet("dh.openOn")==="quick"?"checked":""}> Always open the app on Quick</label>`;
+function openOnHtml(which){
+  which = which || "quick";
+  const name = which==="lite" ? "Lite" : "Quick", other = which==="lite" ? "Quick" : "Lite", cur = pGet("dh.openOn");
+  return `<label class="inline"><input type="checkbox" data-openon="${which}" ${cur===which?"checked":""}> Always open the app on ${name}</label>${cur && cur!==which && typeof renderLite==="function" ? `<small class="muted">Right now it opens on ${other}. Ticking this switches it.</small>` : ""}`;
 }
 
 function welcomeHtml(){
@@ -2863,13 +2870,14 @@ view.addEventListener("click", e=>{
     (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(()=>toast("Link copied"), ()=>{ prompt("Copy this link", u); }); return; }
 });
 view.addEventListener("change", e=>{ if(PHX.isRestore(e.target)) pSet("dh.welcomed","1");
-  if(e.target.dataset.openon){ pSet("dh.openOn", e.target.checked?"quick":""); toast(e.target.checked?"The app will open on Quick":"The app will open where you left it"); } });
+  if(e.target.dataset.openon){ const w = e.target.dataset.openon==="lite" ? "lite" : "quick"; pSet("dh.openOn", e.target.checked ? w : ""); try{ localStorage.removeItem("dh.view"); }catch(_){}
+    toast(e.target.checked ? "The app will open on "+(w==="lite"?"Lite":"Quick") : "The app will open on Today"); render(); } });
 
 
 (async ()=>{
   try{ TAB = sessionStorage.getItem("dh-tab") || "today"; }catch(_){}
-  try{ if(localStorage.getItem("dh.view")==="lite") TAB = "lite"; }catch(_){}
-  { const h = location.hash.slice(1); if(["today","quick","tomorrow","more"].includes(h)){ TAB = h; history.replaceState(null, "", location.pathname + location.search); } }
+  try{ localStorage.removeItem("dh.view"); }catch(_){}
+  { const h = location.hash.slice(1); if(["today","quick","tomorrow","more"].includes(h)){ TAB = h; window.HASH_TAB = h; history.replaceState(null, "", location.pathname + location.search); } }
   if(HHUI.takeHash()) TAB = "household";
   await load(); phoneAfterLoad(); dailyLocalBackup(); mountHousehold(); const ended = checkFlare(); const rolled = rollCook() || ended; const used = useUpStock(); const swept = sweepMissed(); setSync(); render();
   if(SERVER || rolled || swept || used) save(); // refresh the 60-day reminder schedule on every open
