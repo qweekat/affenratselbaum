@@ -166,8 +166,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.38.1";
+const APP_VERSION = "1.39.0";
 const CHANGES = [
+  {v:"1.39.0", date:"2026-11-27", items:["Alerts while the app is open: when a countdown (like 2 h after lunch) or a set reminder comes due, a banner shows with a chime, plus an iPhone notification if you allow them. Settings and a test button are on Lite under \"Alerts while the app is open\"."]},
   {v:"1.38.1", date:"2026-11-27", items:["Fixed: More no longer jumps to Lite. Pick one start page: \"Always open the app on Quick\" (on Quick) or \"on Lite\" (on Lite). Ticking one switches off the other. With neither ticked, the app opens on Today."]},
   {v:"1.38.0", date:"2026-11-27", items:["Lite: add a supplement or powder (like a fiber powder) right under \"Set when you take each one\", then tick when you take it."]},
   {v:"1.37.1", date:"2026-11-27", items:["Fixed: on iPhone, time pickers (wake up, bed, meal times, supplement times) closed after the first turn of the wheel. Now the time saves when you tap Done."]},
@@ -1734,6 +1735,12 @@ function renderLite(){
         <label>How much<input type="text" id="lite-sdose" placeholder="e.g. 1 scoop in water"></label>
         <div><button class="btn" data-liteaddsupp="1">Add it</button></div></div>
     </details>
+    <details class="panel"><summary><b>Alerts while the app is open</b></summary>
+      <label class="inline" style="font-weight:400"><input type="checkbox" data-alert="alertsOn" ${S.alertsOn===false?"":"checked"}> Show a banner when something comes due</label>
+      <label class="inline" style="font-weight:400"><input type="checkbox" data-alert="alertSound" ${S.alertSound===false?"":"checked"}> Play a chime</label>
+      <div class="chips" style="gap:8px"><button class="btn ghost" id="notifyBtn">Allow notifications</button><button class="btn ghost" data-alerttest="1">Test it</button></div>
+      <small class="muted">This only works while the app is open on screen. iPhone doesn't let web apps buzz, and the chime follows your ringer switch. If you allow notifications, iPhone also shows one at the top.</small>
+    </details>
     ${typeof openOnHtml==="function"?`<div>${openOnHtml("lite")}</div>`:""}
     <div class="chips" style="gap:8px;justify-content:center">${typeof PHX!=="undefined"?`<a class="btn ghost" href="pantry.html">Pantry</a>`:`<a class="btn ghost" href="/pantry">Pantry</a>`}</div>
   </div>`;
@@ -1766,6 +1773,7 @@ function liteClick(t){
     render(); window.scrollTo(0,0); return true; }
   if(t.dataset.litemealupd){ const sm = liteSavedMeal(); if(sm){ liteAddFood(); sm.items = liteItems(); save(); toast("Updated \u201c"+sm.n+"\u201d"); } liteReset(); render(); return true; }
   if(t.dataset.litemealdel){ const sm = liteSavedMeal(); if(sm){ S.myMeals = S.myMeals.filter(m=>m!==sm); save(); toast("Removed \u201c"+sm.n+"\u201d from your meals"); } LITE.meal = ""; render(); return true; }
+  if(t.dataset.alerttest){ alertNow("Test alert", "This is how a due item looks"); return true; }
   if(t.dataset.liteaddsupp){ const g = id=>((document.getElementById(id)||{}).value||"").trim(), name = g("lite-sname");
     if(!name){ toast("Type a name first"); return true; }
     S.supplements.push({id:"s"+Date.now(), name, dose:g("lite-sdose"), times:"", how:"", binder:false, active:true, pending:false, notes:"", where:"home", whens:[]});
@@ -1798,6 +1806,7 @@ function liteClick(t){
   return false;
 }
 function liteChange(t){
+  if(t.dataset.alert){ S[t.dataset.alert] = t.checked; save(); return true; }
   if(t.dataset.liteq){ const v = Number(t.value); if(v>0) LITE.pick[t.dataset.liteq] = v; LITE.other = (document.getElementById("lite-other")||{}).value||""; render(); return true; }
   if(t.dataset.litewhen){ const [sid,a] = t.dataset.litewhen.split(":"), s = S.supplements.find(x=>x.id===sid); if(!s) return true;
     s.whens = (s.whens||[]).filter(x=>x!==a); if(t.checked) s.whens.push(a); s.whens.sort((x,y)=>LITE_ANCHORS.findIndex(v=>v[0]===x)-LITE_ANCHORS.findIndex(v=>v[0]===y)); save(); return true; }
@@ -2649,11 +2658,37 @@ view.addEventListener("click",async e=>{
 
 
 const firedHere = new Set();
+
+let AUDIO = null;
+document.addEventListener("pointerdown", ()=>{ try{ if(!AUDIO){ const C = window.AudioContext||window.webkitAudioContext; if(C) AUDIO = new C(); } if(AUDIO && AUDIO.state==="suspended") AUDIO.resume(); }catch(_){} }, true);
+function chime(){
+  if(S.alertSound===false || !AUDIO) return;
+  try{ const t0 = AUDIO.currentTime; [[880,0],[1175,0.18],[880,0.36]].forEach(([f,d])=>{ const o = AUDIO.createOscillator(), g = AUDIO.createGain(); o.type = "sine"; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t0+d); g.gain.exponentialRampToValueAtTime(0.35, t0+d+0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0+d+0.16); o.connect(g); g.connect(AUDIO.destination); o.start(t0+d); o.stop(t0+d+0.18); }); }catch(_){}
+}
+function alertNow(title, body){
+  if(S.alertsOn===false) return;
+  let bar = document.getElementById("dueBanner");
+  if(!bar){ bar = document.createElement("div"); bar.id = "dueBanner"; bar.setAttribute("role","alert");
+    bar.style.cssText = "position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top,0px) + 10px);z-index:9999;background:var(--juniper,#2f6b57);color:#fff;border-radius:14px;padding:14px 16px;box-shadow:0 8px 24px rgba(0,0,0,.25);display:flex;gap:12px;align-items:center;justify-content:space-between;font-weight:600";
+    document.body.appendChild(bar); }
+  const prev = bar.dataset.lines ? JSON.parse(bar.dataset.lines) : [];
+  prev.push(title + (body ? " · " + body : "")); bar.dataset.lines = JSON.stringify(prev.slice(-4));
+  bar.innerHTML = `<div>${prev.slice(-4).map(x=>`<div>${esc(x)}</div>`).join("")}</div><button type="button" style="background:#fff;color:#1d3b31;border:0;border-radius:10px;padding:8px 14px;font:inherit;font-weight:700">OK</button>`;
+  bar.querySelector("button").onclick = ()=>bar.remove();
+  chime(); try{ if(navigator.vibrate) navigator.vibrate([200,100,200]); }catch(_){}
+  if("Notification" in window && Notification.permission==="granted"){
+    const opts = {body: body||"", tag: "dh-"+title};
+    if(navigator.serviceWorker && navigator.serviceWorker.getRegistration) navigator.serviceWorker.getRegistration().then(r=>{ if(r && r.showNotification) r.showNotification(title, opts); else { try{ new Notification(title, opts); }catch(_){} } }).catch(()=>{});
+    else { try{ new Notification(title, opts); }catch(_){} }
+  }
+}
 setInterval(()=>{
   if(SERVER) return;
-  if(!("Notification" in window) || Notification.permission!=="granted") return;
   const now = new Date(), key = ymd(now), hm = pad(now.getHours())+":"+pad(now.getMinutes());
-  for(const r of buildReminders(1)) if(r.at===key+"T"+hm && !firedHere.has(r.key)){ firedHere.add(r.key); try{ new Notification(r.title,{body:r.body}); }catch(_){} }
+  for(const r of buildReminders(1)) if(r.at===key+"T"+hm && !firedHere.has(r.key)){ firedHere.add(r.key); alertNow(r.title, r.body); }
+  
+  if(typeof liteSupps==="function"){ const nm = now.getHours()*60+now.getMinutes();
+    for(const x of liteSupps(key)) if(!x.done && x.due!=null && x.due<=nm && x.due>nm-2 && !firedHere.has("lite:"+key+":"+x.k)){ firedHere.add("lite:"+key+":"+x.k); alertNow("Time for "+x.s.name, liteWhy(x)); if(TAB==="lite" && !LITE.eat && !document.querySelector("#view input:focus, #view select:focus")) render(); } }
 }, 20000);
 
 
