@@ -165,8 +165,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.34.0";
+const APP_VERSION = "1.34.1";
 const CHANGES = [
+  {v:"1.34.1", date:"2026-11-27", items:["Meals have a time you can change when you log them or tap Edit. Edit also lets you switch which meal it was. Supplement countdowns follow the time you set."]},
   {v:"1.34.0", date:"2026-11-27", items:["Eaten today shows on Today, Quick and the Light view, with Edit and Remove for each meal.","Saved meals can be changed: pick one, change foods or amounts, and tick \"Also update my saved meal\" (or update it without logging). You can also remove a saved meal."]},
   {v:"1.33.1", date:"2026-11-27", items:["Fixed: a food typed into \"Something not on the list\" now gets added with an Add button (or Enter) and the screen stays open. Typed foods stay on your list for next time, marked (yours)."]},
   {v:"1.33.0", date:"2026-11-27", items:["Log what you ate from both views: pick one of your meals (planned or your own) or tap pantry foods with amounts. Tick \"Save this as a meal\" and it shows under Your meals next time."]},
@@ -1596,8 +1597,8 @@ const LITE_ANCHORS = [["wake","On waking"],["b","Breakfast"],["l","Lunch"],["s",
 const LITE_MEALS = [["b","Breakfast"],["l","Lunch"],["s","Snack"],["d","Dinner"]];
 const LITE_AFTER = [[0,"with it"],[0.5,"30 min after"],[1,"1 h after"],[2,"2 h after"],[3,"3 h after"]];
 const PANTRY_NAMES = {"butternut": "Butternut squash", "acorn": "Acorn squash", "piepumpkin": "Pie pumpkin", "beets": "Beets", "leeks": "Leeks", "onion": "Onions", "garlic": "Garlic", "chard": "Chard", "spinach": "Spinach", "zucchini": "Zucchini", "sweetpotato": "Sweet potatoes", "cucumber": "Cucumbers", "lime": "Limes", "snappeas": "Snap or snow peas", "ginger": "Ginger", "jalapeno": "Jalapeño or serrano (yours)", "cilantro": "Cilantro", "basil": "Basil or chives", "persimmon": "Persimmons", "kiwi": "Kiwi", "raspberries": "Frozen raspberries or blackberries", "asparagus": "Asparagus", "chicken": "Skinless chicken breast or thigh", "bison": "Ground bison or lean beef", "lamb": "Lamb stew meat", "sablefish": "Sablefish", "trout": "Trout", "salmoncan": "Canned salmon", "sardines": "Sardines", "m_chickenstew": "Chicken butternut stew", "m_bison": "Bison zucchini skillet meat", "m_lambstew": "Lamb chickpea pumpkin stew", "m_shredded": "Shredded chicken", "m_patties": "Sage bison breakfast patties", "m_beans": "Cooked Anasazi or bolita beans", "m_quinoa": "Cooked quinoa", "m_buckwheat": "Cooked buckwheat groats", "m_roastveg": "Roasted sweet potato and beets", "m_chiajam": "Chia berry jam", "m_broth": "Homemade chicken broth (from poaching)", "driedbeans": "Dried Anasazi or bolita beans", "blackbeans": "Canned black beans", "chickpeas": "Canned chickpeas", "pumpkincan": "Canned pumpkin", "artichoke": "Artichoke hearts in water", "quinoa": "Quinoa (dry)", "buckwheat": "Buckwheat groats (dry)", "broth": "Bonafide or Pacific chicken broth", "chia": "Chia seeds", "psyllium": "Psyllium husk", "tahini": "Tahini", "walnuts": "Walnuts", "edamame": "Frozen shelled edamame", "chickpeaflour": "Chickpea flour", "pacha": "Pacha sprouted buckwheat bread", "creamcheese": "Cream cheese", "mozz": "Fresh mozzarella", "feta": "Fresh sheep feta", "yogurt": "Plain whole yogurt", "rice": "Rice", "potatoes": "Potatoes"};
-let LITE = {eat:null, pick:{}, other:"", meal:"", edit:-1};
-const liteReset = ()=>{ LITE = {eat:null, pick:{}, other:"", meal:"", edit:-1}; };
+let LITE = {eat:null, pick:{}, other:"", meal:"", edit:-1, time:""};
+const liteReset = ()=>{ LITE = {eat:null, pick:{}, other:"", meal:"", edit:-1, time:""}; };
 const liteName = a=>(LITE_ANCHORS.find(x=>x[0]===a)||[a,a])[1];
 function liteItemName(id, plist){
   if(id.startsWith("n:")) return id.slice(2);
@@ -1659,6 +1660,7 @@ function renderLite(){
     view.innerHTML = `<div class="stack lite">
       <section class="panel"><h2>${LITE.edit>=0?"Change what you ate":"Eating now"}</h2>
         <div class="chips" style="gap:8px">${LITE_MEALS.map(([m,n])=>`<button class="btn ${LITE.eat===m?"":"ghost"}" data-liteslot="${m}">${n}</button>`).join("")}</div>
+        <label style="display:flex;gap:8px;align-items:center">What time<input type="time" id="lite-time" value="${esc(LITE.time||fromMins(liteNowM()))}" style="width:auto"></label>
         ${Object.keys(picked).length?`<div class="stack" style="gap:6px">${Object.entries(picked).map(([id,q])=>`<div class="lrow"><b>${esc(liteItemName(id, plist))}</b><span class="chips" style="gap:6px;align-items:center"><button class="btn ghost" data-liteminus="${esc(id)}" aria-label="Less">−</button><b>${esc(q)}</b><button class="btn ghost" data-liteplus="${esc(id)}" aria-label="More">+</button></span></div>`).join("")}</div>`:`<small class="muted">Pick one of your meals, or tap foods from your pantry. Tap + for more than one.</small>`}
         <label for="lite-other">Something not on the list</label>
         <div style="display:flex;gap:8px"><input type="text" id="lite-other" style="flex:1" value="${esc(LITE.other)}" placeholder="e.g. leftover stew" enterkeyhint="done"><button class="btn" data-liteadd="1">Add</button></div>
@@ -1711,7 +1713,7 @@ function liteClick(t){
   if(t.dataset.liteev){ const lg = dayLog(key); (lg.ev=lg.ev||{})[t.dataset.liteev] = fromMins(liteNowM()); save(); render(); toast(t.dataset.liteev==="wake"?"Good morning":"Good night"); return true; }
   if(t.dataset.liteunev){ const lg = dayLog(key); if(lg.ev) delete lg.ev[t.dataset.liteunev]; save(); render(); return true; }
   if(t.dataset.liteeat){ const ev = (S.log[key]||{}).ev||{}; LITE = {eat:(LITE_MEALS.find(([m])=>!ev[m])||["s"])[0], pick:{}, other:"", meal:""}; render(); window.scrollTo(0,0); return true; }
-  if(t.dataset.liteslot){ LITE.eat = t.dataset.liteslot; if(LITE.meal){ LITE.meal = ""; LITE.pick = {}; } LITE.other = (document.getElementById("lite-other")||{}).value||""; render(); return true; }
+  if(t.dataset.liteslot){ LITE.eat = t.dataset.liteslot; if(LITE.meal && LITE.edit<0){ LITE.meal = ""; LITE.pick = {}; } LITE.other = (document.getElementById("lite-other")||{}).value||""; render(); return true; }
   const pk = t.closest && t.closest("[data-litepick]");
   if(pk){ const id = pk.dataset.litepick; LITE.pick[id] = (LITE.pick[id]||0)+1; LITE.other = (document.getElementById("lite-other")||{}).value||""; const y = window.scrollY; render(); window.scrollTo(0,y); return true; }
   const mp = t.closest && t.closest("[data-litemeal]");
@@ -1722,7 +1724,7 @@ function liteClick(t){
     render(); window.scrollTo(0,0); return true; }
   if(t.dataset.liteplus||t.dataset.liteminus){ const id = t.dataset.liteplus||t.dataset.liteminus; LITE.pick[id] = (LITE.pick[id]||0)+(t.dataset.liteplus?1:-1); if(LITE.pick[id]<=0) delete LITE.pick[id]; LITE.other = (document.getElementById("lite-other")||{}).value||""; render(); return true; }
   if(t.dataset.liteedit!==undefined){ const a = ((S.log[key]||{}).ate||[])[+t.dataset.liteedit]; if(!a) return true;
-    LITE = {eat:a.m, pick:{}, other:"", meal:a.meal||"", edit:+t.dataset.liteedit}; for(const x of a.items) LITE.pick[x.id||("n:"+x.n)] = (LITE.pick[x.id||("n:"+x.n)]||0)+(x.q||1);
+    LITE = {eat:a.m, pick:{}, other:"", meal:a.meal||"", edit:+t.dataset.liteedit, time:a.t}; for(const x of a.items) LITE.pick[x.id||("n:"+x.n)] = (LITE.pick[x.id||("n:"+x.n)]||0)+(x.q||1);
     render(); window.scrollTo(0,0); return true; }
   if(t.dataset.litemealupd){ const sm = liteSavedMeal(); if(sm){ liteAddFood(); sm.items = liteItems(); save(); toast("Updated \u201c"+sm.n+"\u201d"); } liteReset(); render(); return true; }
   if(t.dataset.litemealdel){ const sm = liteSavedMeal(); if(sm){ S.myMeals = S.myMeals.filter(m=>m!==sm); save(); toast("Removed \u201c"+sm.n+"\u201d from your meals"); } LITE.meal = ""; render(); return true; }
@@ -1732,10 +1734,14 @@ function liteClick(t){
     const other = ((document.getElementById("lite-other")||{}).value||"").trim(), plist = pantryList();
     const items = liteItems();
     if(other && liteAddFood()) return liteClick(t);
-    const lg = dayLog(key), m = LITE.eat, t0 = fromMins(liteNowM());
-    if(LITE.edit<0) (lg.ev=lg.ev||{})[m] = lg.ev[m] || t0;
+    const lg = dayLog(key), m = LITE.eat, t0 = ((document.getElementById("lite-time")||{}).value||"").slice(0,5) || fromMins(liteNowM());
+    const old = LITE.edit>=0 && (lg.ate||[])[LITE.edit] ? lg.ate[LITE.edit] : null;
+    lg.ev = lg.ev||{};
+    if(old && old.m!==m && lg.ev[old.m]===old.t && !(lg.ate||[]).some((a,i)=>i!==LITE.edit && a.m===old.m)) delete lg.ev[old.m];
+    if(!lg.ev[m] || (old && lg.ev[m]===old.t) || !(lg.ate||[]).some((a,i)=>i!==LITE.edit && a.m===m)) lg.ev[m] = t0;
     const entry = LITE.meal ? {m, t:t0, items, meal:LITE.meal} : {m, t:t0, items};
-    if(LITE.edit>=0 && (lg.ate||[])[LITE.edit]){ entry.t = lg.ate[LITE.edit].t; lg.ate[LITE.edit] = entry; } else (lg.ate=lg.ate||[]).push(entry);
+    if(old) lg.ate[LITE.edit] = entry; else (lg.ate=lg.ate||[]).push(entry);
+    lg.ate.sort((a,b)=>(a.t||"").localeCompare(b.t||""));
     const upd = document.getElementById("lite-upd"), sm = liteSavedMeal(); if(upd && upd.checked && sm) sm.items = items.map(x=>({id:x.id, n:x.n, q:x.q}));
     if(QM_DONE[m]) lg.done[QM_DONE[m]] = true;
     const keep = document.getElementById("lite-keep"), kname = ((document.getElementById("lite-keepname")||{}).value||"").trim();
@@ -1754,7 +1760,7 @@ function liteChange(t){
   return false;
 }
 view.addEventListener("keydown", e=>{ if(e.target.id==="lite-other" && e.key==="Enter"){ e.preventDefault(); if(liteAddFood()){ render(); const o = document.getElementById("lite-other"); if(o) o.focus(); } } });
-view.addEventListener("input", e=>{ if(e.target.id!=="lite-q") return; const q = e.target.value.trim().toLowerCase();
+view.addEventListener("input", e=>{ if(e.target.id==="lite-time"){ LITE.time = e.target.value; return; } if(e.target.id!=="lite-q") return; const q = e.target.value.trim().toLowerCase();
   for(const b of document.querySelectorAll("#lite-plist [data-litepick]")) b.style.display = !q || b.dataset.n.includes(q) ? "" : "none"; });
 setInterval(()=>{ if(TAB==="lite" && !LITE.eat && !document.querySelector("#view input:focus, #view select:focus") && !document.querySelector("#view details[open]")) render(); }, 60000);
 function renderMore(){
