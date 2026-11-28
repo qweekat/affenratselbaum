@@ -1668,10 +1668,10 @@ var HH = (function(){
     for (const c of state.custom) if (c.n.toLowerCase() === t) ids.add(c.id);
     return [...ids];
   }
-  let RECEIPT = [];
+  let RECEIPT = [], RC_UNDO = null;
   function renderReceipt() {
     const out = document.getElementById('receipt-out');
-    if (!RECEIPT.length) { out.innerHTML = ''; return; }
+    if (!RECEIPT.length) { out.innerHTML = RC_UNDO ? `<div class="row"><button class="btn ghost" id="btn-receipt-undo">Undo that receipt</button></div>` : ''; return; }
     const found = RECEIPT.filter(r => r.ids.length).length;
     out.innerHTML = `<p class="small">Found ${found} of ${RECEIPT.length} lines. Untick anything that's wrong, then add.</p>` + RECEIPT.map((r, ri) => `<div class="small" style="margin:4px 0"><span class="muted">${esc(r.line.trim())}</span><br>`
       + (r.ids.length ? r.ids.map(id => `<label style="margin-right:10px"><input type="checkbox" data-rc="${ri}" data-rcid="${id}" ${r.off[id] ? '' : 'checked'}> ${esc(itemName(id))}${state.pantry[id] ? ' <span class="muted">(already ticked)</span>' : ''}</label>`).join('')
@@ -1680,6 +1680,7 @@ var HH = (function(){
   }
   document.getElementById('btn-receipt').addEventListener('click', () => {
     const lines = document.getElementById('receipt-text').value.split(/\n+/).filter(l => /[a-z]{3}/i.test(l) && !RC_SKIP.test(l));
+    RC_UNDO = null;
     RECEIPT = lines.map(line => { const t = receiptClean(line); return { line, t, ids: t ? receiptMatch(t) : [], off: {}, add: false, name: t.replace(/\b\w/g, ch => ch.toUpperCase()) }; }).filter(r => r.t);
     renderReceipt();
     if (!RECEIPT.length) toast('No food lines found. Paste the receipt text, one item per line.');
@@ -1692,15 +1693,17 @@ var HH = (function(){
     if (e.target.dataset.rcnew) r.add = e.target.checked; else r.off[e.target.dataset.rcid] = !e.target.checked;
   });
   document.getElementById('receipt-out').addEventListener('click', e => {
+    if (e.target.id === 'btn-receipt-undo' && RC_UNDO) { for (const id of RC_UNDO.ticked) delete state.pantry[id]; state.custom = state.custom.filter(c => !RC_UNDO.custom.includes(c.id));
+      RC_UNDO = null; renderReceipt(); save(); rebuild(); render(); toast('Took those items back off your pantry'); return; }
     if (e.target.id !== 'btn-receipt-add') return;
-    let n = 0;
+    let n = 0; const undo = { ticked: [], custom: [] };
     for (const r of RECEIPT) {
-      for (const id of r.ids) if (!r.off[id]) { if (!state.pantry[id]) n++; state.pantry[id] = 1; }
+      for (const id of r.ids) if (!r.off[id]) { if (!state.pantry[id]) { n++; undo.ticked.push(id); } state.pantry[id] = 1; }
       if (!r.ids.length && r.add && r.name.trim()) { const nm = r.name.trim(), known = Object.values(ITEM).find(i => i.n.toLowerCase() === nm.toLowerCase());
         const id = known ? known.id : 'x_' + nm.toLowerCase().replace(/[^a-z0-9]+/g, '_') + '_' + Date.now().toString(36) + n;
-        if (!known) state.custom.push({ id, n: nm, c: 'other' }); if (!state.pantry[id]) n++; state.pantry[id] = 1; }
+        if (!known) { state.custom.push({ id, n: nm, c: 'other' }); undo.custom.push(id); } if (!state.pantry[id]) { n++; undo.ticked.push(id); } state.pantry[id] = 1; }
     }
-    RECEIPT = []; document.getElementById('receipt-text').value = ''; renderReceipt();
+    RECEIPT = []; document.getElementById('receipt-text').value = ''; RC_UNDO = n ? undo : null; renderReceipt();
     save(); rebuild(); render(); toast(n ? `Added ${n} item${n > 1 ? 's' : ''} to your pantry` : 'Those were already in your pantry');
   });
   customName.addEventListener('keydown', e => { if (e.key === 'Enter') addCustom(); });
