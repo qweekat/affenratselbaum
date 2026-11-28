@@ -166,8 +166,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.48.3";
+const APP_VERSION = "1.48.4";
 const CHANGES = [
+  {v:"1.48.4", date:"2026-11-28", items:["Tier 2: lime is marked \"check first\", and the lime question is on your doctor list."]},
   {v:"1.48.3", date:"2026-11-28", items:["Meal checker picks up rule changes (like Tier 2) as soon as you come back to it.","Build and score a day now flags foods from your own rules, flare-up mode and Tier 2, not just the built-in lists."]},
   {v:"1.48.2", date:"2026-11-28", items:["Pantry: Fill never adds meals that don't fit your rules. If no breakfast (or lunch...) fits, it says so instead.","Pantry picks up rule changes (like Tier 2) as soon as you come back to it."]},
   {v:"1.48.1", date:"2026-11-28", items:["\"Limit\" and \"Keep small\" are now called \"Keep occasional\"."]},
@@ -906,8 +907,19 @@ const MOLD_T2_WORDS = [
   {word:"fermented|kimchi|sauerkraut|miso|tempeh|natto|kefir", label:"Fermented foods (Tier 2)", level:"avoid"},
   {word:"walnut|walnuts|pecan|pecans|cashew|cashews|hazelnut|hazelnuts|macadamia|macadamias|nuts", label:"Shelled nuts (Tier 2)", level:"avoid"},
   {word:"ketchup|bbq sauce|barbecue sauce|relish|mustard|hot sauce|salad dressing|dressing|chutney|teriyaki", label:"Vinegar or sugar condiments (Tier 2)", level:"avoid"},
-  {word:"sour cream|buttermilk|creme fraiche|crème fraîche|soured milk", label:"Soured milk products, yogurt is fine (Tier 2)", level:"avoid"}
+  {word:"sour cream|buttermilk|creme fraiche|crème fraîche|soured milk", label:"Soured milk products, yogurt is fine (Tier 2)", level:"avoid"},
+  {word:"lime juice|juice of a lime|limes|lime", label:"Lime (Tier 2: ask your provider)", level:"ask"}
 ];
+const MOLD_T2_Q = "On Break the Mold Tier 2, is a squeeze of lime juice for flavor OK, or is it out with all fruit?";
+
+function syncMoldTier2(){
+  if(!S.moldTier2) return false;
+  let ch = false;
+  const cur = (S.rules.extra||[]).filter(x=>x.tier2).map(x=>x.label+x.word).join("|"), want = MOLD_T2_WORDS.map(x=>x.label+x.word).join("|");
+  if(cur!==want){ S.rules.extra = (S.rules.extra||[]).filter(x=>!x.tier2).concat(MOLD_T2_WORDS.map(x=>Object.assign({}, x, {tier2:true, why:MOLD_T2_WHY}))); ch = true; }
+  if(!(S.doctor||[]).some(q=>q.text===MOLD_T2_Q)){ (S.doctor=S.doctor||[]).push({id:"q"+Date.now(), text:MOLD_T2_Q, status:"ask", answer:"", added:ymd(new Date())}); ch = true; }
+  return ch;
+}
 
 const MOLD_ONLY_OK = [
   {word:"yeast|nutritional yeast", label:"Yeast"}, {word:"corn|corn tortilla|corn tortillas|polenta|grits", label:"Corn"},
@@ -925,7 +937,7 @@ function setMoldDiet(on){
 function setMoldTier2(on){
   S.rules.extra = (S.rules.extra||[]).filter(x=>!x.tier2);
   if(on) S.rules.extra = S.rules.extra.concat(MOLD_T2_WORDS.map(x=>Object.assign({}, x, {tier2:true, why:MOLD_T2_WHY})));
-  S.moldTier2 = !!on;
+  S.moldTier2 = !!on; syncMoldTier2();
   logRule("Break the Mold Tier 2 "+(on?"on":"off"));
 }
 function startFlare(until){
@@ -2500,7 +2512,7 @@ function renderRules(){
   </section>
   <section class="panel" id="moldPanel"><h2>Mold diet</h2>
     <label style="display:flex;gap:8px;align-items:flex-start;font-weight:400"><input type="checkbox" data-moldon="1" ${S.moldOff?"":"checked"}> <span><b>I'm on the mold diet (Break the Mold Tier 1)</b><br><small class="muted">Untick when you're done. Yeast, corn, potatoes, pickles, vinegar, grapes, dried fruit, aged cheese, peanuts, kombucha and cider stop being flagged. Sweets, juice, alcohol, black tea, mushrooms and cantaloupe stay flagged, since they're on your other lists too (blood sugar, liver, allergies).</small></span></label>
-    ${S.moldOff?"":`<label style="display:flex;gap:8px;align-items:flex-start;font-weight:400"><input type="checkbox" data-moldtier2="1" ${S.moldTier2?"checked":""}> <span><b>Also follow Tier 2</b><br><small class="muted">Avoids all fruit, starchy vegetables (sweet potato, squash, pumpkin, beets), all grains (quinoa and buckwheat too), fermented foods, shelled nuts, vinegar or sugar condiments, and soured milk (yogurt is fine). This cuts most of your fiber foods, so psyllium and chia matter more. Lime juice for flavor still counts as fine.</small></span></label>`}
+    ${S.moldOff?"":`<label style="display:flex;gap:8px;align-items:flex-start;font-weight:400"><input type="checkbox" data-moldtier2="1" ${S.moldTier2?"checked":""}> <span><b>Also follow Tier 2</b><br><small class="muted">Avoids all fruit, starchy vegetables (sweet potato, squash, pumpkin, beets), all grains (quinoa and buckwheat too), fermented foods, shelled nuts, vinegar or sugar condiments, and soured milk (yogurt is fine). This cuts most of your fiber foods, so psyllium and chia matter more. Lime is marked "check first" until your provider answers (the question is on your doctor list).</small></span></label>`}
   </section>
   <section class="panel" id="flarePanel"><h2>Flare-up mode</h2>
     <p class="muted" style="margin:0">Beans, soy, nuts, seeds, chocolate and oats are high in arginine, which some people limit during a flare. Turn this on for a while to flag them everywhere, including the meal checker and the shopping list, and to swap the meals that use them. It turns itself off after the last day.</p>
@@ -2594,7 +2606,7 @@ function docText(){
 }
 
 function render(){
-  if(pfEnsure()) save(); pfRefresh();
+  if(syncMoldTier2() | pfEnsure()) save(); pfRefresh();
   const navTab = TAB==="today"||TAB==="quick"||TAB==="lite"||TAB==="tomorrow" ? TAB : "more";
   document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected", b.dataset.tab===navTab));
   document.querySelectorAll(".dh-bar a").forEach(a=>{ const h=a.getAttribute("href"), on = h==="index.html#more" ? navTab==="more" : h==="index.html#today" && navTab!=="more"; if(on) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current"); });
