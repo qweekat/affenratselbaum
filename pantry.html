@@ -976,7 +976,9 @@ var HH = (function(){
   try { state = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) {}
   state = Object.assign({ pantry: {}, custom: [], plan: {}, mine: [], tab: 'pantry', filter: 'all', got: {}, days: 7 }, state);
   let memo = null;   // what you have and how items sit with your rules, worked out again after each change
-  const save = () => { memo = null; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
+  const save = () => { memo = null; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} queueReady(); };
+  let readyT = null;
+  function queueReady() { clearTimeout(readyT); readyT = setTimeout(() => { try { writeReady(); } catch (e) {} }, 50); }
 
   let ITEM = {}, RECIPE = {};
   function rebuild() {
@@ -1063,6 +1065,21 @@ var HH = (function(){
       } else addBuy(id, e[1], r.n);
     }
     return { buy, cook, his };
+  }
+
+  // What each meal still needs, for all systems you's Today and Tomorrow (pantry-first plan). Same origin, so it reads this.
+  const sigOf = t => { let h = 5381; for (let i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) | 0; return String(h); };
+  function writeReady() {
+    const saved = cooking; cooking = new Set();
+    const out = {};
+    for (const r of Object.values(RECIPE)) {
+      if (r.t === 'batch') continue;
+      const nd = needs(r), hard = hardBuy(nd);
+      out[r.id] = { n: r.n, t: r.t, buy: hard.map(id => ITEM[id]?.n || id), cook: [...nd.cook].map(b => RECIPE[b]?.n || b), off: recipeHits(r).lvl === 'avoid' ? 1 : 0, mine: r.mine ? 1 : 0 };
+    }
+    cooking = saved;
+    let raw = ''; try { raw = localStorage.getItem(KEY) || ''; } catch (e) {}
+    localStorage.setItem('pantryplanner.ready', JSON.stringify({ at: Date.now(), sig: sigOf(raw + '|' + JSON.stringify(USER_RULES)), r: out }));
   }
 
   // ---------- Tabs ----------
@@ -2017,6 +2034,7 @@ var HH = (function(){
     if (state.tab === 'add') renderMine();
   }
   showTab(state.tab);
+  queueReady();
 })();
 </script>
 <script>

@@ -166,8 +166,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.44.4";
+const APP_VERSION = "1.45.0";
 const CHANGES = [
+  {v:"1.45.0", date:"2026-11-28", items:["Meals from your pantry: Today and Tomorrow pick lunch and dinner from what you have, and each meal says what it still needs.","Change a meal to see what each choice needs (ready, cook first, or need 2).","One tap puts the missing things on your grocery list. Grocery mode adds them to your pantry as they go in the cart.","Lite's Eating now shows the planned meal first."]},
   {v:"1.44.4", date:"2026-11-28", items:["The backup reminder (when your last backup is 2 or more days old) now shows on Lite and Today too, not just Quick."]},
   {v:"1.44.3", date:"2026-11-28", items:["Lite: slimmer water box with smaller buttons."]},
   {v:"1.44.2", date:"2026-11-28", items:["Lite: water looks and works like Quick (bar, your cup sizes, undo), and How you feel today sits right under it."]},
@@ -731,6 +732,118 @@ function recipeOptions(slot){
 }
 
 
+const pantryUrl = ()=> SERVER ? "/pantry" : (/daily-helper\.html$/.test(location.pathname) ? "pantry-planner.html" : "pantry.html");
+const PF_SLOTS = [["l","Lunch","lunch"],["d","Dinner","dinner"]];
+function pfOn(){ return S.pantryFirst !== false; }
+function pfSig(t){ let h = 5381; for(let i=0;i<t.length;i++) h = ((h<<5)+h+t.charCodeAt(i))|0; return String(h); }
+function pfCache(){ try{ const c = JSON.parse(localStorage.getItem("pantryplanner.ready")||"null"); return c && c.r ? c : null; }catch(_){ return null; } }
+function pfNeed(id){ const c = pfCache(); return c && id ? c.r[id] || null : null; }
+function pfOpts(k){
+  const c = pfCache(); if(!c) return [];
+  const t = (PF_SLOTS.find(x=>x[0]===k)||[])[2];
+  return Object.entries(c.r).filter(([,r])=>r.t===t && !r.off).map(([id,r])=>({id, ...r}));
+}
+function pfScore(o, k, d, used){
+  const wk = (((S.week[d.getDay()]||{}).ids)||{})[k];
+  let h = 0; const s = ymd(d)+o.id; for(let i=0;i<s.length;i++) h = (h*31+s.charCodeAt(i))%997;
+  return {whole: o.buy.length*10 + o.cook.length*3 + (used.has(o.id)?4:0) - (o.id===wk?1:0), tie: h/1000};
+}
+
+function pfEnsure(){
+  if(!pfOn() || !pfCache()) return false;
+  const A = S.autoPlan = S.autoPlan||{}; let changed = false;
+  const cut = ymd(addDays(new Date(),-14)); for(const k of Object.keys(A)) if(k<cut){ delete A[k]; changed = true; }
+  const used = new Set();
+  for(const off of [0,1]){
+    const d = addDays(new Date(), off), key = ymd(d), ov = dayOver(d), lg = S.log[key]||{};
+    for(const [k] of PF_SLOTS){
+      if((ov.ids && k in ov.ids) || (ov.text && ov.text[k])) continue;
+      const opts = pfOpts(k); if(!opts.length) continue;
+      const day = A[key] = A[key]||{}, cur = day[k];
+      const sc = o=>pfScore(o,k,d,used), best = opts.slice().sort((a,b)=>{ const x=sc(a), y=sc(b); return x.whole-y.whole || x.tie-y.tie; })[0];
+      const curO = cur && opts.find(o=>o.id===cur.id);
+      const keep = cur && (cur.mine || (lg.done||{})["meal:"+k] || (curO && sc(curO).whole <= sc(best).whole));
+      if(!keep){ day[k] = {id:best.id}; changed = true; }
+      used.add(day[k].id);
+    }
+  }
+  return changed;
+}
+function pfIds(d){
+  if(!pfOn()) return {};
+  const a = (S.autoPlan||{})[ymd(d)]; if(!a) return {};
+  return Object.fromEntries(Object.entries(a).filter(([,v])=>v&&v.id).map(([k,v])=>[k,v.id]));
+}
+function pfNote(id){
+  const r = pfNeed(id); if(!r) return "";
+  if(r.buy.length) return "Need: "+r.buy.join(", ")+".";
+  if(r.cook.length) return "Cook first: "+r.cook.join(", ")+".";
+  return "You have everything for this.";
+}
+
+let PF_REFRESHED = "";
+function pfRefresh(){
+  if(!pfOn()) return;
+  let raw = ""; try{ raw = localStorage.getItem("pantryplanner.v1")||""; }catch(_){}
+  const sig = pfSig(raw+"|"+JSON.stringify(S.rules||null)), c = pfCache();
+  if((c && c.sig===sig) || PF_REFRESHED===sig) return;
+  PF_REFRESHED = sig;
+  const f = document.createElement("iframe"); f.style.display = "none"; f.setAttribute("aria-hidden","true"); f.tabIndex = -1;
+  f.src = pantryUrl() + "?ready=1";
+  f.onload = ()=>setTimeout(()=>{ f.remove(); if(pfEnsure()) save();
+    const a = document.activeElement; if((TAB==="today"||TAB==="tomorrow"||TAB==="lite") && !LITE.eat && !(a && /INPUT|SELECT|TEXTAREA/.test(a.tagName))) render(); }, 400);
+  document.body.appendChild(f);
+}
+function pfList(){
+  const out = [];
+  for(const off of [0,1]){ const d = addDays(new Date(), off), ids = idsFor(d);
+    for(const [k,l] of PF_SLOTS){ const r = pfNeed(ids[k]); if(r && r.buy.length) out.push({id:ids[k], day:ymd(d), k, r}); } }
+  return out;
+}
+function pfPanelHtml(){
+  if(!pfOn()) return "";
+  const c = pfCache();
+  if(!c) return `<section class="panel"><h2>Meals from your pantry</h2><p class="muted" style="margin:0">Getting your pantry ready… If this stays, open <a href="${pantryUrl()}">Pantry</a> once and tick what you have.</p></section>`;
+  const tag = r=> !r ? "" : r.buy.length ? "need "+r.buy.length : r.cook.length ? "cook first" : "ready";
+  let rows = "";
+  for(const off of [0,1]){
+    const d = addDays(new Date(), off), key = ymd(d), ids = idsFor(d), ov = dayOver(d), A = (S.autoPlan||{})[key]||{};
+    rows += `<b style="margin-top:6px">${off?"Tomorrow":"Today"}</b>`;
+    for(const [k,l] of PF_SLOTS){
+      if((ov.ids && k in ov.ids) || (ov.text && ov.text[k])){ const r = recipe(ov.ids&&ov.ids[k]); rows += `<div class="lrow"><div>${l}: ${esc(r?r.n:(ov.text&&ov.text[k]||"").trim()||"skipped")}<br><small class="muted">You changed this under "Change just ${off?"tomorrow":"today"}".</small></div></div>`; continue; }
+      const opts = pfOpts(k).sort((a,b)=>a.buy.length-b.buy.length || a.cook.length-b.cook.length || a.n.localeCompare(b.n));
+      const cur = ids[k], r = pfNeed(cur);
+      rows += `<label class="stack" style="gap:2px">${l}<select data-pfswap="${k}" data-day="${key}">${opts.map(o=>`<option value="${esc(o.id)}" ${o.id===cur?"selected":""}>${esc(o.n)} · ${esc(tag(o))}</option>`).join("")}${A[k]&&A[k].mine?`<option value="">Let the app pick</option>`:""}</select>
+        <small class="${r&&r.buy.length?"":"muted"}">${esc(r ? (r.buy.length ? "Need: "+r.buy.join(", ") : r.cook.length ? "Cook first: "+r.cook.join(", ") : "You have everything") : "")}</small></label>`;
+    }
+  }
+  const need = pfList(), names = [...new Set(need.flatMap(x=>x.r.buy))];
+  let pp = null; try{ pp = JSON.parse(localStorage.getItem("pantryplanner.v1")||"null"); }catch(_){}
+  const listed = pp && pp.fromToday && JSON.stringify(pp.fromToday)===JSON.stringify(pfPlanCounts(need));
+  return `<section class="panel" id="pfBox"><h2>Meals from your pantry</h2>
+    <small class="muted">Picked from what you have. Change one to see what each needs.</small>
+    <div class="stack" style="gap:8px">${rows}</div>
+    ${names.length ? `<p style="margin:0"><b>To buy:</b> ${esc(names.join(", "))}</p>
+      ${listed ? `<p style="margin:0">On your grocery list. <a href="${pantryUrl()}#grocery">Open grocery list</a></p>` : `<button class="btn" data-pfgrocery="1">Add what's missing to my grocery list</button>`}`
+      : `<p style="margin:0"><b>Nothing to buy</b> for these meals.</p>`}
+    <small class="muted">At the store, stick to this list. In <a href="${pantryUrl()}#grocery">Grocery mode</a>, tap each thing as it goes in the cart and it's added to your pantry.</small>
+  </section>`;
+}
+function pfPlanCounts(need){ const o = {}; for(const x of need) o[x.id] = (o[x.id]||0)+1; return o; }
+
+async function pfToGrocery(){
+  const need = pfList(), add = pfPlanCounts(need);
+  let p = {}; try{ p = JSON.parse(localStorage.getItem("pantryplanner.v1")||"{}")||{}; }catch(_){}
+  p.plan = p.plan||{};
+  for(const [id,n] of Object.entries(p.fromToday||{})){ p.plan[id] = (p.plan[id]||0)-n; if(p.plan[id]<=0) delete p.plan[id]; }
+  for(const [id,n] of Object.entries(add)) p.plan[id] = (p.plan[id]||0)+n;
+  p.fromToday = add;
+  const v = JSON.stringify(p);
+  try{ localStorage.setItem("pantryplanner.v1", v); }catch(_){}
+  if(SERVER) try{ await fetch("/api/kv/pantryplanner.v1",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({value:v})}); }catch(_){}
+}
+
+
 function extraSupps(){ return []; }
 
 function defaultRoutine(){ return []; }
@@ -742,7 +855,7 @@ const MISS_FIELDS = [["after","Counts as missed after","minutes past its time","
 
 let OV_OPEN = null, EDIT_ITEM = null; 
 function dayOver(d){ return ((S.dayOver||{})[ymd(d)])||{}; }
-function idsFor(d){ const ov = dayOver(d); return Object.assign({}, ((S.week[d.getDay()]||{}).ids)||{}, ov.ids||{}, Object.fromEntries(Object.keys(ov.text||{}).filter(k=>ov.text[k]).map(k=>[k,"__text"]))); }
+function idsFor(d){ const ov = dayOver(d); return Object.assign({}, ((S.week[d.getDay()]||{}).ids)||{}, pfIds(d), ov.ids||{}, Object.fromEntries(Object.keys(ov.text||{}).filter(k=>ov.text[k]).map(k=>[k,"__text"]))); }
 function defaultClock(){ return {on:true, wake:"09:00", bed:"22:00", easeUntil:"2026-10-28"}; }
 function dayTimes(d){
   const C = S.clock||{}, T = Object.assign({}, S.times), ov = dayOver(d);
@@ -1186,8 +1299,8 @@ function itemsFor(d, plain){
   if(S.on.meals){
     const b=r("b"), l=r("l"), dn=r("d");
     if(b) add({id:"meal:b", time:parseTime(T.breakfast), kind:"meal", title:"Breakfast: "+b.n, detail:b.d});
-    if(l) add({id:"meal:l", time:parseTime(T.lunch), kind:"meal", title:"Lunch: "+l.n, detail:[l.d,"Start with a few bites of vegetables (or cucumber with lime) before the rest. In a mixed bowl, eat some veggies off the top first; if that's not practical, a mixed bowl is fine."].filter(Boolean).join(" ")});
-    if(dn) add({id:"meal:d", time:parseTime(T.dinner), kind:"meal", title:"Dinner: "+dn.n, detail:[flareOn(d)&&FLARE_NOTE[ids.d]?"Flare-up: "+FLARE_NOTE[ids.d]+".":"", "Start with a few bites of vegetables (or cucumber with lime) before the rest. In a mixed bowl, eat some veggies off the top first; if that's not practical, a mixed bowl is fine.", dn.you?"You add: "+dn.you+".":"", dn.his?"He adds: "+dn.his+".":"", householdNote(dn.n+" "+(dn.d||"")), wk.note||""].filter(Boolean).join(" ")});
+    if(l) add({id:"meal:l", time:parseTime(T.lunch), kind:"meal", title:"Lunch: "+l.n, detail:[ymd(d)>=ymd(new Date())?pfNote(ids.l):"", l.d,"Start with a few bites of vegetables (or cucumber with lime) before the rest. In a mixed bowl, eat some veggies off the top first; if that's not practical, a mixed bowl is fine."].filter(Boolean).join(" ")});
+    if(dn) add({id:"meal:d", time:parseTime(T.dinner), kind:"meal", title:"Dinner: "+dn.n, detail:[ymd(d)>=ymd(new Date())?pfNote(ids.d):"", flareOn(d)&&FLARE_NOTE[ids.d]?"Flare-up: "+FLARE_NOTE[ids.d]+".":"", "Start with a few bites of vegetables (or cucumber with lime) before the rest. In a mixed bowl, eat some veggies off the top first; if that's not practical, a mixed bowl is fine.", dn.you?"You add: "+dn.you+".":"", dn.his?"He adds: "+dn.his+".":"", householdNote(dn.n+" "+(dn.d||"")), wk.note||""].filter(Boolean).join(" ")});
   }
   if(S.on.snack && r("s")) add({id:"snack", time:parseTime(T.snack), kind:"habit", title:"Snack: "+r("s").n, detail:[r("s").d,"Have a little protein with any fruit."].filter(Boolean).join(" ")});
   if(S.on.walk) for(const [k,lbl] of [["breakfast","your first meal"],["lunch","lunch"],["dinner","dinner"]]) if(parseTime(T[k])) add({id:k==="dinner"?"walk":"walk:"+k, time:fromMins(mins(parseTime(T[k]))+Number(T.walkAfter||30)), kind:"habit", title:"10-minute walk after "+lbl, detail:"As your energy allows. It helps your blood sugar after a meal."});
@@ -1498,6 +1611,7 @@ function renderDay(offset){
       <div class="chips" style="gap:8px"><button class="btn" data-ovsave="${key}">Save</button>${any?`<button class="btn ghost" data-ovreset="${key}">Back to the usual day</button>`:""}</div>
       <small class="muted">Changes also save by themselves when you leave a box.</small>
     </details>`; }
+  if(offset>=0) h += pfPanelHtml();
   h += `<section class="panel"><h2>${offset===0?"Today's checklist":offset<0?"Checklist for that day":"Tomorrow"}</h2><ol class="day">`;
   for(const it of timed){
     const done = !!lg.done[it.id], ms0 = (lg.missed||{})[it.id], ms = ms0 && !ms0.undone ? ms0 : null;
@@ -1664,7 +1778,10 @@ function liteMealOpts(slot){
   const opts = recipeOptions(slot), seen = new Set(opts.map(o=>o[0]));
   const mine = opts.filter(o=>(S.myMeals||[]).some(m=>m.id===o[0])), rest = opts.filter(o=>!mine.includes(o));
   const other = (S.myMeals||[]).filter(m=>!seen.has(m.id) && (m.items||[]).length).map(m=>[m.id, m.n+" (yours, "+((LITE_MEALS.find(x=>x[0]===m.t)||[0,"other"])[1]).toLowerCase()+")"]);
-  return [...mine, ...rest, ...other];
+  const all = [...mine, ...rest, ...other], plan = idsFor(new Date())[slot], i = all.findIndex(o=>o[0]===plan);
+  if(i>0) all.unshift(all.splice(i,1)[0]);
+  if(i>=0) all[0] = [all[0][0], all[0][1]+" (planned)"];
+  return all;
 }
 function ateListHtml(key, panel){
   const lg = S.log[key]||{}, ate = lg.ate||[];
@@ -2429,6 +2546,7 @@ function docText(){
 }
 
 function render(){
+  if(pfEnsure()) save(); pfRefresh();
   const navTab = TAB==="today"||TAB==="quick"||TAB==="lite"||TAB==="tomorrow" ? TAB : "more";
   document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected", b.dataset.tab===navTab));
   document.querySelectorAll(".dh-bar a").forEach(a=>{ const h=a.getAttribute("href"), on = h==="index.html#more" ? navTab==="more" : h==="index.html#today" && navTab!=="more"; if(on) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current"); });
@@ -2533,6 +2651,9 @@ view.addEventListener("change",e=>{
   if(t.dataset.docans){ const x=S.doctor.find(v=>v.id===t.dataset.docans); if(x){ x.answer=t.value; save(); } return; }
   if(t.dataset.rule){ const k=t.dataset.rule, old=S.rules[k], v=t.value===""?null:Number(t.value); S.rules[k]=v; const f=RULE_FIELDS.find(x=>x[0]===k); logRule(f[1]+": "+(old??"pending")+" → "+(v??"pending")); save(); return; }
   if(t.dataset.ramp!==undefined){ const i=+t.dataset.ramp, old=S.rules.ramp[i]; S.rules.ramp=[...S.rules.ramp]; S.rules.ramp[i]=Number(t.value)||old; logRule("Fiber ramp week "+(i+1)+": "+old+" → "+S.rules.ramp[i]+" g"); save(); return; }
+  if(t.dataset.pfswap){ const A = S.autoPlan = S.autoPlan||{}, day = A[t.dataset.day] = A[t.dataset.day]||{};
+    if(t.value) day[t.dataset.pfswap] = {id:t.value, mine:1}; else delete day[t.dataset.pfswap];
+    save(); render(); return; }
   if(t.dataset.ov||t.dataset.ovslot||t.dataset.ovtext!==undefined){
     const D = (S.dayOver=S.dayOver||{}), o = D[t.dataset.day] = D[t.dataset.day]||{};
     OV_OPEN = t.dataset.day;
@@ -2566,6 +2687,7 @@ view.addEventListener("toggle",e=>{ if(e.target.dataset && e.target.dataset.feel
 view.addEventListener("click",async e=>{
   const t = e.target;
   if((TAB==="lite" || LITE.eat || (t.dataset && (t.dataset.liteeat || t.dataset.liteaddsupp || t.dataset.liteedit!==undefined || t.dataset.liteatedel!==undefined))) && liteClick(t)) return;
+  if(t.dataset.pfgrocery){ await pfToGrocery(); render(); toast("Added to your grocery list"); return; }
   if(t.dataset.diagadd){ const g = id=>((document.getElementById(id)||{}).value||"").trim(), name = g("dg-name");
     if(!name){ toast("Type the diagnosis name"); return; }
     const foods = (lvl, txt)=>txt.split(/[,\n;]+/).map(x=>x.trim()).filter(Boolean).map((f,i)=>[lvl[0]+i+"_"+Date.now().toString(36), lvl, f, f, "From your "+name+" diagnosis."]);
