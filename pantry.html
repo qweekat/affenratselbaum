@@ -1015,7 +1015,8 @@ var HH = (function(){
   // What else counts as each item, so things you type in ("kabocha", "black cod", "romaine") count for the meals that use them.
   // [words that match, words that rule it out]. Plurals match too.
   const MATCH = {
-    butternut: ['butternut|kabocha|delicata|winter squash', 'seed|soup'], acorn: ['acorn squash'], piepumpkin: ['pie pumpkin|sugar pumpkin|pumpkin', 'seed|pie|spice|canned|can'],
+    butternut: ['butternut|kabocha|delicata|hubbard|winter squash|squash winter', 'seed|soup'], acorn: ['acorn squash'], piepumpkin: ['pie pumpkin|sugar pumpkin|pumpkin', 'seed|pie|spice|canned|can'],
+    mesclun: ['mesclun|lettuce|romaine|spring mix|salad mix|mixed greens|salad greens|arugula|butter lettuce|little gem'],
     beets: ['beets?|beetroot', 'sugar|powder'], leeks: ['leeks?'], onion: ['onion|shallot|scallion|green onion', 'powder|salt'], garlic: ['garlic', 'powder|salt'],
     chard: ['chard|kale|collards?|bok choy|mustard greens|cooking greens|beet greens'], spinach: ['spinach'], zucchini: ['zucchini|courgette|yellow squash|summer squash'],
     sweetpotato: ['sweet potato|yam'], cucumber: ['cucumber|persian cucumber'], lime: ['lime|lemon', 'grass|leaf|leaves'], snappeas: ['snap peas?|snow peas?|sugar snaps?'],
@@ -1643,7 +1644,7 @@ var HH = (function(){
   document.getElementById('btn-add-custom').addEventListener('click', addCustom);
 
   // ---------- Add from a receipt: paste the text (Live Text or Google Lens), tick what it recognizes ----------
-  const RC_SKIP = /\b(sub ?total|total|tax|change|cash|visa|mastercard|amex|debit|credit|card|balance|savings?|you saved|coupon|discount|thank|member|points?|receipt|store|cashier|register|approved|auth|bag fee|bottle dep|crv|items? sold|tender)\b/i;
+  const RC_SKIP = /\b(sub ?total|total|tax|change|cash|visa|mastercard|amex|debit|credit|card|balance|savings?|you saved|coupon|discount|thank|member|points?|receipt|store|cashier|register|approved|auth|bag fee|bottle dep|crv|items? sold|item count|tender|shopping with|customer|cashier|account|loyalty|phone|www|\.com)\b/i;
   const RC_ABBR = { org: '', orgnc: '', organic: '', og: '', chkn: 'chicken', chk: 'chicken', chick: 'chicken', brst: 'breast', bnls: 'boneless', bls: 'boneless', sknls: 'skinless', skls: 'skinless',
     grnd: 'ground', grd: 'ground', gr: 'ground', bf: 'beef', swt: 'sweet', sw: 'sweet', pot: 'potato', pots: 'potatoes', pto: 'potato', cuc: 'cucumber', cucumb: 'cucumber', cuke: 'cucumber', cukes: 'cucumbers',
     blk: 'black', bn: 'beans', bns: 'beans', grbnzo: 'garbanzo', garb: 'garbanzo', chkpea: 'chickpeas', chkpeas: 'chickpeas', zuc: 'zucchini', zucc: 'zucchini', spin: 'spinach', spnch: 'spinach',
