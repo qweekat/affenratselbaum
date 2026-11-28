@@ -166,8 +166,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.41.1";
+const APP_VERSION = "1.42.0";
 const CHANGES = [
+  {v:"1.42.0", date:"2026-11-28", items:["Lite: supplements can be set for 30 min or 1 h before a meal or bedtime. Lite counts down from that meal's planned time and shows it under Coming up, then Take now (with the banner and chime if the app is open)."]},
   {v:"1.41.1", date:"2026-11-27", items:["More > Phone settings (was Phone shortcuts): Start page has both \"open on Quick\" and \"open on Lite\", the same boxes as on those pages. In the home-screen app, the Shortcuts links are greyed out since they only work in Safari."]},
   {v:"1.41.0", date:"2026-11-27", items:["Fill in past days: on Today, tap \"‹ Day before\" to go back (up to 60 days). Tick the checklist, add water, log meals and as-needed doses for that day. \"Back to today\" returns."]},
   {v:"1.40.0", date:"2026-11-27", items:["Today, Quick and Lite stay in step both ways: ticking Kitchen closes, a meal, a glass of water or a supplement in one shows in the others, and unticking takes it back everywhere."]},
@@ -1636,7 +1637,9 @@ view.addEventListener("toggle", e=>{ const d = e.target; if(!d.dataset || !d.dat
 
 const LITE_ANCHORS = [["wake","On waking"],["b","Breakfast"],["l","Lunch"],["s","Snack"],["d","Dinner"],["bed","Bedtime"]];
 const LITE_MEALS = [["b","Breakfast"],["l","Lunch"],["s","Snack"],["d","Dinner"]];
-const LITE_AFTER = [[0,"with it"],[0.5,"30 min after"],[1,"1 h after"],[2,"2 h after"],[3,"3 h after"]];
+const LITE_AFTER = [[-1,"1 h before"],[-0.5,"30 min before"],[0,"with it"],[0.5,"30 min after"],[1,"1 h after"],[2,"2 h after"],[3,"3 h after"]];
+
+function litePlanned(a, d){ const T = dayTimes(d), k = {b:"breakfast", l:"lunch", s:"snack", d:"dinner", bed:"bed"}[a]; const t = k && parseTime(T[k]); return t ? mins(t) : null; }
 const PANTRY_NAMES = {"butternut": "Butternut squash", "acorn": "Acorn squash", "piepumpkin": "Pie pumpkin", "beets": "Beets", "leeks": "Leeks", "onion": "Onions", "garlic": "Garlic", "chard": "Chard", "spinach": "Spinach", "zucchini": "Zucchini", "sweetpotato": "Sweet potatoes", "cucumber": "Cucumbers", "lime": "Limes", "snappeas": "Snap or snow peas", "ginger": "Ginger", "jalapeno": "Jalapeño or serrano (yours)", "cilantro": "Cilantro", "basil": "Basil or chives", "persimmon": "Persimmons", "kiwi": "Kiwi", "raspberries": "Frozen raspberries or blackberries", "asparagus": "Asparagus", "chicken": "Skinless chicken breast or thigh", "bison": "Ground bison or lean beef", "lamb": "Lamb stew meat", "sablefish": "Sablefish", "trout": "Trout", "salmoncan": "Canned salmon", "sardines": "Sardines", "m_chickenstew": "Chicken butternut stew", "m_bison": "Bison zucchini skillet meat", "m_lambstew": "Lamb chickpea pumpkin stew", "m_shredded": "Shredded chicken", "m_patties": "Sage bison breakfast patties", "m_beans": "Cooked Anasazi or bolita beans", "m_quinoa": "Cooked quinoa", "m_buckwheat": "Cooked buckwheat groats", "m_roastveg": "Roasted sweet potato and beets", "m_chiajam": "Chia berry jam", "m_broth": "Homemade chicken broth (from poaching)", "driedbeans": "Dried Anasazi or bolita beans", "blackbeans": "Canned black beans", "chickpeas": "Canned chickpeas", "pumpkincan": "Canned pumpkin", "artichoke": "Artichoke hearts in water", "quinoa": "Quinoa (dry)", "buckwheat": "Buckwheat groats (dry)", "broth": "Bonafide or Pacific chicken broth", "chia": "Chia seeds", "psyllium": "Psyllium husk", "tahini": "Tahini", "walnuts": "Walnuts", "edamame": "Frozen shelled edamame", "chickpeaflour": "Chickpea flour", "pacha": "Pacha sprouted buckwheat bread", "creamcheese": "Cream cheese", "mozz": "Fresh mozzarella", "feta": "Fresh sheep feta", "yogurt": "Plain whole yogurt", "rice": "Rice", "potatoes": "Potatoes"};
 let LITE_SET_OPEN = false;
 let LITE = {eat:null, pick:{}, other:"", meal:"", edit:-1, time:"", day:""};
@@ -1683,7 +1686,10 @@ function liteSupps(key){
     if(!s.active || s.asNeeded || !dueOn(s,d)) continue;
     const ws = s.whens||[], h = Number(s.afterH)||0, mine = [];
     if(!ws.length) mine.push({s, a:"", k:s.id+"@any", due:null, h:0, done:!!done[s.id+"@any"]});
-    for(const a of ws){ const at = ev[a]; mine.push({s, a, k:s.id+"@"+a, due: at ? mins(at)+Math.round(h*60) : null, h, done:!!done[s.id+"@"+a]}); }
+    for(const a of ws){ const at = ev[a]; let due, hh = h;
+      if(h<0 && a!=="wake"){ const pl = litePlanned(a, d); due = pl!=null ? pl+Math.round(h*60) : null; if(at) due = due==null ? mins(at) : Math.min(due, mins(at)); }
+      else { if(h<0) hh = 0; due = at ? mins(at)+Math.round(hh*60) : null; }
+      mine.push({s, a, k:s.id+"@"+a, due, h:hh, done:!!done[s.id+"@"+a]}); }
     
     const fi = full.filter(i=>i.id==="supp:"+s.id || i.id.startsWith("supp:"+s.id+":")), fd = fi.filter(i=>fdone[i.id]).length;
     let extra = (fi.length && fd===fi.length) ? mine.length : fd - mine.filter(x=>x.done).length;
@@ -1692,7 +1698,7 @@ function liteSupps(key){
   }
   return out;
 }
-function liteWhy(x){ return x.a ? (x.h ? (LITE_AFTER.find(v=>v[0]===x.h)||[0,x.h+" h after"])[1]+" "+liteName(x.a).toLowerCase() : (x.a==="wake"||x.a==="bed" ? liteName(x.a).toLowerCase() : "with "+liteName(x.a).toLowerCase())) : "any time today"; }
+function liteWhy(x){ return x.a ? (x.h ? (LITE_AFTER.find(v=>v[0]===x.h)||[0,Math.abs(x.h)+(x.h<0?" h before":" h after")])[1]+" "+liteName(x.a).toLowerCase()+(x.h<0&&x.due!=null?" (around "+niceTime(fromMins(x.due))+")":"") : (x.a==="wake"||x.a==="bed" ? liteName(x.a).toLowerCase() : "with "+liteName(x.a).toLowerCase())) : "any time today"; }
 function liteIn(m){ const n = Math.max(0, m - liteNowM()), h = Math.floor(n/60); return "in "+(h?h+" h ":"")+(n%60)+" min"; }
 
 function liteMarkFull(key, sid){
@@ -1751,7 +1757,7 @@ function renderLite(){
     ${ateListHtml(key, true)}
     ${unset.length?`<details class="panel"><summary><b>Any time today (${unset.length})</b></summary>${unset.map(x=>liteRow(x,key,true)).join("")}</details>`:""}
     <details class="panel" ${LITE_SET_OPEN?"open":""}><summary><b>Set when you take each one</b></summary>
-      <small class="muted">Pick the moments for each supplement. "Hours after" waits that long after the moment, for things like psyllium.</small>
+      <small class="muted">Pick the moments for each supplement. "After" waits that long after you tap the moment, for things like psyllium. "Before" a meal or bedtime counts down from the time planned for it in the full app, and moves up if you eat early.</small>
       ${S.supplements.filter(s=>s.active&&!s.asNeeded).map(s=>`<div class="stack" style="gap:4px;border-top:1px solid var(--line,#ddd);padding-top:8px"><b>${esc(s.name)}</b>
         <div class="chips" style="gap:4px 12px">${LITE_ANCHORS.map(([a,n])=>`<label class="inline" style="font-weight:400"><input type="checkbox" data-litewhen="${esc(s.id)}:${a}" ${(s.whens||[]).includes(a)?"checked":""}> ${n}</label>`).join("")}</div>
         <label class="inline" style="font-weight:400">Take it <select data-liteafter="${esc(s.id)}">${LITE_AFTER.map(([v,n])=>`<option value="${v}" ${(Number(s.afterH)||0)===v?"selected":""}>${n}</option>`).join("")}</select></label></div>`).join("")}
