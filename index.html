@@ -166,8 +166,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.42.1";
+const APP_VERSION = "1.43.0";
 const CHANGES = [
+  {v:"1.43.0", date:"2026-11-28", items:["\"Set when you take each one\" is now the same folded panel on Today, Quick and Lite. Changes in one show in all three. To remove a supplement or change everything about it, the panel links to More, then Supplements & routine."]},
   {v:"1.42.1", date:"2026-11-28", items:["Lite: \"Add a supplement or powder\" can mark it Only as needed, with a most-per-day limit."]},
   {v:"1.42.0", date:"2026-11-28", items:["Lite: supplements can be set for 30 min or 1 h before a meal or bedtime. Lite counts down from that meal's planned time and shows it under Coming up, then Take now (with the banner and chime if the app is open)."]},
   {v:"1.41.1", date:"2026-11-27", items:["More > Phone settings (was Phone shortcuts): Start page has both \"open on Quick\" and \"open on Lite\", the same boxes as on those pages. In the home-screen app, the Shortcuts links are greyed out since they only work in Safari."]},
@@ -1514,6 +1515,7 @@ function renderDay(offset){
   }
   h += `</ol></section>`;
   if(offset<=0) h += prnHtml(key, lg);
+  if(offset===0) h += liteSetWhenHtml();
   h += ovBox + factsBox;
   if(untimed.length){
     h += `<section class="panel"><h2>No time set yet</h2><small class="muted">These won't remind you until they have a time. Add times on the Supplements &amp; routine tab.</small><ol class="day">`;
@@ -1714,6 +1716,23 @@ function liteKitchen(key, on){
 function liteRow(x, key, btn){
   return `<div class="lrow"><div><b>${esc(x.s.name)}</b>${suppDose(x.s,new Date())?` <small class="muted">${esc(suppDose(x.s,new Date()))}</small>`:""}<br><small class="muted">${esc(liteWhy(x))}${x.due!=null&&x.due>liteNowM()?" · "+liteIn(x.due):""}</small></div>${btn?`<button class="btn" data-litedone="${esc(x.k)}" data-sid="${esc(x.s.id)}" data-day="${key}">Done</button>`:""}</div>`;
 }
+
+function liteSetWhenHtml(){
+  return `<details class="panel" ${LITE_SET_OPEN?"open":""}><summary><b>Set when you take each one</b></summary>
+      <small class="muted">Pick the moments for each supplement. "After" waits that long after you tap the moment, for things like psyllium. "Before" a meal or bedtime counts down from the time planned for it in the full app, and moves up if you eat early.</small>
+      ${S.supplements.filter(s=>s.active&&!s.asNeeded).map(s=>`<div class="stack" style="gap:4px;border-top:1px solid var(--line,#ddd);padding-top:8px"><b>${esc(s.name)}</b>
+        <div class="chips" style="gap:4px 12px">${LITE_ANCHORS.map(([a,n])=>`<label class="inline" style="font-weight:400"><input type="checkbox" data-litewhen="${esc(s.id)}:${a}" ${(s.whens||[]).includes(a)?"checked":""}> ${n}</label>`).join("")}</div>
+        <label class="inline" style="font-weight:400">Take it <select data-liteafter="${esc(s.id)}">${LITE_AFTER.map(([v,n])=>`<option value="${v}" ${(Number(s.afterH)||0)===v?"selected":""}>${n}</option>`).join("")}</select></label></div>`).join("")}
+      <div class="stack" style="gap:6px;border-top:1px solid var(--line,#ddd);padding-top:8px"><b>Add a supplement or powder</b>
+        <small class="muted">For something you take every day, like a fiber powder with lunch. Add it here, then tick when you take it.</small>
+        <label>Name<input type="text" id="lite-sname" placeholder="e.g. Fiber powder"></label>
+        <label>How much<input type="text" id="lite-sdose" placeholder="e.g. 1 scoop in water"></label>
+        <label style="display:flex;gap:8px;align-items:center;font-weight:400"><input type="checkbox" id="lite-sprn"> Only as needed (no reminders, log it with Took it)</label>
+        <label class="inline" style="font-weight:400">Most a day, if there's a limit <input type="number" id="lite-smax" min="0" max="12" style="width:5em" placeholder="none"></label>
+        <div><button class="btn" data-liteaddsupp="1">Add it</button></div></div>
+      <small class="muted">To remove one or change everything about it, go to <button class="linkbtn" data-goto="supps">More, then Supplements &amp; routine</button>.</small>
+    </details>`;
+}
 function renderLite(){
   const key = ymd(new Date()), lg = S.log[key]||{done:{}}, ev = lg.ev||{}, now = liteNowM();
   const all = liteSupps(key), open = all.filter(x=>!x.done);
@@ -1757,19 +1776,7 @@ function renderLite(){
     ${prnHtml(key, lg)}
     ${ateListHtml(key, true)}
     ${unset.length?`<details class="panel"><summary><b>Any time today (${unset.length})</b></summary>${unset.map(x=>liteRow(x,key,true)).join("")}</details>`:""}
-    <details class="panel" ${LITE_SET_OPEN?"open":""}><summary><b>Set when you take each one</b></summary>
-      <small class="muted">Pick the moments for each supplement. "After" waits that long after you tap the moment, for things like psyllium. "Before" a meal or bedtime counts down from the time planned for it in the full app, and moves up if you eat early.</small>
-      ${S.supplements.filter(s=>s.active&&!s.asNeeded).map(s=>`<div class="stack" style="gap:4px;border-top:1px solid var(--line,#ddd);padding-top:8px"><b>${esc(s.name)}</b>
-        <div class="chips" style="gap:4px 12px">${LITE_ANCHORS.map(([a,n])=>`<label class="inline" style="font-weight:400"><input type="checkbox" data-litewhen="${esc(s.id)}:${a}" ${(s.whens||[]).includes(a)?"checked":""}> ${n}</label>`).join("")}</div>
-        <label class="inline" style="font-weight:400">Take it <select data-liteafter="${esc(s.id)}">${LITE_AFTER.map(([v,n])=>`<option value="${v}" ${(Number(s.afterH)||0)===v?"selected":""}>${n}</option>`).join("")}</select></label></div>`).join("")}
-      <div class="stack" style="gap:6px;border-top:1px solid var(--line,#ddd);padding-top:8px"><b>Add a supplement or powder</b>
-        <small class="muted">For something you take every day, like a fiber powder with lunch. Add it here, then tick when you take it.</small>
-        <label>Name<input type="text" id="lite-sname" placeholder="e.g. Fiber powder"></label>
-        <label>How much<input type="text" id="lite-sdose" placeholder="e.g. 1 scoop in water"></label>
-        <label style="display:flex;gap:8px;align-items:center;font-weight:400"><input type="checkbox" id="lite-sprn"> Only as needed (no reminders, log it with Took it)</label>
-        <label class="inline" style="font-weight:400">Most a day, if there's a limit <input type="number" id="lite-smax" min="0" max="12" style="width:5em" placeholder="none"></label>
-        <div><button class="btn" data-liteaddsupp="1">Add it</button></div></div>
-    </details>
+    ${liteSetWhenHtml()}
     <details class="panel"><summary><b>Alerts while the app is open</b></summary>
       <label class="inline" style="font-weight:400"><input type="checkbox" data-alert="alertsOn" ${S.alertsOn===false?"":"checked"}> Show a banner when something comes due</label>
       <label class="inline" style="font-weight:400"><input type="checkbox" data-alert="alertSound" ${S.alertSound===false?"":"checked"}> Play a chime</label>
@@ -2484,7 +2491,7 @@ document.addEventListener("focusout", e=>{
 }, true);
 view.addEventListener("change",e=>{
   const t = e.target;
-  if((TAB==="lite" || LITE.eat) && liteChange(t)) return;
+  if((TAB==="lite" || LITE.eat || t.dataset.litewhen || t.dataset.liteafter) && liteChange(t)) return;
   if(t.dataset.diag){ setDiag(t.dataset.diag, t.checked); render(); toast(t.checked?"Added. Its questions are in your doctor list.":"Removed"); return; }
   if(t.dataset.plandiag){ const k = "plan:"+t.dataset.plandiag; S.diagnoses = (S.diagnoses||[]).filter(x=>x!==k); if(t.checked) S.diagnoses.push(k); save(); render(); return; }
   if(t.dataset.diagrule){ const [id,k] = t.dataset.diagrule.split(":"); setDiagRule(id, k, t.checked); render(); return; }
@@ -2544,7 +2551,7 @@ view.addEventListener("change",e=>{
 view.addEventListener("toggle",e=>{ if(e.target.dataset && e.target.dataset.feelbox) FEEL_OPEN = e.target.open; }, true);
 view.addEventListener("click",async e=>{
   const t = e.target;
-  if((TAB==="lite" || LITE.eat || (t.dataset && (t.dataset.liteeat || t.dataset.liteedit!==undefined || t.dataset.liteatedel!==undefined))) && liteClick(t)) return;
+  if((TAB==="lite" || LITE.eat || (t.dataset && (t.dataset.liteeat || t.dataset.liteaddsupp || t.dataset.liteedit!==undefined || t.dataset.liteatedel!==undefined))) && liteClick(t)) return;
   if(t.dataset.diagadd){ const g = id=>((document.getElementById(id)||{}).value||"").trim(), name = g("dg-name");
     if(!name){ toast("Type the diagnosis name"); return; }
     const foods = (lvl, txt)=>txt.split(/[,\n;]+/).map(x=>x.trim()).filter(Boolean).map((f,i)=>[lvl[0]+i+"_"+Date.now().toString(36), lvl, f, f, "From your "+name+" diagnosis."]);
@@ -2880,6 +2887,7 @@ function renderQuick(){
     <section class="panel"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><h2>Supplements</h2>${dueNow?`<button class="btn" data-qsupps="1">Took all due now (${dueNow})</button>`:""}</div>
       ${supps.length?`<div class="qlist">${supps.map(i=>qRow(i,key,lg)).join("")}</div>`:`<p class="muted" style="margin:0">No supplements on today's list.</p>`}</section>
     ${typeof prnHtml==="function"?prnHtml(key,lg):""}
+    ${typeof liteSetWhenHtml==="function"?liteSetWhenHtml():""}
     ${backupNudge()}
     <div><button class="linkbtn" data-goto="today">See the full day</button></div>
     <div>${openOnHtml()}</div>
