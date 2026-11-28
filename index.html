@@ -166,8 +166,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.46.1";
+const APP_VERSION = "1.47.0";
 const CHANGES = [
+  {v:"1.47.0", date:"2026-11-28", items:["My rules: new Mold diet box. Tier 1 is always on; tick \"Also follow Tier 2\" to also avoid fruit, starchy vegetables, grains, fermented foods, shelled nuts, vinegar or sugar condiments and soured milk everywhere."]},
   {v:"1.46.1", date:"2026-11-28", items:["My rules: new \"Built-in lists\" box shows the mold diet (Break the Mold Tier 1), allergy and keep-small lists that are always on."]},
   {v:"1.46.0", date:"2026-11-28", items:["Pantry > Meals: \"Build a meal from what I have\" mixes a protein, vegetables, a starch and a flavor from what you ticked, using only foods that fit your rules. Save one and it joins your meals and Today's pantry picks.","Each meal card says which food rule it trips and why.","Chia berry jam is now Chia berry spread, so it isn't flagged as a sweet.","Grocery mode: Done shopping and ✕ sit below the iPhone clock, and the Grocery button reopens it."]},
   {v:"1.45.0", date:"2026-11-28", items:["Meals from your pantry: Today and Tomorrow pick lunch and dinner from what you have, and each meal says what it still needs.","Change a meal to see what each choice needs (ready, cook first, or need 2).","One tap puts the missing things on your grocery list. Grocery mode adds them to your pantry as they go in the cart.","Lite's Eating now shows the planned meal first."]},
@@ -891,6 +892,23 @@ function flareAffected(){
   for(const dow of [1,2,3,4,5,6,0]) for(const [k] of SLOTS){ const id = ((S.week[dow]||{}).ids||{})[k];
     if(id && (id in FLARE_SWAP || FLARE_NOTE[id])) out.push({dow, k, id, to: id in FLARE_SWAP ? FLARE_SWAP[id] : null, note: FLARE_NOTE[id]||""}); }
   return out;
+}
+
+const MOLD_T2_WHY = "Break the Mold Tier 2 (you turned this on).";
+const MOLD_T2_WORDS = [
+  {word:"fruit|fruits|apple|apples|banana|bananas|berry|berries|raspberries|blackberries|blueberries|strawberries|kiwi|kiwis|persimmon|persimmons|orange|oranges|mango|mangoes|pear|pears|cherries|melon|grapefruit|plum|plums|apricot|apricots", label:"All fruit (Tier 2)", level:"avoid"},
+  {word:"sweet potato|sweet potatoes|yam|yams|butternut|acorn squash|winter squash|kabocha|delicata|pumpkin|beet|beets|green peas|english peas|parsnip|parsnips|plantain|plantains", label:"Starchy vegetables (Tier 2)", level:"avoid"},
+  {word:"quinoa|buckwheat|groats|kasha|rice|oat|oats|oatmeal|millet|amaranth|sorghum|teff|grain|grains|bread|toast|pasta|flour|crackers|cereal", label:"All grains, quinoa and buckwheat included (Tier 2)", level:"avoid"},
+  {word:"fermented|kimchi|sauerkraut|miso|tempeh|natto|kefir", label:"Fermented foods (Tier 2)", level:"avoid"},
+  {word:"walnut|walnuts|pecan|pecans|cashew|cashews|hazelnut|hazelnuts|macadamia|macadamias|nuts", label:"Shelled nuts (Tier 2)", level:"avoid"},
+  {word:"ketchup|bbq sauce|barbecue sauce|relish|mustard|hot sauce|salad dressing|dressing|chutney|teriyaki", label:"Vinegar or sugar condiments (Tier 2)", level:"avoid"},
+  {word:"sour cream|buttermilk|creme fraiche|crème fraîche|soured milk", label:"Soured milk products, yogurt is fine (Tier 2)", level:"avoid"}
+];
+function setMoldTier2(on){
+  S.rules.extra = (S.rules.extra||[]).filter(x=>!x.tier2);
+  if(on) S.rules.extra = S.rules.extra.concat(MOLD_T2_WORDS.map(x=>Object.assign({}, x, {tier2:true, why:MOLD_T2_WHY})));
+  S.moldTier2 = !!on;
+  logRule("Break the Mold Tier 2 "+(on?"on":"off"));
 }
 function startFlare(until){
   S.flare = {on:true, until, started:ymd(new Date()), saved:null};
@@ -1662,7 +1680,7 @@ MENU.unshift(["lookback","Week look-back","Water, check-ins, bowels, notes. Prin
 
 function householdMine(){
   const out = HH_MINE.map(([label, pat, level])=>({key:"m:"+label, label, detail:level==="avoid"?"":HH.LEVELS[level], item:{label, pat, level}, on:level==="avoid"}));
-  for(const x of (S.rules.extra||[]).filter(x=>!x.flare && ["avoid","limit","ask"].includes(x.level) && x.word)) out.push({key:"x:"+x.word, label:x.label||x.word, detail:x.level==="avoid"?"":HH.LEVELS[x.level],
+  for(const x of (S.rules.extra||[]).filter(x=>!x.flare && !x.tier2 && ["avoid","limit","ask"].includes(x.level) && x.word)) out.push({key:"x:"+x.word, label:x.label||x.word, detail:x.level==="avoid"?"":HH.LEVELS[x.level],
     item:{label:x.label||x.word, pat:HH.wordsPat(String(x.word).replace(/\|/g,",")), level:x.level}, on:true});
   const fl = (S.rules.extra||[]).filter(x=>x.flare && x.word);
   if(flareOn() && fl.length) out.push({key:"flare", label:"Flare-up foods", detail:"Until "+S.flare.until.slice(5).replace("-","/")+". Could hint at a health condition",
@@ -2462,6 +2480,10 @@ function renderRules(){
     <h3>Fiber ramp (g a day)</h3>
     <div class="grid2">${[0,1,2,3].map(i=>`<label>Week ${i+1}${i===3?" and on":""}<input type="number" min="0" id="ramp-${i}" data-ramp="${i}" value="${esc(R.ramp[i])}"></label>`).join("")}</div>
   </section>
+  <section class="panel" id="moldPanel"><h2>Mold diet</h2>
+    <p class="muted" style="margin:0">Tier 1 of Break the Mold is always on (see Built-in lists). Tier 2 is stricter. Turn it on if your provider wants you on it.</p>
+    <label style="display:flex;gap:8px;align-items:flex-start;font-weight:400"><input type="checkbox" data-moldtier2="1" ${S.moldTier2?"checked":""}> <span><b>Also follow Tier 2</b><br><small class="muted">Avoids all fruit, starchy vegetables (sweet potato, squash, pumpkin, beets), all grains (quinoa and buckwheat too), fermented foods, shelled nuts, vinegar or sugar condiments, and soured milk (yogurt is fine). This cuts most of your fiber foods, so psyllium and chia matter more. Lime juice for flavor still counts as fine.</small></span></label>
+  </section>
   <section class="panel" id="flarePanel"><h2>Flare-up mode</h2>
     <p class="muted" style="margin:0">Beans, soy, nuts, seeds, chocolate and oats are high in arginine, which some people limit during a flare. Turn this on for a while to flag them everywhere, including the meal checker and the shopping list, and to swap the meals that use them. It turns itself off after the last day.</p>
     ${S.flare.on?`<p style="margin:0"><b>On through ${esc(S.flare.until)}.</b></p>
@@ -2474,11 +2496,11 @@ function renderRules(){
   </section>
   <details class="panel"><summary><b>Built-in lists</b> <small class="muted">always on: mold diet, allergies, keep small</small></summary>
     <p class="muted" style="margin:0">These come with your plan and are checked everywhere: meals, pantry, shopping and the meal checker. To let one through, add it under "Foods that are fine" below.</p>
-    ${[["Mold diet (Break the Mold, Tier 1): avoid","mold"],["Allergies and your avoid list","other"],["Keep small","small"]].map(([h,k])=>`<p style="margin:0"><b>${h}:</b> ${esc(BUILTIN_LISTS[k].join(", "))}</p>`).join("")}
+    ${[["Mold diet (Break the Mold, Tier 1): avoid","mold"],...(S.moldTier2?[["Mold diet Tier 2 (on): avoid","t2"]]:[]),["Allergies and your avoid list","other"],["Keep small","small"]].map(([h,k])=>`<p style="margin:0"><b>${h}:</b> ${esc((k==="t2"?MOLD_T2_WORDS.map(x=>x.label.replace(/ \(Tier 2\)$/,"")):BUILTIN_LISTS[k]).join(", "))}</p>`).join("")}
   </details>
   <section class="panel"><h2>Foods to flag</h2>
     <p class="muted" style="margin:0">Add something new that bothers you, or something to keep small. Your plan's built-in allergy and mold lists stay as they are.</p>
-    ${(R.extra||[]).some(x=>!x.flare)?`<ol class="day">${R.extra.map((x,i)=>x.flare?"":`<li><span class="t"><span class="chip ${x.level==="avoid"?"pending":x.level==="ask"?"dusk":""}">${lv[x.level]||x.level}</span></span><span></span><div class="item"><div class="title">${esc(x.label||x.word)}</div>${x.why?`<div class="detail">${esc(x.why)}</div>`:""}<button class="linkbtn" data-ruledel="extra:${i}">Remove</button></div></li>`).join("")}</ol>`:""}
+    ${(R.extra||[]).some(x=>!x.flare&&!x.tier2)?`<ol class="day">${R.extra.map((x,i)=>x.flare||x.tier2?"":`<li><span class="t"><span class="chip ${x.level==="avoid"?"pending":x.level==="ask"?"dusk":""}">${lv[x.level]||x.level}</span></span><span></span><div class="item"><div class="title">${esc(x.label||x.word)}</div>${x.why?`<div class="detail">${esc(x.why)}</div>`:""}<button class="linkbtn" data-ruledel="extra:${i}">Remove</button></div></li>`).join("")}</ol>`:""}
     <div class="grid2"><label>Food or ingredient<input type="text" id="rx-word" placeholder="e.g. paprika"></label>
       <label>What to do<select id="rx-level"><option value="avoid">Avoid</option><option value="limit">Limit</option><option value="ask">Check first</option></select></label></div>
     <label>Why (optional)<input type="text" id="rx-why" placeholder="e.g. flared my gut on 10/30"></label>
@@ -2675,6 +2697,7 @@ view.addEventListener("change",e=>{
     for(const f of ["ids","text"]) if(o[f] && !Object.keys(o[f]).length) delete o[f];
     if(!Object.keys(o).length) delete D[t.dataset.day];
     save(); render(); toast("Saved"); return; }
+  if(t.dataset.moldtier2){ setMoldTier2(t.checked); save(); render(); toast(t.checked?"Tier 2 is on":"Back to Tier 1 only"); return; }
   if(t.dataset.flareuntil){ if(t.value){ S.flare.until=t.value; for(const x of S.rules.extra) if(x.flare) x.why="High in arginine. Flare-up mode through "+t.value.slice(5).replace("-","/")+"."; logRule("Flare-up mode now through "+t.value); save(); } return; }
   if(t.dataset.missSet){ const k=t.dataset.missSet, old=S.miss[k]; S.miss[k]= t.type==="number" ? Number(t.value) : t.value; logRule("Missed items, "+MISS_FIELDS.find(x=>x[0]===k)[1].toLowerCase()+": "+old+" → "+S.miss[k]); save(); return; }
   if(t.dataset.lead){ S.leads[t.dataset.lead]=t.value; save(); return; }
