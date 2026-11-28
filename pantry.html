@@ -160,6 +160,12 @@ footer { color: var(--muted); font-size: 0.85rem; display: flex; flex-direction:
       </div>
       <div id="custom-warn"></div>
       <div id="label-form"></div>
+      <details class="small" id="receipt-box" style="margin-top:8px"><summary><b>Add from a receipt</b></summary>
+        <p class="small muted">On an iPhone, open the receipt photo, press and hold on the text, tap Select All, then Copy (Live Text). On Android, use Google Lens: Text, then Copy. Paste it here, or type what you bought, one per line.</p>
+        <textarea id="receipt-text" rows="6" style="width:100%" placeholder="ORG BNLS CHKN BRST   8.99&#10;SWT POTATOES 2.31&#10;CUCUMBER 1.29"></textarea>
+        <div class="row"><button class="btn" id="btn-receipt">Read it</button></div>
+        <div id="receipt-out"></div>
+      </details>
     </div>
     <div id="pantry-groups" class="panel"></div>
   </section>
@@ -1635,6 +1641,67 @@ var HH = (function(){
     save(); rebuild(); render(); toast(`Added ${n}`);
   }
   document.getElementById('btn-add-custom').addEventListener('click', addCustom);
+
+  // ---------- Add from a receipt: paste the text (Live Text or Google Lens), tick what it recognizes ----------
+  const RC_SKIP = /\b(sub ?total|total|tax|change|cash|visa|mastercard|amex|debit|credit|card|balance|savings?|you saved|coupon|discount|thank|member|points?|receipt|store|cashier|register|approved|auth|bag fee|bottle dep|crv|items? sold|tender)\b/i;
+  const RC_ABBR = { org: '', orgnc: '', organic: '', og: '', chkn: 'chicken', chk: 'chicken', chick: 'chicken', brst: 'breast', bnls: 'boneless', bls: 'boneless', sknls: 'skinless', skls: 'skinless',
+    grnd: 'ground', grd: 'ground', gr: 'ground', bf: 'beef', swt: 'sweet', sw: 'sweet', pot: 'potato', pots: 'potatoes', pto: 'potato', cuc: 'cucumber', cucumb: 'cucumber', cuke: 'cucumber', cukes: 'cucumbers',
+    blk: 'black', bn: 'beans', bns: 'beans', grbnzo: 'garbanzo', garb: 'garbanzo', chkpea: 'chickpeas', chkpeas: 'chickpeas', zuc: 'zucchini', zucc: 'zucchini', spin: 'spinach', spnch: 'spinach',
+    lett: 'lettuce', rom: 'romaine', bluebr: 'blueberries', blubry: 'blueberries', blubr: 'blueberries', rasp: 'raspberries', rspbry: 'raspberries', strwb: 'strawberries', strw: 'strawberries', strwbry: 'strawberries',
+    blkbry: 'blackberries', sqsh: 'squash', sq: 'squash', btrnut: 'butternut', bnut: 'butternut', btrnt: 'butternut', sard: 'sardines', sardn: 'sardines', slmn: 'salmon', salm: 'salmon', tky: 'turkey',
+    lmb: 'lamb', frz: 'frozen', frzn: 'frozen', cnd: 'canned', evoo: 'olive oil', pmpkn: 'pumpkin', pmpk: 'pumpkin', onn: 'onion', onio: 'onion', yel: 'yellow', grlc: 'garlic', garl: 'garlic', cil: 'cilantro',
+    cilan: 'cilantro', aspar: 'asparagus', asprgs: 'asparagus', artich: 'artichoke', quin: 'quinoa', bkwht: 'buckwheat', psyl: 'psyllium', wlnt: 'walnuts', wlnts: 'walnuts', pcn: 'pecans', pcns: 'pecans',
+    sunfl: 'sunflower', moz: 'mozzarella', mozz: 'mozzarella', chs: 'cheese', crm: 'cream', yog: 'yogurt', ygrt: 'yogurt', brth: 'broth', bnlss: 'boneless', grn: 'green', grns: 'greens', prsmn: 'persimmon',
+    pers: 'persimmon', kiw: 'kiwi', lmn: 'lemon', avo: 'avocado', avoc: 'avocado', tom: 'tomato', toms: 'tomatoes', beet: 'beets', jalap: 'jalapeno', jlpno: 'jalapeno', lks: 'leeks', chrd: 'chard', kl: 'kale' };
+  function receiptClean(line) {
+    let t = line.toLowerCase().replace(/\$?\d+\.\d{2}\s*[a-z]{0,2}\b/g, ' ').replace(/\d+(\.\d+)?\s*(lb|lbs|oz|kg|g|ea|ct|pk)\b\s*(@|x)?/g, ' ')
+      .replace(/@\s*\S+/g, ' ').replace(/\b\d{3,}\b/g, ' ').replace(/^\s*\d+\s*(x|@)?\s+/, ' ').replace(/[^a-z\s'-]/g, ' ');
+    t = t.split(/\s+/).map(w => (w in RC_ABBR ? RC_ABBR[w] : w)).filter(w => w.length > 1).join(' ').trim();
+    return t;
+  }
+  function receiptMatch(t) {
+    const ids = new Set(matchIds(t).filter(id => ITEM[id]));
+    for (const i of ITEMS) { if (/^m_/.test(i.id) || MATCH_RE[i.id]) continue;
+      for (const part of i.n.toLowerCase().replace(/\(.*?\)/g, '').split(/\s+or\s+|,|\//)) { const ph = part.trim(); if (ph.length < 3) continue;
+        if (new RegExp('(?<![a-z])' + ph.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?:e?s)?(?![a-z])').test(t)) { ids.add(i.id); break; } } }
+    for (const c of state.custom) if (c.n.toLowerCase() === t) ids.add(c.id);
+    return [...ids];
+  }
+  let RECEIPT = [];
+  function renderReceipt() {
+    const out = document.getElementById('receipt-out');
+    if (!RECEIPT.length) { out.innerHTML = ''; return; }
+    const found = RECEIPT.filter(r => r.ids.length).length;
+    out.innerHTML = `<p class="small">Found ${found} of ${RECEIPT.length} lines. Untick anything that's wrong, then add.</p>` + RECEIPT.map((r, ri) => `<div class="small" style="margin:4px 0"><span class="muted">${esc(r.line.trim())}</span><br>`
+      + (r.ids.length ? r.ids.map(id => `<label style="margin-right:10px"><input type="checkbox" data-rc="${ri}" data-rcid="${id}" ${r.off[id] ? '' : 'checked'}> ${esc(itemName(id))}${state.pantry[id] ? ' <span class="muted">(already ticked)</span>' : ''}</label>`).join('')
+        : `<label><input type="checkbox" data-rc="${ri}" data-rcnew="1" ${r.add ? 'checked' : ''}> Add as my own item: </label><input type="text" data-rcname="${ri}" value="${esc(r.name)}" style="width:auto">`) + '</div>').join('')
+      + `<div class="row"><button class="btn primary" id="btn-receipt-add">Add ticked items to my pantry</button></div>`;
+  }
+  document.getElementById('btn-receipt').addEventListener('click', () => {
+    const lines = document.getElementById('receipt-text').value.split(/\n+/).filter(l => /[a-z]{3}/i.test(l) && !RC_SKIP.test(l));
+    RECEIPT = lines.map(line => { const t = receiptClean(line); return { line, t, ids: t ? receiptMatch(t) : [], off: {}, add: false, name: t.replace(/\b\w/g, ch => ch.toUpperCase()) }; }).filter(r => r.t);
+    renderReceipt();
+    if (!RECEIPT.length) toast('No food lines found. Paste the receipt text, one item per line.');
+  });
+  document.getElementById('receipt-out').addEventListener('change', e => {
+    const ri = e.target.dataset.rc, nm = e.target.dataset.rcname;
+    if (nm !== undefined) { RECEIPT[+nm].name = e.target.value; return; }
+    if (ri === undefined) return;
+    const r = RECEIPT[+ri];
+    if (e.target.dataset.rcnew) r.add = e.target.checked; else r.off[e.target.dataset.rcid] = !e.target.checked;
+  });
+  document.getElementById('receipt-out').addEventListener('click', e => {
+    if (e.target.id !== 'btn-receipt-add') return;
+    let n = 0;
+    for (const r of RECEIPT) {
+      for (const id of r.ids) if (!r.off[id]) { if (!state.pantry[id]) n++; state.pantry[id] = 1; }
+      if (!r.ids.length && r.add && r.name.trim()) { const nm = r.name.trim(), known = Object.values(ITEM).find(i => i.n.toLowerCase() === nm.toLowerCase());
+        const id = known ? known.id : 'x_' + nm.toLowerCase().replace(/[^a-z0-9]+/g, '_') + '_' + Date.now().toString(36) + n;
+        if (!known) state.custom.push({ id, n: nm, c: 'other' }); if (!state.pantry[id]) n++; state.pantry[id] = 1; }
+    }
+    RECEIPT = []; document.getElementById('receipt-text').value = ''; renderReceipt();
+    save(); rebuild(); render(); toast(n ? `Added ${n} item${n > 1 ? 's' : ''} to your pantry` : 'Those were already in your pantry');
+  });
   customName.addEventListener('keydown', e => { if (e.key === 'Enter') addCustom(); });
 
   // ---------- Nutrition label photo (only when served by all systems you, which reads the photo offline) ----------
