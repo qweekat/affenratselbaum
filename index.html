@@ -166,8 +166,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.44.1";
+const APP_VERSION = "1.44.2";
 const CHANGES = [
+  {v:"1.44.2", date:"2026-11-28", items:["Lite: water looks and works like Quick (bar, your cup sizes, undo), and How you feel today sits right under it."]},
   {v:"1.44.1", date:"2026-11-28", items:["Quick no longer shows the \"Deleting this icon deletes your data\" warning. It's still under More, Phone settings, and the backup reminder still appears when a backup is due."]},
   {v:"1.44.0", date:"2026-11-28", items:["How you feel today is now on Quick and Lite too, the same faces as on Today.","Lite: removed the Pantry button at the bottom, since Pantry is on the bottom bar."]},
   {v:"1.43.1", date:"2026-11-28", items:["Set when you take each one: each supplement is its own folded row showing what it's set to, so you can scroll past to the one you want."]},
@@ -1781,9 +1782,9 @@ function renderLite(){
       ${soon.length?`<h3 style="margin:8px 0 0">Coming up</h3>${soon.map(x=>liteRow(x,key,false)).join("")}`:""}
       ${!dueNow.length&&!soon.length?`<small class="muted">Tap I'm up or Eating now, and what goes with it shows here.</small>`:""}
     </section>
-    <section class="panel"><div class="lrow"><div><b>Water</b><br><small class="muted">${r1w(oz)} of ${esc(goal)} oz</small></div><button class="btn" data-sip="8">+8 oz</button></div></section>
-    ${prnHtml(key, lg)}
+    ${typeof PHX!=="undefined"&&PHX.waterHtml?PHX.waterHtml(lg):`<section class="panel"><div class="lrow"><div><b>Water</b><br><small class="muted">${r1w(oz)} of ${esc(goal)} oz</small></div><button class="btn" data-sip="8">+8 oz</button></div></section>`}
     ${liteFeelHtml(key)}
+    ${prnHtml(key, lg)}
     ${ateListHtml(key, true)}
     ${unset.length?`<details class="panel"><summary><b>Any time today (${unset.length})</b></summary>${unset.map(x=>liteRow(x,key,true)).join("")}</details>`:""}
     ${liteSetWhenHtml()}
