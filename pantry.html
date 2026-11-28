@@ -166,6 +166,7 @@ footer { color: var(--muted); font-size: 0.85rem; display: flex; flex-direction:
 
   <!-- 2. Meals -->
   <section class="panel" id="p-meals" data-panel="meals" hidden>
+    <details class="card" id="build-box" style="margin-bottom:12px"><summary><b>Build a meal from what I have</b> <span class="small muted">only foods that fit your rules</span></summary><div id="meal-build"></div></details>
     <div class="row spread">
       <div class="chips" id="meal-filter"></div>
       <span class="small muted">Fiber and glycemic load are for your plate, scored the same way as the Meal Plan Checker.</span>
@@ -815,7 +816,7 @@ var HH = (function(){
     ['m_lambstew', 'Lamb chickpea pumpkin stew', 'cooked', 0, '', 'r_lambstew'], ['m_shredded', 'Shredded chicken', 'cooked', 0, '', 'r_shredded'],
     ['m_patties', 'Sage bison breakfast patties', 'cooked', 0, 'patties', 'r_patties'], ['m_beans', 'Cooked Anasazi or bolita beans', 'cooked', 0, '', 'r_beans'],
     ['m_quinoa', 'Cooked quinoa', 'cooked', 0, '', 'r_quinoa'], ['m_buckwheat', 'Cooked buckwheat groats', 'cooked', 0, '', 'r_buckwheat'],
-    ['m_roastveg', 'Roasted sweet potato and beets', 'cooked', 0, '', 'r_roastveg'], ['m_chiajam', 'Chia berry jam', 'cooked', 0, '', 'r_chiajam'],
+    ['m_roastveg', 'Roasted sweet potato and beets', 'cooked', 0, '', 'r_roastveg'], ['m_chiajam', 'Chia berry spread', 'cooked', 0, '', 'r_chiajam'],
     ['m_broth', 'Homemade chicken broth (from poaching)', 'cooked', 0, ''],
     ['driedbeans', 'Dried Anasazi or bolita beans', 'pantry', 1, 'anasazi bolita'], ['blackbeans', 'Canned black beans', 'pantry', 0],
     ['chickpeas', 'Canned chickpeas', 'pantry', 0, 'garbanzo'], ['pumpkincan', 'Canned pumpkin', 'pantry', 0], ['artichoke', 'Artichoke hearts in water', 'pantry', 0],
@@ -891,7 +892,7 @@ var HH = (function(){
       steps: 'Rinse well. Simmer in 4.5 cups water for 25 min. Freeze in 1/2 cup portions.' },
     { id: 'r_buckwheat', n: 'Buckwheat groats pot', t: 'batch', makes: '10 to 12 half-cup portions · 12 min', ings: [['buckwheat', '2 cups']],
       steps: 'Simmer in 4 cups water for 12 min. Freeze in 1/2 cup portions.' },
-    { id: 'r_chiajam', n: 'Chia berry jam', t: 'batch', makes: 'about 8 servings · no cooking', ings: [['raspberries', '2 cups'], ['chia', '1/4 cup']],
+    { id: 'r_chiajam', n: 'Chia berry spread', t: 'batch', makes: 'about 8 servings · no cooking', ings: [['raspberries', '2 cups'], ['chia', '1/4 cup']],
       steps: 'Mash berries with 1/2 cup water, stir in chia, refrigerate. Ripe berries are sweet enough on their own. Sets in an hour, keeps 5 days.' },
 
     // Breakfast: your usual pattern. Carbs stay for later in the day.
@@ -967,7 +968,7 @@ var HH = (function(){
     { id: 's_cucumber', n: 'Cucumber and snap peas with tahini', t: 'snack', ings: [['cucumber', '1/2'], ['snappeas', '1/2 cup'], ['tahini', '1 tbsp'], ['lime', '1/4']], plate: [['cucumber', 1], ['snappeas', 0.5], ['tahini', 1], ['lime', 1]] },
     { id: 's_edamame', n: 'Salted edamame', t: 'snack', ings: [['edamame', '1/2 cup'], ['salt', 'pinch']], plate: [['edamame', 1]] },
     { id: 's_chickpeas', n: 'Tiny-oven roasted chickpeas', t: 'snack', ings: [['chickpeas', '1/2 cup'], ['oliveoil', '1 tsp'], ['cumin', 'pinch']], plate: [['chickpeas', 1], ['oliveoil', 1]] },
-    { id: 'e_chiajam', n: 'Chia berry jam treat', t: 'evening', ings: [['m_chiajam', '1/4 cup'], ['yogurt', '2 tbsp', 'opt']], plate: [['raspberries', 0.25], ['chia', 0.5]], steps: 'On its own or with a spoon of plain yogurt.' },
+    { id: 'e_chiajam', n: 'Chia berry spread treat', t: 'evening', ings: [['m_chiajam', '1/4 cup'], ['yogurt', '2 tbsp', 'opt']], plate: [['raspberries', 0.25], ['chia', 0.5]], steps: 'On its own or with a spoon of plain yogurt.' },
   ];
 
   // ---------- State ----------
@@ -1445,7 +1446,60 @@ var HH = (function(){
       </div>
     </article>`;
   }
+  // ---------- Build a meal from what's in the pantry (11/28) ----------
+  // Picks a protein, two vegetables, a starch or fiber, and a flavor from ticked items that fit your food rules.
+  const BUILD = { slot: 'lunch', seed: 0 };
+  const B_PROT = ['chicken', 'bison', 'lamb', 'sablefish', 'trout', 'salmoncan', 'sardines', 'm_chickenstew', 'm_bison', 'm_lambstew', 'm_shredded', 'm_patties', 'chickpeas', 'blackbeans', 'm_beans', 'edamame'];
+  const B_VEG = ['butternut', 'acorn', 'piepumpkin', 'beets', 'leeks', 'chard', 'spinach', 'zucchini', 'cucumber', 'snappeas', 'asparagus', 'artichoke', 'm_roastveg', 'pumpkincan'];
+  const B_BASE = ['m_quinoa', 'm_buckwheat', 'quinoa', 'buckwheat', 'pacha', 'sweetpotato', 'm_roastveg', 'm_beans', 'chickpeas', 'blackbeans'];
+  const B_FLAV = ['lime', 'cilantro', 'basil', 'tahini', 'feta', 'mozz', 'yogurt', 'ginger', 'garlic', 'oliveoil', 'walnuts'];
+  function buildPools() {
+    const fits = id => worst(itemHits(id)) !== 'avoid';
+    const ok = ids => ids.filter(id => ITEM[id] && has(id) && fits(id));
+    const mine = c => state.custom.filter(x => (x.c || 'other') === c && state.pantry[x.id] && fits(x.id)).map(x => x.id);
+    return { prot: [...ok(B_PROT), ...mine('meat')], veg: [...ok(B_VEG), ...mine('produce')], base: ok(B_BASE), flav: ok(B_FLAV) };
+  }
+  function buildCombos() {
+    const P = buildPools(), out = [], seen = new Set();
+    let x = BUILD.seed * 7919 + 17; const rnd = n => { x = (x * 1103515245 + 12345) % 2147483648; return n ? x % n : 0; };
+    const take = (arr, not) => { const a = arr.filter(id => !not.includes(id)); return a.length ? a[rnd(a.length)] : null; };
+    for (let i = 0; i < 24 && out.length < 3; i++) {
+      const p = take(P.prot, []); if (!p) break;
+      const v1 = take(P.veg, [p]), v2 = take(P.veg, [p, v1]), b = take(P.base, [p, v1, v2]), f = take(P.flav, []);
+      const ids = [p, v1, v2, b, f].filter(Boolean), key = [...ids].sort().join();
+      if (seen.has(key)) continue; seen.add(key); out.push(ids);
+    }
+    return { P, out };
+  }
+  const short = id => ITEM[id].n.replace(/^(Ground|Canned|Cooked|Skinless|Frozen( shelled)?|Fresh) /i, '').split(/ or |,/)[0];
+  const buildName = ids => { const t = `${short(ids[0])} with ${ids[1] ? short(ids[1]).toLowerCase() : 'vegetables'}`; return t.charAt(0).toUpperCase() + t.slice(1); };
+  const B_AMT = { prot: '3 to 4 oz', veg: '1 cup', base: '1/2 cup', flav: 'to taste' };
+  function renderBuild() {
+    const el = document.getElementById('meal-build'); if (!el) return;
+    const { P, out } = buildCombos();
+    const miss = [!P.prot.length && 'a protein', !P.veg.length && 'a vegetable'].filter(Boolean);
+    el.innerHTML = `<div class="chips" style="margin:8px 0">${[['breakfast', 'Breakfast'], ['lunch', 'Lunch'], ['dinner', 'Dinner']].map(([k, n]) => `<button class="chip" data-bslot="${k}" aria-pressed="${BUILD.slot === k}">${n}</button>`).join('')}<button class="btn sm" data-bshuffle="1">Shuffle</button></div>` +
+      (miss.length ? `<p class="need">Tick ${miss.join(' and ')} on the Pantry tab first.</p>` :
+      out.map((ids, i) => `<div class="card" style="margin:8px 0"><b>${esc(ids.map(id => ITEM[id].n).join(', '))}</b>
+        <div class="row" style="margin-top:6px"><input type="text" id="bname-${i}" value="${esc(buildName(ids))}" aria-label="Meal name" style="flex:1;min-width:0"><button class="btn sm primary" data-bsave="${i}">Save as my meal</button></div></div>`).join('')) +
+      `<p class="small muted">Only things you've ticked that fit your food rules. Saved meals show up in Meals and on Today's pantry picks.</p>`;
+    el._combos = out;
+  }
+  document.getElementById('meal-build').addEventListener('click', e => {
+    const t = e.target;
+    if (t.dataset.bslot) { BUILD.slot = t.dataset.bslot; BUILD.seed++; renderBuild(); return; }
+    if (t.dataset.bshuffle) { BUILD.seed++; renderBuild(); return; }
+    if (t.dataset.bsave !== undefined) {
+      const ids = (e.currentTarget._combos || [])[+t.dataset.bsave]; if (!ids) return;
+      const role = id => B_PROT.includes(id) || (ITEM[id].custom && ITEM[id].c === 'meat') ? 'prot' : B_FLAV.includes(id) ? 'flav' : B_BASE.includes(id) && !B_VEG.includes(id) ? 'base' : 'veg';
+      const n = ((document.getElementById('bname-' + t.dataset.bsave) || {}).value || buildName(ids)).trim();
+      if (!n) return;
+      state.mine.push({ id: 'my_' + Date.now().toString(36), n, t: BUILD.slot, ings: ids.map(id => [id, B_AMT[role(id)]]), steps: 'Built from your pantry.', mine: 1 });
+      save(); rebuild(); render(); toast(`Saved ${n}`);
+    }
+  });
   function renderMeals() {
+    renderBuild();
     const f = document.getElementById('meal-filter');
     f.innerHTML = [['all', 'All'], ...TYPES].map(([k, n]) => `<button class="chip" data-filter="${k}" aria-pressed="${state.filter === k}">${esc(n)}</button>`).join('');
     const list = Object.values(RECIPE).filter(r => state.filter === 'all' ? r.t !== 'batch' : r.t === state.filter);
@@ -1855,7 +1909,7 @@ var HH = (function(){
     [/^(coconut oil)$/, ['olive oil']],
     [/^(coconut milk|coconut cream)$/, ['safe broth', 'plain whole yogurt, stirred in off the heat']],
     [/^coconut aminos$/, ['salt and fresh ginger']],
-    [/^jam$|^jelly$/, ['chia berry jam']],
+    [/^jam$|^jelly$/, ['chia berry spread']],
     [/^(egg whites?|eggs?|meringue)$/, ['flax egg (1 tbsp ground flax + 3 tbsp water)', 'chia egg (1 tbsp chia + 3 tbsp water)']],
     [/^(wine|beer|sake|cider|hard cider)$/, ['safe broth', 'water with lime']],
   ];

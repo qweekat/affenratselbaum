@@ -166,8 +166,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.45.0";
+const APP_VERSION = "1.46.0";
 const CHANGES = [
+  {v:"1.46.0", date:"2026-11-28", items:["Pantry > Meals: \"Build a meal from what I have\" mixes a protein, vegetables, a starch and a flavor from what you ticked, using only foods that fit your rules. Save one and it joins your meals and Today's pantry picks.","Each meal card says which food rule it trips and why.","Chia berry jam is now Chia berry spread, so it isn't flagged as a sweet.","Grocery mode: Done shopping and ✕ sit below the iPhone clock, and the Grocery button reopens it."]},
   {v:"1.45.0", date:"2026-11-28", items:["Meals from your pantry: Today and Tomorrow pick lunch and dinner from what you have, and each meal says what it still needs.","Change a meal to see what each choice needs (ready, cook first, or need 2).","One tap puts the missing things on your grocery list. Grocery mode adds them to your pantry as they go in the cart.","Lite's Eating now shows the planned meal first."]},
   {v:"1.44.4", date:"2026-11-28", items:["The backup reminder (when your last backup is 2 or more days old) now shows on Lite and Today too, not just Quick."]},
   {v:"1.44.3", date:"2026-11-28", items:["Lite: slimmer water box with smaller buttons."]},
@@ -703,7 +704,7 @@ const RECIPES = {
   s_cucumber:{t:"s", n:"Cucumber and snap peas with tahini", d:"With tahini and lime.", pull:[]},
   s_edamame:{t:"s", n:"Salted edamame (bean)", d:"Counts as your bean serving.", pull:[]},
   s_chickpeas:{t:"s", n:"Tiny-oven roasted chickpeas (bean)", d:"Counts as your bean serving.", pull:[]},
-  e_chiajam:{t:"e", n:"Chia berry jam", d:"1/4 cup, alone or with a spoon of plain yogurt. Counts toward your seed handful.", pull:[]}
+  e_chiajam:{t:"e", n:"Chia berry spread", d:"1/4 cup, alone or with a spoon of plain yogurt. Counts toward your seed handful.", pull:[]}
 };
 const SLOTS = [["b","Breakfast"],["l","Lunch"],["s","Snack"],["d","Dinner"],["e","Evening treat"]];
 
@@ -1201,7 +1202,7 @@ const BASES = {
   r_grain:{n:"Quinoa or buckwheat pot", unit:"half-cup portions", yield:11, min:25, where:"stove"},
   r_patties:{n:"Sage bison breakfast patties", unit:"patties", yield:16, min:18, where:"oven"},
   r_roastveg:{n:"Roasted sweet potato and beets", unit:"sides", yield:5, min:40, where:"oven", fridge:true},
-  r_chiajam:{n:"Chia berry jam", unit:"servings", yield:8, min:5, where:"none", fridge:true}
+  r_chiajam:{n:"Chia berry spread", unit:"servings", yield:8, min:5, where:"none", fridge:true}
 };
 
 const USES = {
@@ -1764,7 +1765,7 @@ const LITE_MEALS = [["b","Breakfast"],["l","Lunch"],["s","Snack"],["d","Dinner"]
 const LITE_AFTER = [[-1,"1 h before"],[-0.5,"30 min before"],[0,"with it"],[0.5,"30 min after"],[1,"1 h after"],[2,"2 h after"],[3,"3 h after"]];
 
 function litePlanned(a, d){ const T = dayTimes(d), k = {b:"breakfast", l:"lunch", s:"snack", d:"dinner", bed:"bed"}[a]; const t = k && parseTime(T[k]); return t ? mins(t) : null; }
-const PANTRY_NAMES = {"butternut": "Butternut squash", "acorn": "Acorn squash", "piepumpkin": "Pie pumpkin", "beets": "Beets", "leeks": "Leeks", "onion": "Onions", "garlic": "Garlic", "chard": "Chard", "spinach": "Spinach", "zucchini": "Zucchini", "sweetpotato": "Sweet potatoes", "cucumber": "Cucumbers", "lime": "Limes", "snappeas": "Snap or snow peas", "ginger": "Ginger", "jalapeno": "Jalapeño or serrano (yours)", "cilantro": "Cilantro", "basil": "Basil or chives", "persimmon": "Persimmons", "kiwi": "Kiwi", "raspberries": "Frozen raspberries or blackberries", "asparagus": "Asparagus", "chicken": "Skinless chicken breast or thigh", "bison": "Ground bison or lean beef", "lamb": "Lamb stew meat", "sablefish": "Sablefish", "trout": "Trout", "salmoncan": "Canned salmon", "sardines": "Sardines", "m_chickenstew": "Chicken butternut stew", "m_bison": "Bison zucchini skillet meat", "m_lambstew": "Lamb chickpea pumpkin stew", "m_shredded": "Shredded chicken", "m_patties": "Sage bison breakfast patties", "m_beans": "Cooked Anasazi or bolita beans", "m_quinoa": "Cooked quinoa", "m_buckwheat": "Cooked buckwheat groats", "m_roastveg": "Roasted sweet potato and beets", "m_chiajam": "Chia berry jam", "m_broth": "Homemade chicken broth (from poaching)", "driedbeans": "Dried Anasazi or bolita beans", "blackbeans": "Canned black beans", "chickpeas": "Canned chickpeas", "pumpkincan": "Canned pumpkin", "artichoke": "Artichoke hearts in water", "quinoa": "Quinoa (dry)", "buckwheat": "Buckwheat groats (dry)", "broth": "Bonafide or Pacific chicken broth", "chia": "Chia seeds", "psyllium": "Psyllium husk", "tahini": "Tahini", "walnuts": "Walnuts", "edamame": "Frozen shelled edamame", "chickpeaflour": "Chickpea flour", "pacha": "Pacha sprouted buckwheat bread", "creamcheese": "Cream cheese", "mozz": "Fresh mozzarella", "feta": "Fresh sheep feta", "yogurt": "Plain whole yogurt", "rice": "Rice", "potatoes": "Potatoes"};
+const PANTRY_NAMES = {"butternut": "Butternut squash", "acorn": "Acorn squash", "piepumpkin": "Pie pumpkin", "beets": "Beets", "leeks": "Leeks", "onion": "Onions", "garlic": "Garlic", "chard": "Chard", "spinach": "Spinach", "zucchini": "Zucchini", "sweetpotato": "Sweet potatoes", "cucumber": "Cucumbers", "lime": "Limes", "snappeas": "Snap or snow peas", "ginger": "Ginger", "jalapeno": "Jalapeño or serrano (yours)", "cilantro": "Cilantro", "basil": "Basil or chives", "persimmon": "Persimmons", "kiwi": "Kiwi", "raspberries": "Frozen raspberries or blackberries", "asparagus": "Asparagus", "chicken": "Skinless chicken breast or thigh", "bison": "Ground bison or lean beef", "lamb": "Lamb stew meat", "sablefish": "Sablefish", "trout": "Trout", "salmoncan": "Canned salmon", "sardines": "Sardines", "m_chickenstew": "Chicken butternut stew", "m_bison": "Bison zucchini skillet meat", "m_lambstew": "Lamb chickpea pumpkin stew", "m_shredded": "Shredded chicken", "m_patties": "Sage bison breakfast patties", "m_beans": "Cooked Anasazi or bolita beans", "m_quinoa": "Cooked quinoa", "m_buckwheat": "Cooked buckwheat groats", "m_roastveg": "Roasted sweet potato and beets", "m_chiajam": "Chia berry spread", "m_broth": "Homemade chicken broth (from poaching)", "driedbeans": "Dried Anasazi or bolita beans", "blackbeans": "Canned black beans", "chickpeas": "Canned chickpeas", "pumpkincan": "Canned pumpkin", "artichoke": "Artichoke hearts in water", "quinoa": "Quinoa (dry)", "buckwheat": "Buckwheat groats (dry)", "broth": "Bonafide or Pacific chicken broth", "chia": "Chia seeds", "psyllium": "Psyllium husk", "tahini": "Tahini", "walnuts": "Walnuts", "edamame": "Frozen shelled edamame", "chickpeaflour": "Chickpea flour", "pacha": "Pacha sprouted buckwheat bread", "creamcheese": "Cream cheese", "mozz": "Fresh mozzarella", "feta": "Fresh sheep feta", "yogurt": "Plain whole yogurt", "rice": "Rice", "potatoes": "Potatoes"};
 let LITE_SET_OPEN = false;
 let LITE = {eat:null, pick:{}, other:"", meal:"", edit:-1, time:"", day:""};
 const liteReset = ()=>{ LITE = {eat:null, pick:{}, other:"", meal:"", edit:-1, time:"", day:""}; };
