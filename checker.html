@@ -998,6 +998,14 @@ Dinner: Baked salmon with roasted sweet potato, broccoli, and a squeeze of lemon
   renderScan();
   renderFix();
   renderDay();
+  // A phone can bring this page back from memory after you change your rules elsewhere. Reload so they apply.
+  (function () {
+    const at = JSON.stringify(USER_RULES);
+    const now = () => { try { const h = JSON.parse(localStorage.getItem('dh-me-v1') || 'null'); return JSON.stringify(h && h.rules && typeof h.rules === 'object' ? h.rules : null); } catch (e) { return at; } };
+    const check = () => { if (now() !== at) location.reload(); };
+    window.addEventListener('pageshow', e => { if (e.persisted) check(); });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) check(); });
+  })();
 })();
 </script>
 
