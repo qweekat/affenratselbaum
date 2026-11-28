@@ -825,8 +825,8 @@ var HH = (function(){
     ['quinoa', 'Quinoa (dry)', 'pantry', 0], ['buckwheat', 'Buckwheat groats (dry)', 'pantry', 0], ['broth', 'Bonafide or Pacific chicken broth', 'pantry', 0, 'broth stock'],
     ['chia', 'Chia seeds', 'pantry', 0], ['psyllium', 'Psyllium husk', 'pantry', 0], ['tahini', 'Tahini', 'pantry', 0], ['walnuts', 'Walnuts', 'pantry', 0],
     ['edamame', 'Frozen shelled edamame', 'pantry', 0], ['chickpeaflour', 'Chickpea flour', 'pantry', 0],
-    ['buckwheatflour', 'Buckwheat flour', 'pantry', 0], ['sesame', 'Sesame seeds', 'pantry', 0], ['parsley', 'Parsley', 'produce', 0], ['beefcheek', 'Beef cheek', 'meat', 0],
-    ['m_meatballs', 'Sesame ginger meatballs', 'cooked', 0, 'meatballs', 'r_meatballs'], ['m_barbacoa', 'Beef cheek barbacoa', 'cooked', 0, 'barbacoa', 'r_barbacoa'], ['bakingsoda', 'Baking soda', 'spice', 0, '', '', 1], ['vanilla', 'Vanilla extract (alcohol-free)', 'spice', 0, '', '', 0],
+    ['buckwheatflour', 'Buckwheat flour', 'pantry', 0], ['sesame', 'Sesame seeds', 'pantry', 0], ['sunflower', 'Raw sunflower seeds', 'pantry', 0], ['pepitas', 'Raw pumpkin seeds', 'pantry', 0, 'pepitas'], ['cassavaflour', 'Cassava flour', 'pantry', 0], ['parsley', 'Parsley', 'produce', 0], ['beefcheek', 'Beef cheek', 'meat', 0],
+    ['m_meatballs', 'Sesame ginger meatballs', 'cooked', 0, 'meatballs', 'r_meatballs'], ['m_barbacoa', 'Beef cheek barbacoa', 'cooked', 0, 'barbacoa', 'r_barbacoa'], ['bakingsoda', 'Baking soda', 'spice', 0, '', '', 1],
     ['pacha', 'Pacha sprouted buckwheat bread', 'dairy', 0, 'bread toast'], ['creamcheese', 'Cream cheese', 'dairy', 0], ['mozz', 'Fresh mozzarella', 'dairy', 0, 'mozzarella'],
     ['feta', 'Fresh sheep feta', 'dairy', 0], ['yogurt', 'Plain whole yogurt', 'dairy', 0],
     ['salt', 'Salt', 'spice', 0, '', '', 1], ['pepper', 'Black pepper', 'spice', 0, '', '', 1], ['oliveoil', 'Olive oil', 'spice', 0, '', '', 1],
@@ -865,6 +865,43 @@ var HH = (function(){
   // ings: [ids (one id, or several that can stand in for each other), amount, flag]
   //   flag 'opt' = nice to have, not counted; 'his' = his plate, listed under "For him"
   // plate: her serving as [Meal Plan Checker food id, number of its units]
+  // ---------- Recipe box: printed recipes kept as written, for others or for later, with your notes ----------
+  // Ingredient lists as printed; steps in short. 'adapted' points to versions that fit your rules.
+  const BP = 'Bake It Paleo', GFA = 'Gluten Free Alice';
+  const BOX = [
+    { id: 'bx_sptoast', n: 'Sweet potato toast', site: BP, src: 'https://bakeitpaleo.com/sweet-potato-toast/', yields: 'varies', t: 'dinner', adapted: ['d_sptoast'],
+      ings: ['3 to 4 small sweet potatoes', 'olive oil', 'toppings of your choice'],
+      steps: 'Slice lengthwise about 1/4 in thick, brush with oil, air fry at 350 °F about 15 min, flip, 5 min more. Cool a few minutes and top.' },
+    { id: 'bx_bwpancakes', n: 'Fluffy vegan buckwheat pancakes', site: BP, src: 'https://bakeitpaleo.com/fluffy-vegan-buckwheat-pancakes/', yields: '8 pancakes', t: 'breakfast', adapted: ['d_bwpancakes'],
+      ings: ['1 cup buckwheat flour (150 g)', '2 tbsp coconut flour (14 g)', '1/2 tsp baking soda', '1/4 tsp salt', '1/2 cup + 2 tbsp water', '1/2 cup dairy-free yogurt', '3 tbsp maple syrup', '1 tsp vanilla extract', '1/4 to 1/3 cup dark chocolate chips'],
+      steps: 'Mix the dry things, stir in the wet ones, fold in the chips. Cook 1/4 cup per pancake in a greased, covered pan on medium until golden, flip, and leave the middles a little soft.' },
+    { id: 'bx_meatballs', n: 'Paleo sesame ginger meatballs', site: BP, src: 'https://bakeitpaleo.com/paleo-sesame-ginger-meatballs/', yields: '18 meatballs', t: 'dinner', adapted: ['r_meatballs', 'd_meatballs'],
+      ings: ['1 lb grass-fed ground beef', '1/4 cup chopped onion', '1/4 cup chopped parsley', '3 cloves garlic, pressed', '1 tbsp grated ginger', '1 tbsp sesame seeds', '1/2 tsp salt', 'Sauce: 3 tbsp coconut aminos', '1 tbsp sesame oil', '1 tsp sriracha', '1/2 tsp tapioca flour'],
+      steps: 'Mix and roll into 18 balls. Cook in a pan on medium-high, lid on for the first 10 min, about 15 min in all. Whisk the sauce, pour it over, and stir until it thickens. Top with more sesame seeds.' },
+    { id: 'bx_sesamechicken', n: 'Paleo sesame chicken', site: BP, src: 'https://bakeitpaleo.com/paleo-sesame-chicken-recipe/', yields: 'serves 2 to 4', t: 'dinner', adapted: ['d_sesamechicken'],
+      ings: ['1.5 to 2 lb chicken thighs', '2 tsp avocado oil', '1/4 cup coconut aminos', '1 tbsp fish sauce', '1 tsp toasted sesame oil', '1/2 tsp red pepper flakes (optional)', '1/2 tsp granulated garlic', '1/2 tsp tapioca flour', '1 tbsp sesame seeds', 'chives to garnish'],
+      steps: 'Brown bite-size chicken in the oil on medium-high about 15 min. Whisk the sauce, pour it over on medium-low, and stir about 5 min until thick. Stir in the sesame seeds and top with chives.' },
+    { id: 'bx_barbacoa', n: 'Beef cheek barbacoa norteña', site: 'printed page', src: '', yields: '6 servings', t: 'dinner', adapted: ['r_barbacoa', 'd_barbacoa'],
+      ings: ['3 lb beef cheek, trimmed', '1/4 cup beef stock', '1 tbsp kosher salt', '2 tsp ground cumin', '1 tsp black pepper', '1/2 large yellow onion', '4 cloves garlic, minced', '1 tsp Mexican oregano', '2 tsp ancho chili powder', '1 bay leaf', '2 cups water', 'salsa borracha or another salsa'],
+      steps: 'Rub the meat with the spices and garlic, wrap tightly in foil with the stock, onion and bay, and chill overnight. Slow cook in water on low at least 10 hours. Unwrap, chop fine and pick out any gristle.' },
+    { id: 'bx_cassavabread', n: 'Rosemary cassava bread', site: BP, src: 'https://bakeitpaleo.com/rosemary-cassava-bread/', yields: 'one 8 x 4 in loaf', t: 'baking',
+      ings: ['220 g cassava flour (1 1/2 cups)', '44 g arrowroot flour (1/3 cup)', '1/2 tbsp rosemary', '1 tsp baking powder', '1/2 tsp baking soda', '3/4 tsp salt', '5 large eggs', '1/4 cup olive oil', '1/2 tbsp apple cider vinegar', '1/4 cup water, up to 3/4 cup'],
+      steps: 'Mix the dry and wet things separately, then together. Bake in a lined 8 x 4 in pan at 350 °F about 35 min. Cool on a rack and keep it in the fridge.',
+      notes: 'Your notes on the page: sage and thyme in place of rosemary; arrowroot + 2/3 tbsp; baking powder 3/4 tsp + 1/8; baking soda 1/4 tsp + 1/8; a 5 to 1 cassava to arrowroot ratio worked out in the margin.' },
+    { id: 'bx_crackers', n: 'Rosemary cassava flour crackers', site: BP, src: 'https://bakeitpaleo.com/salted-rosemary-crackers/', yields: '3 to 4 dozen', t: 'snack', adapted: ['s_crackers'],
+      ings: ['1/4 cup raw sunflower seeds', '1/4 cup raw pumpkin seeds', '1/2 cup cassava flour (63 g)', '2 tsp rosemary', '1/2 tsp sea salt', '1/4 cup water', '1 tsp olive oil', 'flaked sea salt (optional)'],
+      steps: 'Grind the seeds fine, blend in the flour, salt and rosemary, then the water and oil. Roll 1/8 in thick between parchment, salt, cut 1 in squares, and bake at 350 °F 15 min, flip, 5 to 10 min more.' },
+    { id: 'bx_bagels', n: 'Paleo air fryer bagels', site: BP, src: 'https://bakeitpaleo.com/paleo-air-fryer-bagels/', yields: '4 mini bagels', t: 'baking',
+      ings: ['1/2 cup tapioca flour (61 g)', '1/3 cup cassava flour (52 g)', '1/2 cup almond flour (45 g)', '2 tsp poppy seeds (optional)', '1/2 tsp baking soda', '1/4 tsp salt', '2 tbsp avocado oil', '1 tbsp maple syrup', '1 tsp apple cider vinegar', '4 to 5 tbsp water'],
+      steps: 'Mix the dry things, add the wet ones, and knead into a dough. Shape 4 bagels, boil 1 min a side, then air fry until golden. (The second page was too blurry to read the time and temperature.)' },
+    { id: 'bx_gfapancakes', n: 'Gluten-free and vegan fluffy pancakes', site: GFA, src: 'https://glutenfreealice.com/', yields: '6 large pancakes', t: 'breakfast',
+      ings: ['300 g gluten-free self-raising flour', '2 tsp baking powder', 'pinch of sea salt', '4 tbsp caster sugar', '1/2 tsp vanilla extract', '390 ml almond milk (or another milk alternative)', 'oil or dairy-free butter for frying'],
+      steps: 'Mix the dry things, whisk in the vanilla and milk to a thick batter. Ladle into a hot oiled pan, flip when bubbles form, and cook 2 min more.' },
+    { id: 'bx_crumpets', n: 'Crumpets (gluten-free, dairy-free)', site: GFA, src: 'https://glutenfreealice.com/', yields: '12 crumpets', t: 'baking',
+      ings: ['350 ml dairy-free milk', '275 g gluten-free self-raising flour', '1 tbsp easy-bake yeast', '1/2 tsp bicarbonate of soda', '2 tsp caster sugar', 'pinch of salt', 'oil for frying'],
+      steps: 'Warm the milk to about 39 °C, add the yeast and sugar and wait until frothy. Whisk in the flour, soda and salt, cover and rest 90 min. Thin with a little warm water, then cook about 2.5 tbsp in oiled rings 5 to 7 min and flip for 1 to 2 min.' },
+  ];
+  const BOX_TYPE = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snack', evening: 'Treat', baking: 'Baking and breads' };
   const TYPES = [['breakfast', 'Breakfast'], ['lunch', 'Lunch'], ['dinner', 'Dinner'], ['snack', 'Snack'], ['evening', 'Evening treat'], ['batch', 'Batch cooking']];
   const TYPE_NAME = Object.fromEntries(TYPES);
   const RECIPES = [
@@ -963,7 +1000,7 @@ var HH = (function(){
       steps: 'Toss everything with the oil, oregano and garlic on one small sheet pan. Roast at 400 °F for 30 to 35 min.' },
     // From printed recipes sent 11/28, adapted to the rules. Source pages linked in the steps.
     { id: 'r_meatballs', n: 'Sesame ginger meatballs', t: 'batch', makes: '18 meatballs · 25 min', shared: 1,
-      ings: [['bison', '1 lb'], ['onion', '1/4 cup chopped'], [['parsley', 'cilantro'], '1/4 cup chopped'], ['garlic', '3 cloves'], ['ginger', '1 tbsp grated'], ['sesame', '1 tbsp'], ['salt', '1/2 tsp']],
+      ings: [['bison', '1 lb'], ['onion', '1/4 cup chopped'], ['cilantro', '1/4 cup chopped (in place of parsley)'], ['garlic', '3 cloves'], ['ginger', '1 tbsp grated'], ['sesame', '1 tbsp'], ['salt', '1/2 tsp']],
       steps: 'Mix everything by hand and roll into 18 balls of about 2 tbsp. Cook in a pan on medium-high with the lid on for 10 min, then uncover and brown about 5 min more until cooked through. Freeze in portions of 6. Idea from Bake It Paleo, bakeitpaleo.com/paleo-sesame-ginger-meatballs.' },
     { id: 'd_meatballs', n: 'Sesame ginger meatball bowl', t: 'dinner', makes: 'reheat 10 min', shared: 1, his: 'rice',
       ings: [['m_meatballs', '6 meatballs'], ['snappeas', '1 cup'], ['cucumber', '1/2'], ['tahini', '1 tbsp'], ['lime', '1/2'], ['sesameoil', '1 tsp'], ['ginger', '1/2 tsp grated'], ['sesame', 'sprinkle', 'opt'], ['rice', '1 cup cooked', 'his']],
@@ -976,14 +1013,21 @@ var HH = (function(){
       ings: [['m_barbacoa', '1 portion'], [['m_beans', 'blackbeans'], '1/2 cup (yours)'], ['spinach', '2 handfuls'], ['cilantro', 'handful'], ['lime', '1/2'], ['jalapeno', '1, yours', 'opt'], ['rice', '1 cup cooked', 'his']],
       plate: [['bison', 1], ['anasazi', 1], ['spinach', 1], ['onion', 0.25], ['cilantro', 1], ['lime', 1]],
       steps: 'Reheat the barbacoa with a splash of its juices. Yours goes over beans and spinach with cilantro, lime and chile if you like. He adds rice.' },
+    { id: 'd_sesamechicken', n: 'Sesame chicken skillet', t: 'dinner', makes: 'one pan · 25 min', shared: 1, his: 'rice',
+      ings: [['chicken', '1.5 lb thighs, bite-size'], ['oliveoil', '2 tsp'], ['snappeas', '1 cup'], ['sesameoil', '1 tsp'], ['garlic', '2 cloves'], ['ginger', '1 tsp grated'], ['salt', '1/2 tsp'], ['lime', '1/2'], ['sesame', '1 tbsp'], ['basil', 'chives to finish', 'opt'], ['jalapeno', 'pepper flakes, yours', 'opt'], ['rice', '1 cup cooked', 'his']],
+      plate: [['chicken', 1], ['snappeas', 1], ['sesame', 0.5], ['sesameoil', 0.5], ['oliveoil', 0.5], ['lime', 1]],
+      steps: 'Brown the chicken in the olive oil on medium-high about 15 min, adding the snap peas for the last 3. Off the heat, stir in the sesame oil, garlic, ginger, salt and lime (in place of coconut aminos, fish sauce and tapioca), then the sesame seeds and chives. Pepper flakes go on your plate. Idea from Bake It Paleo, bakeitpaleo.com/paleo-sesame-chicken-recipe.' },
+    { id: 's_crackers', n: 'Herb seed crackers', t: 'snack', makes: 'oven · 35 min · 3 to 4 dozen',
+      ings: [['sunflower', '1/4 cup'], ['pepitas', '1/4 cup'], ['cassavaflour', '1/2 cup'], [['thyme', 'sage'], '2 tsp'], ['salt', '1/2 tsp'], ['oliveoil', '1 tsp']],
+      steps: 'Grind the seeds fine in a blender or spice grinder. Blend in the flour, salt and thyme or sage (in place of rosemary), then 1/4 cup water and the oil. Roll 1/8 in thick between two sheets of parchment, sprinkle with salt, cut 1 in squares, and bake at 350 °F for 15 min, flip, 5 to 10 min more. A handful is a snack; add cucumber or a little cheese. Idea from Bake It Paleo, bakeitpaleo.com/salted-rosemary-crackers.' },
     { id: 'd_sptoast', n: 'Sweet potato toast with chicken and greens', t: 'dinner', makes: 'tiny oven · 25 min', shared: 1, his: 'potatoes',
       ings: [['sweetpotato', '1 small'], ['oliveoil', '1 tsp'], [['m_shredded', 'chicken'], '4 oz'], ['spinach', 'handful'], ['lime', '1/2'], ['cilantro', 'handful', 'opt'], ['potatoes', '1 to 2', 'his']],
       plate: [['sweetpotato', 1], ['oliveoil', 0.5], ['chicken', 1], ['spinach', 1], ['lime', 1], ['cilantro', 1]],
       steps: 'Slice the sweet potato lengthwise about 1/4 in thick and brush with the oil. Bake at 400 °F about 15 min, flip, 5 to 10 min more until tender. Top with warm shredded chicken, spinach, lime and cilantro. Idea from Bake It Paleo, bakeitpaleo.com/sweet-potato-toast.' },
     { id: 'd_bwpancakes', n: 'Buckwheat berry pancakes with patties', t: 'dinner', makes: 'stovetop · 20 min · 8 pancakes',
-      ings: [['buckwheatflour', '1 cup + 2 tbsp'], ['psyllium', '1 tsp'], ['bakingsoda', '1/2 tsp'], ['salt', '1/4 tsp'], ['yogurt', '1/2 cup'], ['stevia', 'to taste'], ['vanilla', '1 tsp', 'opt'], ['raspberries', '1/3 cup'], ['oliveoil', 'for the pan'], ['m_patties', '2 patties']],
+      ings: [['buckwheatflour', '1 cup + 2 tbsp'], ['psyllium', '1 tsp'], ['bakingsoda', '1/2 tsp'], ['salt', '1/4 tsp'], ['yogurt', '1/2 cup'], ['stevia', 'to taste'], ['raspberries', '1/3 cup'], ['oliveoil', 'for the pan'], ['m_patties', '2 patties']],
       plate: [['buckwheat', 1.5], ['yogurt', 0.25], ['raspberries', 0.5], ['bison', 1], ['oliveoil', 0.5]],
-      steps: 'Mix the flours, soda and salt. Stir in about 2/3 cup water, the yogurt, stevia and vanilla to a thick batter, then fold in the berries (in place of maple syrup and chocolate chips; extra buckwheat flour and psyllium stand in for the coconut flour). Cook 1/4 cup per pancake in a lightly oiled covered pan on medium, flip once. Two pancakes is one serving, with patties on the side for protein; the rest freeze. Adapted from Bake It Paleo\'s fluffy buckwheat pancakes.' },
+      steps: 'Mix the flours, soda and salt. Stir in about 2/3 cup water, the yogurt and stevia to a thick batter, then fold in the berries (in place of maple syrup, vanilla and chocolate chips; extra buckwheat flour and psyllium stand in for the coconut flour). Cook 1/4 cup per pancake in a lightly oiled covered pan on medium, flip once. Two pancakes is one serving, with patties on the side for protein; the rest freeze. Adapted from Bake It Paleo\'s fluffy buckwheat pancakes.' },
     { id: 'd_thermossoup', n: 'Thermos chicken squash soup', t: 'dinner', makes: 'fuel saver · 10 min boil', shared: 1, his: 'rice',
       ings: [['chicken', '8 oz'], ['butternut', '1 cup cubed'], ['leeks', '1'], ['ginger', '1 tsp grated'], [['broth', 'm_broth'], '3 cups'], ['spinach', 'handful'], ['rice', '1 cup cooked', 'his']],
       plate: [['chicken', 1], ['butternut', 2], ['onion', 0.5], ['spinach', 1]],
@@ -1417,8 +1461,9 @@ var HH = (function(){
     return r.n + ' ' + r.ings.filter(e => e[2] !== 'his').map(e => idsOf(e).map(id => { const it = ITEM[id], b = RECIPE[id] || (it && it.make && RECIPE[it.make]); return (it ? it.n : '') + ' ' + (b ? hhText(b, seen) : ''); }).join(' ')).join(' ');
   }
   // Which of your food rules a meal trips, and why, so "Doesn't fit" isn't a mystery.
-  function ruleLines(r) {
-    const { hits } = recipeHits(r), by = new Map();
+  function ruleLines(r) { return ruleLinesFrom(recipeHits(r).hits); }
+  function ruleLinesFrom(hits) {
+    const by = new Map();
     for (const h of hits) { if (h.rule.level === 'note') continue; const k = h.rule.label; if (!by.has(k)) by.set(k, { lvl: h.rule.level, why: h.rule.why, words: new Set() }); by.get(k).words.add(h.word.toLowerCase()); }
     if (!by.size) return '';
     const name = { avoid: "Doesn't fit", ask: 'Check', limit: 'Keep occasional' };
@@ -1469,6 +1514,7 @@ var HH = (function(){
       <details><summary>Ingredients and steps</summary><ul>${ingList}</ul>${r.steps ? `<p class="small" style="margin-top:6px">${esc(r.steps)}</p>` : ''}</details>
       <div class="row">
         <button class="btn sm ${inPlan ? '' : 'primary'}" data-add="${r.id}">Add to plan</button>
+        <button class="btn sm ghost" data-myver="${r.id}">${r.mine ? 'Edit' : 'Make my version'}</button>
         ${inPlan ? `<span class="small muted">In plan ×${inPlan}</span>` : ''}
       </div>
     </article>`;
@@ -1531,7 +1577,8 @@ var HH = (function(){
   function renderMeals() {
     renderBuild();
     const f = document.getElementById('meal-filter');
-    f.innerHTML = [['all', 'All'], ...TYPES].map(([k, n]) => `<button class="chip" data-filter="${k}" aria-pressed="${state.filter === k}">${esc(n)}</button>`).join('');
+    f.innerHTML = [['all', 'All'], ...TYPES, ['box', 'Recipe box']].map(([k, n]) => `<button class="chip" data-filter="${k}" aria-pressed="${state.filter === k}">${esc(n)}</button>`).join('');
+    if (state.filter === 'box') { renderBox(); return; }
     const list = Object.values(RECIPE).filter(r => state.filter === 'all' ? r.t !== 'batch' : r.t === state.filter);
     const all = list.map(r => { const nd = needs(r); return { r, buy: hardBuy(nd).length, cook: nd.cook.size, off: recipeHits(r).lvl === 'avoid' }; })
       .sort((a, b) => a.buy - b.buy || a.cook - b.cook || a.r.n.localeCompare(b.r.n));
@@ -1552,7 +1599,44 @@ var HH = (function(){
     if (!k) return;
     state.filter = k; save(); renderMeals();
   });
+  function boxCard(b) {
+    const hits = scan(b.ings.join('\n')), lines = ruleLinesFrom(hits);
+    const ad = (b.adapted || []).filter(id => RECIPE[id]);
+    return `<article class="card meal">
+      <div class="row spread"><h3>${esc(b.n)}</h3><span class="small muted">${esc(b.yields || '')}</span></div>
+      <div class="row"><span class="pill plain">${esc(BOX_TYPE[b.t] || b.t)}</span><span class="small muted">${b.src ? `<a href="${esc(b.src)}" target="_blank" rel="noopener">${esc(b.site)}</a>` : esc(b.site || '')}</span></div>
+      ${lines || '<p class="pill ok">Fits your food rules as written.</p>'}
+      ${ad.length ? `<p class="need">Your version: ${ad.map(id => `<b>${esc(RECIPE[id].n)}</b>`).join(', ')} (in Meals)</p>` : ''}
+      ${b.notes ? `<p class="small">${esc(b.notes)}</p>` : ''}
+      <details><summary>Ingredients and steps as written</summary><ul>${b.ings.map(l => `<li>${esc(l)}</li>`).join('')}</ul><p class="small" style="margin-top:6px">${esc(b.steps)}</p></details>
+      <div class="row"><button class="btn sm" data-myver="box:${b.id}">Make my version</button></div>
+    </article>`;
+  }
+  function renderBox() {
+    const fits = BOX.filter(b => worst(scan(b.ings.join('\n'))) !== 'avoid');
+    const not = BOX.filter(b => !fits.includes(b));
+    document.getElementById('meal-groups').innerHTML = `<p class="small muted">Recipes kept as written, for other people or for after the mold diet. "Make my version" opens one in Add my own meal, where you can swap things and save it as yours.</p>`
+      + [['Fits as written', fits], ['Needs changes for you', not]].filter(g => g[1].length).map(([h, xs]) =>
+        `<div class="section-h"><h2>${h}</h2><span class="small muted">${xs.length}</span></div><div class="grid">${xs.map(boxCard).join('')}</div>`).join('');
+  }
+  // Opens a recipe in "Add my own meal" so you can change it and save it as yours.
+  function openMyVersion(key) {
+    let title, type, ings, steps, editId = null;
+    if (key.startsWith('box:')) {
+      const b = BOX.find(x => x.id === key.slice(4)); if (!b) return;
+      title = b.n + ' (my version)'; type = TYPES.some(t => t[0] === b.t) ? b.t : 'snack'; ings = b.ings.slice(); steps = b.steps;
+    } else {
+      const r = RECIPE[key]; if (!r) return;
+      if (r.mine) { title = r.n; ings = r.ings.map(e => e[1]); editId = r.id; }
+      else { title = r.n + ' (my version)'; ings = r.ings.filter(e => e[2] !== 'his').map(e => `${e[1]} ${idsOf(e).map(id => ITEM[id]?.n || id).join(' or ')}${e[2] === 'opt' ? ' (optional)' : ''}`); }
+      type = r.t === 'batch' ? 'dinner' : r.t; steps = r.steps || '';
+    }
+    imp.title = title; imp.type = type; imp.ings = ings; imp.steps = steps; imp.editId = editId;
+    showTab('add'); renderImport();
+    setTimeout(() => document.getElementById('imp-result').scrollIntoView({ block: 'start' }), 50);
+  }
   document.getElementById('meal-groups').addEventListener('click', e => {
+    if (e.target.dataset.myver) { openMyVersion(e.target.dataset.myver); return; }
     const id = e.target.dataset.add;
     if (!id) return;
     state.plan[id] = (state.plan[id] || 0) + 1;
@@ -1869,7 +1953,7 @@ var HH = (function(){
   }
   document.getElementById('new-ings').addEventListener('input', checkNew);
   newType.addEventListener('change', checkNew);
-  function saveMeal(n, type, lines, steps) {
+  function saveMeal(n, type, lines, steps, editId) {
     const ings = lines.map(l => {
       let id = matchLine(l);
       if (!id) {
@@ -1880,7 +1964,9 @@ var HH = (function(){
       }
       return [id, l];
     });
-    state.mine.push({ id: 'my_' + Date.now().toString(36), n, t: type, ings, steps, mine: 1 });
+    const old = editId && state.mine.findIndex(r => r.id === editId);
+    if (editId && old >= 0) state.mine[old] = { ...state.mine[old], n, t: type, ings, steps };
+    else state.mine.push({ id: 'my_' + Date.now().toString(36), n, t: type, ings, steps, mine: 1 });
     save(); rebuild(); render(); toast(`Saved ${n}. It's in the Meals tab now`);
   }
   document.getElementById('btn-save-meal').addEventListener('click', () => {
@@ -1893,9 +1979,10 @@ var HH = (function(){
   });
   function renderMine() {
     document.getElementById('my-meals').innerHTML = state.mine.length ? state.mine.map(r => `<div class="plan-row"><div><b>${esc(r.n)}</b> <span class="small muted">${esc(TYPE_NAME[r.t])} · ${r.ings.length} ingredients</span></div>
-      <button class="btn sm ghost" data-del-meal="${r.id}">Delete</button></div>`).join('') : '<p class="empty">Meals you add show up here and in the Meals tab.</p>';
+      <span class="row" style="gap:6px"><button class="btn sm ghost" data-myver="${r.id}">Edit</button><button class="btn sm ghost" data-del-meal="${r.id}">Delete</button></span></div>`).join('') : '<p class="empty">Meals you add show up here and in the Meals tab.</p>';
   }
   document.getElementById('my-meals').addEventListener('click', e => {
+    if (e.target.dataset.myver) { openMyVersion(e.target.dataset.myver); return; }
     const id = e.target.dataset.delMeal;
     if (!id || !confirm('Delete this meal?')) return;
     state.mine = state.mine.filter(r => r.id !== id);
@@ -1907,6 +1994,7 @@ var HH = (function(){
   // Safe swaps by the word that was flagged, then by rule label. 'leave out' drops the ingredient line.
   const SUB_WORD = [
     [/^lemon juice$/, ['lime juice']],
+    [/^(apple cider vinegar|cider vinegar|vinegar)$/, ['lime juice', 'leave out']],
     [/^lemon (zest|peel)$/, ['lime zest']],
     [/^lemons?$/, ['lime', 'sumac']],
     [/^carrots?$/, ['sweet potato', 'butternut squash', 'beets']],
@@ -2053,7 +2141,7 @@ var HH = (function(){
       <textarea id="imp-ings" style="min-height:120px">${esc(imp.ings.join('\n'))}</textarea>
       <h3>Steps</h3>
       <textarea id="imp-steps" style="min-height:100px">${esc(imp.steps)}</textarea>
-      <div class="row"><button class="btn primary" id="btn-imp-save">Save as my meal</button>
+      <div class="row"><button class="btn primary" id="btn-imp-save">${imp.editId ? 'Save changes' : 'Save as my meal'}</button>
         ${issues.some(x => x.rule.level === 'avoid') ? '<span class="small muted">Some things are still marked Avoid. You can save anyway if you know they work for you.</span>' : ''}</div>`;
     el._issues = issues;
   }
@@ -2070,7 +2158,7 @@ var HH = (function(){
     runImport(t);
   });
   document.getElementById('btn-imp-clear').addEventListener('click', () => {
-    document.getElementById('imp-text').value = ''; imp.ings = []; imp.steps = ''; imp.title = ''; renderImport();
+    document.getElementById('imp-text').value = ''; imp.ings = []; imp.steps = ''; imp.title = ''; imp.editId = null; renderImport();
   });
   document.getElementById('imp-file').addEventListener('change', async e => {
     const f = e.target.files[0];
@@ -2112,8 +2200,8 @@ var HH = (function(){
     }
     if (b.id === 'btn-imp-save') {
       if (!imp.title.trim() || !imp.ings.length) { toast('Give it a name and at least one ingredient'); return; }
-      saveMeal(imp.title.trim(), imp.type, imp.ings, imp.steps.trim());
-      document.getElementById('imp-text').value = ''; imp.ings = []; imp.steps = ''; imp.title = '';
+      saveMeal(imp.title.trim(), imp.type, imp.ings, imp.steps.trim(), imp.editId);
+      document.getElementById('imp-text').value = ''; imp.ings = []; imp.steps = ''; imp.title = ''; imp.editId = null;
       renderImport();
     }
   });
