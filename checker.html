@@ -219,7 +219,9 @@ footer a, .lede a { color: var(--accent); }
       <div class="row">
         <button class="btn" id="day-sample">Load the plan's sample day</button>
         <button class="btn ghost" id="day-clear">Clear day</button>
+        <button class="btn primary" id="day-fix">Fix this day from my pantry</button>
       </div>
+      <div id="day-fixout" class="flags"></div>
     </div>
     <div class="summary" id="day-summary"></div>
     <div class="flags" id="day-flags"></div>
@@ -239,7 +241,7 @@ footer a, .lede a { color: var(--accent); }
   // level: avoid | ask | limit | note | ok (ok consumes the words so later rules skip them)
   // ---------- Your rules, set on all systems you's "My rules" page. Built-in values fill anything missing. ----------
   const USER_RULES = (() => { try { const h = JSON.parse(localStorage.getItem('dh-me-v1') || 'null'); return h && h.rules && typeof h.rules === 'object' ? h.rules : null; } catch (e) { return null; } })();
-  const DEFAULTS = { carbsPerDay: null, carbsPerMeal: null, glLow: 10, glHigh: 20, fiberGoal: 30, ramp: [15, 20, 25, 30], beansPerDay: 1, nutsSeedsTbsp: 2, oilTspPerMeal: 2, spacingMin: 120 };
+  const DEFAULTS = { carbsPerDay: null, carbsPerMeal: null, glLow: 10, glHigh: 20, fiberGoal: 30, ramp: [15, 20, 25, 30], beansPerDay: 1, nutsSeedsTbsp: 2, oilTspPerMeal: 2, spacingMin: 120, vegPerDay: 5 };
   const R = { ...DEFAULTS };
   if (USER_RULES) for (const k of Object.keys(DEFAULTS)) {
     const v = USER_RULES[k];
@@ -810,6 +812,17 @@ Dinner: Baked salmon with roasted sweet potato, broccoli, and a squeeze of lemon
   const glBand = gl => gl <= R.glLow ? ['ok', 'Low'] : gl < R.glHigh ? ['limit', 'Medium'] : ['avoid', 'High'];
   const qtyText = q => { const w = Math.floor(q), r = q - w; const fr = { 0.25: '¼', 0.5: '½', 0.75: '¾' }[r] || (r ? fmt(r, 2) : ''); return (w || !fr ? String(w || (fr ? '' : 0)) : '') + fr; };
 
+  const P2C = { salmoncan: ['salmon'], trout: ['salmon'], m_shredded: ['chicken'], m_bison: ['bison'], m_patties: ['bison'], driedbeans: ['anasazi'], m_beans: ['anasazi'],
+    m_quinoa: ['quinoa'], m_buckwheat: ['buckwheat'], piepumpkin: ['pumpkin'], pumpkincan: ['pumpkin'], chard: ['spinachc'], spinach: ['spinach', 'spinachc'], leeks: ['onion'],
+    ginger: ['garlic'], raspberries: ['raspberries', 'blackberries'], m_roastveg: ['sweetpotato', 'beets'], turmeric: ['cumin'], oregano: ['cumin'], coriander: ['cumin'] };
+  const FRUIT = new Set(['raspberries', 'blackberries', 'strawberries', 'blueberries', 'persimmon', 'kiwi', 'banana', 'grapefruit', 'cranberries']);
+  const STARCH = new Set(['quinoa', 'buckwheat', 'brownrice', 'wildrice', 'millet', 'amaranth', 'oats', 'sweetpotato', 'butternut', 'acorn', 'pumpkin', 'peas', 'beets']);
+  const STAPLE = new Set(['oliveoil', 'sesameoil', 'lime', 'garlic', 'cumin', 'cilantro', 'dandeliontea']);
+  const NO_ADD = new Set(['psyllium', 'inulin', 'stevia', 'agave', 'datesyrup', 'chickpeaflour', 'oats']);
+  const roleOf = fd => fd.P ? 'protein' : fd.B ? 'bean' : fd.N ? 'seed' : fd.F ? 'oil' : FRUIT.has(fd.id) ? 'fruit' : STARCH.has(fd.id) ? 'starch' : STAPLE.has(fd.id) ? 'staple' : NO_ADD.has(fd.id) ? 'extra' : 'veg';
+  // Non-starchy vegetable servings: 1/2 cup cooked or 1 cup raw leafy greens is one serving (Cardiometabolic guide).
+  const VEG_SERV = { zucchini: 2, cucumber: 2, snappeas: 2, lettuce: 2, olives: 0.5 };
+  const vegServ = meals => meals.reduce((a, m) => a + m.items.reduce((b, it) => { const fd = it.id ? BY_ID[it.id] : null; return b + (fd && roleOf(fd) === 'veg' && (fd.f || 0) > 0.3 ? it.q * (VEG_SERV[fd.id] || 1) : 0); }, 0), 0);
   function renderDay() {
     document.getElementById('week').value = state.week;
     const target = R.ramp[(+state.week || 4) - 1];
@@ -821,6 +834,7 @@ Dinner: Baked salmon with roasted sweet potato, broccoli, and a squeeze of lemon
       <div class="stat${day.fiber < target * 0.85 ? ' warn' : ''}"><span class="k">Fiber</span><span class="v">${fmt(day.fiber, 0)} <small>of ${target} g</small></span><div class="bar"><i style="width:${pct}%"></i></div></div>
       <div class="stat${day.B > R.beansPerDay ? ' warn' : ''}"><span class="k">Bean servings</span><span class="v">${fmt(day.B)} <small>of ${fmt(R.beansPerDay)}</small></span><span class="small muted">Beans, chickpeas, edamame, tofu</span></div>
       <div class="stat${day.N > R.nutsSeedsTbsp ? ' warn' : ''}"><span class="k">Nuts and seeds</span><span class="v">${fmt(day.N)} <small>of ${fmt(R.nutsSeedsTbsp)} tbsp</small></span><span class="small muted">Chia and flax count</span></div>
+      <div class="stat${vegServ(state.meals) < R.vegPerDay ? ' warn' : ''}"><span class="k">Non-starchy veg</span><span class="v">${fmt(vegServ(state.meals))} <small>of ${fmt(R.vegPerDay)} servings</small></span><span class="small muted">½ cup cooked or 1 cup raw leafy</span></div>
       <div class="stat"><span class="k">Glycemic load</span><span class="v">${fmt(day.gl, 0)} <small>for the day</small></span><span class="small muted">Per-meal bands below</span></div>
       ${R.carbsPerDay != null ? `<div class="stat${Math.round(day.carbs) > R.carbsPerDay ? ' warn' : ''}"><span class="k">Total carbs</span><span class="v">${fmt(day.carbs, 0)} <small>of ${fmt(R.carbsPerDay, 0)} g</small></span><span class="small muted">Your daily target</span></div>` : ''}`;
     const df = [];
@@ -932,6 +946,119 @@ Dinner: Baked salmon with roasted sweet potato, broccoli, and a squeeze of lemon
   document.getElementById('week').onchange = e => { state.week = e.target.value; save(); renderDay(); };
   document.getElementById('day-sample').onclick = () => { state.meals = JSON.parse(JSON.stringify(SAMPLE)); save(); renderDay(); };
   document.getElementById('day-clear').onclick = () => { state.meals = blankDay(); save(); renderDay(); };
+
+  // ---------- Fix this day from my pantry (11/28) ----------
+  // Swaps out foods that break your rules or that you don't have, adds protein where carbs have none,
+  // then adds fiber from your pantry until you reach this week's goal, inside your limits for beans,
+  // nuts and seeds, oil, carbs and glycemic load. Uses the Pantry page's ticks (same app).
+  function pantryFoods() {
+    let p = null; try { p = JSON.parse(localStorage.getItem('pantryplanner.v1') || 'null'); } catch (e) {}
+    const ids = Object.keys((p && p.pantry) || {}).filter(k => p.pantry[k]);
+    const out = new Set();
+    for (const id of ids) for (const c of (P2C[id] || [id])) if (BY_ID[c]) out.add(c);
+    return out;
+  }
+  const mealOK = (name, role) => {
+    const n = name.toLowerCase();
+    if (role === 'fruit') return /breakfast|snack/.test(n);
+    if (role === 'bean' || role === 'starch') return /lunch|dinner/.test(n);
+    if (role === 'veg') return !/snack/.test(n) || true;
+    return true;
+  };
+  function fixDay() {
+    const have = pantryFoods();
+    if (!have.size) return { msg: 'Tick what you have on the Pantry page first, then try again.', changes: [] };
+    const target = R.ramp[(+state.week || 4) - 1];
+    const before = JSON.parse(JSON.stringify(state.meals));
+    const changes = [];
+    const usable = id => { const fd = BY_ID[id]; return fd && (!fd.s || fd.s === 'ok' || fd.s === 'note'); };
+    const dayT = () => state.meals.map(mealTotals).reduce((a, t) => { for (const k of ['fiber', 'B', 'N']) a[k] += t[k]; return a; }, { fiber: 0, B: 0, N: 0 });
+    const fitsMeal = mi => { const t = mealTotals(state.meals[mi]); return t.gl < R.glHigh && t.F <= R.oilTspPerMeal && (R.carbsPerMeal == null || Math.round(t.carbs) <= R.carbsPerMeal); };
+    const fitsDay = () => { const d = dayT(); return d.B <= R.beansPerDay + 1e-9 && d.N <= R.nutsSeedsTbsp + 1e-9 && d.fiber <= target + 5; };
+    const tryChange = (mi, apply, undo) => { apply(); if (fitsMeal(mi) && fitsDay()) return true; undo(); return false; };
+    const nameOf = id => BY_ID[id].name;
+    // 1. Swap foods that break your rules, or that aren't in your pantry.
+    state.meals.forEach((meal, mi) => {
+      for (let ii = meal.items.length - 1; ii >= 0; ii--) {
+        const it = meal.items[ii]; if (!it.id) continue;
+        const fd = BY_ID[it.id], role = roleOf(fd);
+        const bad = fd.s === 'avoid', missing = !have.has(it.id) && !STAPLE.has(it.id);
+        if (fd.s === 'ask' && !bad) changes.push(`${meal.name}: ${fd.name} is "check first" on your rules. Kept it; leave it out if you're unsure.`);
+        if (!bad && !missing) continue;
+        if (role === 'staple') { if (bad) { meal.items.splice(ii, 1); changes.push(`${meal.name}: took out ${nameOf(it.id)} (it breaks your rules).`); } continue; }
+        const why = bad ? 'breaks your rules' : "isn't in your pantry";
+        const subs = [...have].filter(id => id !== it.id && usable(id) && roleOf(BY_ID[id]) === role && !meal.items.some(x => x.id === id))
+          .sort((a, b) => (BY_ID[b].f || 0) - (BY_ID[a].f || 0));
+        let done = false;
+        for (const s of subs) {
+          const old = meal.items[ii];
+          if (tryChange(mi, () => { meal.items[ii] = { id: s, q: old.q }; }, () => { meal.items[ii] = old; })) { changes.push(`${meal.name}: swapped ${nameOf(old.id)} for ${nameOf(s)} (${nameOf(old.id).toLowerCase()} ${why}).`); done = true; break; }
+        }
+        if (!done) { if (bad) { meal.items.splice(ii, 1); changes.push(`${meal.name}: took out ${nameOf(it.id)} (it ${why}, and nothing like it is in your pantry).`); }
+          else changes.push(`${meal.name}: kept ${nameOf(it.id)}, but it isn't in your pantry. Add it to your grocery list, or swap it yourself.`); }
+      }
+    });
+    // 2. Carbs with no protein: add one from the pantry.
+    state.meals.forEach((meal, mi) => {
+      const t = mealTotals(meal);
+      if (t.avail > 15 && !t.P && !t.B) {
+        const p = [...have].find(id => usable(id) && roleOf(BY_ID[id]) === 'protein');
+        if (p) { meal.items.push({ id: p, q: 1 }); changes.push(`${meal.name}: added ${nameOf(p)} so the carbs come with protein.`); }
+      }
+    });
+    // 3. Non-starchy vegetables: every lunch and dinner gets some, then top up to your daily servings.
+    const vegIds = [...have].filter(id => usable(id) && roleOf(BY_ID[id]) === 'veg' && (BY_ID[id].f || 0) > 0.3).sort((a, b) => (BY_ID[b].f || 0) - (BY_ID[a].f || 0));
+    const addVeg = mi => { const meal = state.meals[mi];
+      for (const id of vegIds) { const ex = meal.items.find(x => x.id === id); if (ex && ex.q >= 2) continue;
+        if (tryChange(mi, () => { if (ex) ex.q += 1; else meal.items.push({ id, q: 1 }); }, () => { if (ex) ex.q -= 1; else meal.items.pop(); })) {
+          changes.push(`${meal.name}: ${ex ? 'more' : 'added'} ${nameOf(id)} (1 × ${BY_ID[id].unit}, vegetables).`); return true; } }
+      return false; };
+    state.meals.forEach((meal, mi) => { if (/lunch|dinner/i.test(meal.name) && vegServ([meal]) < 1) addVeg(mi); });
+    for (let n = 0; n < 12 && vegServ(state.meals) < R.vegPerDay; n++) {
+      const order = state.meals.map((m, mi) => [mi, vegServ([m])]).filter(([mi]) => !/snack/i.test(state.meals[mi].name)).sort((a, b) => a[1] - b[1]);
+      if (!order.some(([mi]) => addVeg(mi))) break;
+    }
+    // 4. Fiber: add or top up the best fiber food that still fits, until this week's goal.
+    for (let n = 0; n < 30 && dayT().fiber < target - 0.5; n++) {
+      let best = null;
+      state.meals.forEach((meal, mi) => {
+        for (const id of have) {
+          const fd = BY_ID[id], role = roleOf(fd);
+          if (!usable(id) || NO_ADD.has(id) || ['protein', 'oil', 'staple', 'extra'].includes(role) || (fd.f || 0) < 0.5 || !mealOK(meal.name, role)) continue;
+          const step = role === 'seed' || role === 'bean' ? 0.5 : role === 'veg' ? 1 : 0.5;
+          const ex = meal.items.find(x => x.id === id), cap = role === 'veg' ? 3 : role === 'seed' ? 2 : 1.5;
+          if (ex && ex.q + step > cap) continue;
+          const gl0 = mealTotals(meal).gl, f0 = dayT().fiber;
+          const apply = () => { if (ex) ex.q += step; else meal.items.push({ id, q: step }); };
+          const undo = () => { if (ex) ex.q -= step; else meal.items.pop(); };
+          apply();
+          const ok = fitsMeal(mi) && fitsDay(), gain = dayT().fiber - f0, glUp = mealTotals(meal).gl - gl0;
+          undo();
+          if (!ok || gain <= 0) continue;
+          const score = gain / (1 + Math.max(0, glUp)) + (role === 'veg' ? 0.5 : 0) + (ex ? 0.2 : 0);
+          if (!best || score > best.score) best = { score, mi, id, step, ex: !!ex, gain };
+        }
+      });
+      if (!best) break;
+      const meal = state.meals[best.mi], ex = meal.items.find(x => x.id === best.id);
+      if (ex) ex.q += best.step; else meal.items.push({ id: best.id, q: best.step });
+      changes.push(`${meal.name}: ${best.ex ? 'more' : 'added'} ${nameOf(best.id)} (${qtyText(best.step)} × ${BY_ID[best.id].unit}, +${fmt(best.gain)} g fiber).`);
+    }
+    const d = dayT();
+    const v = vegServ(state.meals);
+    const msg = (d.fiber >= target - 0.5 ? `Fiber is at ${fmt(d.fiber, 0)} of ${target} g` : `Fiber got to ${fmt(d.fiber, 0)} of ${target} g (your pantry ran out of fiber foods that fit your limits)`)
+      + (v >= R.vegPerDay ? `, and vegetables at ${fmt(v)} of ${fmt(R.vegPerDay)} servings.` : `. Vegetables got to ${fmt(v)} of ${fmt(R.vegPerDay)} servings: tick more vegetables in your pantry or add them to your list.`);
+    return { msg, changes, before };
+  }
+  let FIX_UNDO = null;
+  document.getElementById('day-fix').onclick = () => {
+    const r = fixDay(); FIX_UNDO = r.before || null; save(); renderDay();
+    const merged = [];
+    for (const c of r.changes) { const m = /^(.*): (more|added) (.*) \((.*) × (.*), \+([\d.]+) g fiber\)\.$/.exec(c); const last = merged[merged.length - 1];
+      if (m && last && last.k === m[1] + m[3]) { last.n += 1; last.g += +m[6]; last.t = `${m[1]}: ${last.verb} ${m[3]} (+${fmt(last.g)} g fiber).`; } else merged.push(m ? { k: m[1] + m[3], verb: m[2], n: 1, g: +m[6], t: c } : { t: c }); }
+    document.getElementById('day-fixout').innerHTML = `<div class="note" style="border-color:var(--ok)"><b>${esc(r.msg)}</b>${merged.length ? `<ul style="margin:6px 0 0 18px;padding:0">${merged.map(x => `<li>${esc(x.t)}</li>`).join('')}</ul>` : ''}${FIX_UNDO ? '<div style="margin-top:8px"><button class="btn ghost" id="day-fixundo">Undo</button></div>' : ''}</div>`;
+  };
+  document.getElementById('day-fixout').addEventListener('click', e => { if (e.target.id === 'day-fixundo' && FIX_UNDO) { state.meals = FIX_UNDO; FIX_UNDO = null; save(); renderDay(); document.getElementById('day-fixout').innerHTML = ''; } });
 
   // ---------- Fix a meal: swap, trim, and add suggestions from the ingredient list ----------
   const FIX_EXAMPLE = 'oatmeal, dates, walnuts, sunflower seeds, pumpkin seeds, flaxseed, chia seeds';
