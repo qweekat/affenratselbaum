@@ -166,8 +166,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.47.0";
+const APP_VERSION = "1.48.0";
 const CHANGES = [
+  {v:"1.48.0", date:"2026-11-28", items:["My rules > Mold diet: untick \"I'm on the mold diet\" when you're done, and the mold-only foods stop being flagged."]},
   {v:"1.47.0", date:"2026-11-28", items:["My rules: new Mold diet box. Tier 1 is always on; tick \"Also follow Tier 2\" to also avoid fruit, starchy vegetables, grains, fermented foods, shelled nuts, vinegar or sugar condiments and soured milk everywhere."]},
   {v:"1.46.1", date:"2026-11-28", items:["My rules: new \"Built-in lists\" box shows the mold diet (Break the Mold Tier 1), allergy and keep-small lists that are always on."]},
   {v:"1.46.0", date:"2026-11-28", items:["Pantry > Meals: \"Build a meal from what I have\" mixes a protein, vegetables, a starch and a flavor from what you ticked, using only foods that fit your rules. Save one and it joins your meals and Today's pantry picks.","Each meal card says which food rule it trips and why.","Chia berry jam is now Chia berry spread, so it isn't flagged as a sweet.","Grocery mode: Done shopping and ✕ sit below the iPhone clock, and the Grocery button reopens it."]},
@@ -904,6 +905,20 @@ const MOLD_T2_WORDS = [
   {word:"ketchup|bbq sauce|barbecue sauce|relish|mustard|hot sauce|salad dressing|dressing|chutney|teriyaki", label:"Vinegar or sugar condiments (Tier 2)", level:"avoid"},
   {word:"sour cream|buttermilk|creme fraiche|crème fraîche|soured milk", label:"Soured milk products, yogurt is fine (Tier 2)", level:"avoid"}
 ];
+
+const MOLD_ONLY_OK = [
+  {word:"yeast|nutritional yeast", label:"Yeast"}, {word:"corn|corn tortilla|corn tortillas|polenta|grits", label:"Corn"},
+  {word:"potato|potatoes", label:"Potatoes"}, {word:"pickle|pickles|pickled", label:"Pickled foods"}, {word:"vinegar", label:"Vinegar"},
+  {word:"grape|grapes", label:"Grapes"}, {word:"dried fruit|raisins|dates|prunes", label:"Dried fruit"},
+  {word:"aged cheese|parmesan|cheddar|gouda|manchego|pecorino", label:"Aged cheese"}, {word:"peanut|peanuts|peanut butter", label:"Peanuts"},
+  {word:"kombucha|cider", label:"Fermented drinks"}, {word:"sourdough", label:"Sourdough"}
+];
+function setMoldDiet(on){
+  S.rules.ok = (S.rules.ok||[]).filter(x=>!x.moldOff);
+  if(!on){ S.rules.ok = S.rules.ok.concat(MOLD_ONLY_OK.map(x=>Object.assign({}, x, {moldOff:true}))); if(S.moldTier2) setMoldTier2(false); }
+  S.moldOff = !on;
+  logRule("Mold diet "+(on?"on":"off"));
+}
 function setMoldTier2(on){
   S.rules.extra = (S.rules.extra||[]).filter(x=>!x.tier2);
   if(on) S.rules.extra = S.rules.extra.concat(MOLD_T2_WORDS.map(x=>Object.assign({}, x, {tier2:true, why:MOLD_T2_WHY})));
@@ -2481,8 +2496,8 @@ function renderRules(){
     <div class="grid2">${[0,1,2,3].map(i=>`<label>Week ${i+1}${i===3?" and on":""}<input type="number" min="0" id="ramp-${i}" data-ramp="${i}" value="${esc(R.ramp[i])}"></label>`).join("")}</div>
   </section>
   <section class="panel" id="moldPanel"><h2>Mold diet</h2>
-    <p class="muted" style="margin:0">Tier 1 of Break the Mold is always on (see Built-in lists). Tier 2 is stricter. Turn it on if your provider wants you on it.</p>
-    <label style="display:flex;gap:8px;align-items:flex-start;font-weight:400"><input type="checkbox" data-moldtier2="1" ${S.moldTier2?"checked":""}> <span><b>Also follow Tier 2</b><br><small class="muted">Avoids all fruit, starchy vegetables (sweet potato, squash, pumpkin, beets), all grains (quinoa and buckwheat too), fermented foods, shelled nuts, vinegar or sugar condiments, and soured milk (yogurt is fine). This cuts most of your fiber foods, so psyllium and chia matter more. Lime juice for flavor still counts as fine.</small></span></label>
+    <label style="display:flex;gap:8px;align-items:flex-start;font-weight:400"><input type="checkbox" data-moldon="1" ${S.moldOff?"":"checked"}> <span><b>I'm on the mold diet (Break the Mold Tier 1)</b><br><small class="muted">Untick when you're done. Yeast, corn, potatoes, pickles, vinegar, grapes, dried fruit, aged cheese, peanuts, kombucha and cider stop being flagged. Sweets, juice, alcohol, black tea, mushrooms and cantaloupe stay flagged, since they're on your other lists too (blood sugar, liver, allergies).</small></span></label>
+    ${S.moldOff?"":`<label style="display:flex;gap:8px;align-items:flex-start;font-weight:400"><input type="checkbox" data-moldtier2="1" ${S.moldTier2?"checked":""}> <span><b>Also follow Tier 2</b><br><small class="muted">Avoids all fruit, starchy vegetables (sweet potato, squash, pumpkin, beets), all grains (quinoa and buckwheat too), fermented foods, shelled nuts, vinegar or sugar condiments, and soured milk (yogurt is fine). This cuts most of your fiber foods, so psyllium and chia matter more. Lime juice for flavor still counts as fine.</small></span></label>`}
   </section>
   <section class="panel" id="flarePanel"><h2>Flare-up mode</h2>
     <p class="muted" style="margin:0">Beans, soy, nuts, seeds, chocolate and oats are high in arginine, which some people limit during a flare. Turn this on for a while to flag them everywhere, including the meal checker and the shopping list, and to swap the meals that use them. It turns itself off after the last day.</p>
@@ -2496,7 +2511,7 @@ function renderRules(){
   </section>
   <details class="panel"><summary><b>Built-in lists</b> <small class="muted">always on: mold diet, allergies, keep small</small></summary>
     <p class="muted" style="margin:0">These come with your plan and are checked everywhere: meals, pantry, shopping and the meal checker. To let one through, add it under "Foods that are fine" below.</p>
-    ${[["Mold diet (Break the Mold, Tier 1): avoid","mold"],...(S.moldTier2?[["Mold diet Tier 2 (on): avoid","t2"]]:[]),["Allergies and your avoid list","other"],["Keep small","small"]].map(([h,k])=>`<p style="margin:0"><b>${h}:</b> ${esc((k==="t2"?MOLD_T2_WORDS.map(x=>x.label.replace(/ \(Tier 2\)$/,"")):BUILTIN_LISTS[k]).join(", "))}</p>`).join("")}
+    ${[[S.moldOff?"Mold diet (off now; only the ones on other lists still flag)":"Mold diet (Break the Mold, Tier 1): avoid","mold"],...(S.moldTier2?[["Mold diet Tier 2 (on): avoid","t2"]]:[]),["Allergies and your avoid list","other"],["Keep small","small"]].map(([h,k])=>`<p style="margin:0"><b>${h}:</b> ${esc((k==="t2"?MOLD_T2_WORDS.map(x=>x.label.replace(/ \(Tier 2\)$/,"")):BUILTIN_LISTS[k]).join(", "))}</p>`).join("")}
   </details>
   <section class="panel"><h2>Foods to flag</h2>
     <p class="muted" style="margin:0">Add something new that bothers you, or something to keep small. Your plan's built-in allergy and mold lists stay as they are.</p>
@@ -2508,7 +2523,7 @@ function renderRules(){
   </section>
   <section class="panel"><h2>Foods that are fine</h2>
     <p class="muted" style="margin:0">Things you know you tolerate. These are never flagged, even if a built-in rule would catch them.</p>
-    ${(R.ok||[]).length?`<div class="chips">${R.ok.map((x,i)=>`<span class="chip">${esc(x.label||x.word)} <button class="linkbtn" style="padding:0 0 0 6px" data-ruledel="ok:${i}" aria-label="Remove ${esc(x.label||x.word)}">✕</button></span>`).join("")}</div>`:""}
+    ${(R.ok||[]).some(x=>!x.moldOff)?`<div class="chips">${R.ok.map((x,i)=>x.moldOff?"":`<span class="chip">${esc(x.label||x.word)} <button class="linkbtn" style="padding:0 0 0 6px" data-ruledel="ok:${i}" aria-label="Remove ${esc(x.label||x.word)}">✕</button></span>`).join("")}</div>`:""}
     <div class="grid2"><label>Food<input type="text" id="rk-word" placeholder="e.g. lion's mane"></label></div>
     <div><button class="btn ghost" id="ruleAddOk">Add as fine</button></div>
   </section>
@@ -2697,6 +2712,7 @@ view.addEventListener("change",e=>{
     for(const f of ["ids","text"]) if(o[f] && !Object.keys(o[f]).length) delete o[f];
     if(!Object.keys(o).length) delete D[t.dataset.day];
     save(); render(); toast("Saved"); return; }
+  if(t.dataset.moldon){ setMoldDiet(t.checked); save(); render(); toast(t.checked?"Mold diet on":"Mold diet off"); return; }
   if(t.dataset.moldtier2){ setMoldTier2(t.checked); save(); render(); toast(t.checked?"Tier 2 is on":"Back to Tier 1 only"); return; }
   if(t.dataset.flareuntil){ if(t.value){ S.flare.until=t.value; for(const x of S.rules.extra) if(x.flare) x.why="High in arginine. Flare-up mode through "+t.value.slice(5).replace("-","/")+"."; logRule("Flare-up mode now through "+t.value); save(); } return; }
   if(t.dataset.missSet){ const k=t.dataset.missSet, old=S.miss[k]; S.miss[k]= t.type==="number" ? Number(t.value) : t.value; logRule("Missed items, "+MISS_FIELDS.find(x=>x[0]===k)[1].toLowerCase()+": "+old+" → "+S.miss[k]); save(); return; }
