@@ -451,7 +451,7 @@ var HH = (function(){
     ["shellfish","Shellfish","shellfish|shrimps?|prawns?|crabs?|lobsters?|crawfish|crayfish|scallops?|clams?|mussels?|oysters?",["fda-allergens"]],
     ["sesame","Sesame","sesame|tahini|hummus|halva|za.?atar",["fda-allergens"]]
   ];
-  var LEVELS = {avoid:"Avoid", limit:"Limit", ask:"Ask first"};
+  var LEVELS = {avoid:"Avoid", limit:"Keep occasional", ask:"Ask first"};
 
   function ymd(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
   function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
@@ -663,7 +663,7 @@ var HH = (function(){
 })();
   const HHH = HH.fromStorage('dh-me-v1'); HH.style();
 /*HH-END*/
-  const LEVELS = { avoid: 'Avoid', ask: 'Check', limit: 'Limit', note: 'Note' };
+  const LEVELS = { avoid: 'Avoid', ask: 'Check', limit: 'Keep occasional', note: 'Note' };
   const ORDER = ['avoid', 'ask', 'limit', 'note'];
   function scan(text) {
     const taken = [], hits = [];
@@ -1394,7 +1394,7 @@ var HH = (function(){
     const { hits } = recipeHits(r), by = new Map();
     for (const h of hits) { if (h.rule.level === 'note') continue; const k = h.rule.label; if (!by.has(k)) by.set(k, { lvl: h.rule.level, why: h.rule.why, words: new Set() }); by.get(k).words.add(h.word.toLowerCase()); }
     if (!by.size) return '';
-    const name = { avoid: "Doesn't fit", ask: 'Check', limit: 'Limit' };
+    const name = { avoid: "Doesn't fit", ask: 'Check', limit: 'Keep occasional' };
     return [...by].sort((a, b) => ORDER.indexOf(a[1].lvl) - ORDER.indexOf(b[1].lvl)).map(([label, x]) =>
       `<p class="need small"><span class="pill ${x.lvl === 'avoid' ? 'avoid' : 'limit'}">${name[x.lvl] || x.lvl}</span> <b>${esc(label)}</b> (${esc([...x.words].join(', '))})${x.why ? `. <span class="muted">${esc(x.why)}</span>` : ''}</p>`).join('');
   }

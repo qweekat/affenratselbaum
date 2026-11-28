@@ -360,7 +360,7 @@ var HH = (function(){
     ["shellfish","Shellfish","shellfish|shrimps?|prawns?|crabs?|lobsters?|crawfish|crayfish|scallops?|clams?|mussels?|oysters?",["fda-allergens"]],
     ["sesame","Sesame","sesame|tahini|hummus|halva|za.?atar",["fda-allergens"]]
   ];
-  var LEVELS = {avoid:"Avoid", limit:"Limit", ask:"Ask first"};
+  var LEVELS = {avoid:"Avoid", limit:"Keep occasional", ask:"Ask first"};
 
   function ymd(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
   function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
@@ -573,7 +573,7 @@ var HH = (function(){
   const HHH = HH.fromStorage('dh-me-v1'); HH.style();
 /*HH-END*/
 
-  const LEVELS = { avoid: 'Avoid', ask: 'Ask first', limit: 'Limit', note: 'Note' };
+  const LEVELS = { avoid: 'Avoid', ask: 'Ask first', limit: 'Keep occasional', note: 'Note' };
   const ORDER = ['avoid', 'ask', 'limit', 'note'];
 
   function scan(text) {

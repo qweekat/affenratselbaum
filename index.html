@@ -166,8 +166,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.48.0";
+const APP_VERSION = "1.48.1";
 const CHANGES = [
+  {v:"1.48.1", date:"2026-11-28", items:["\"Limit\" and \"Keep small\" are now called \"Keep occasional\"."]},
   {v:"1.48.0", date:"2026-11-28", items:["My rules > Mold diet: untick \"I'm on the mold diet\" when you're done, and the mold-only foods stop being flagged."]},
   {v:"1.47.0", date:"2026-11-28", items:["My rules: new Mold diet box. Tier 1 is always on; tick \"Also follow Tier 2\" to also avoid fruit, starchy vegetables, grains, fermented foods, shelled nuts, vinegar or sugar condiments and soured milk everywhere."]},
   {v:"1.46.1", date:"2026-11-28", items:["My rules: new \"Built-in lists\" box shows the mold diet (Break the Mold Tier 1), allergy and keep-small lists that are always on."]},
@@ -247,7 +248,7 @@ var HH = (function(){
     ["shellfish","Shellfish","shellfish|shrimps?|prawns?|crabs?|lobsters?|crawfish|crayfish|scallops?|clams?|mussels?|oysters?",["fda-allergens"]],
     ["sesame","Sesame","sesame|tahini|hummus|halva|za.?atar",["fda-allergens"]]
   ];
-  var LEVELS = {avoid:"Avoid", limit:"Limit", ask:"Ask first"};
+  var LEVELS = {avoid:"Avoid", limit:"Keep occasional", ask:"Ask first"};
 
   function ymd(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
   function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
@@ -483,7 +484,7 @@ var HHUI = (function(){
       +'<label>What they add on their own plate<input type="text" id="hh-t-adds" maxlength="200" value="'+esc(p?p.adds:"")+'" placeholder="e.g. potatoes or rice"></label></div>'
       +'<div><b>Leave out of shared pots</b>'+presetBoxes(f)+'</div>'
       +'<label>Other foods to leave out<input type="text" id="hh-t-avoid" value="'+esc(f.avoid||"")+'" placeholder="Commas between, e.g. mushrooms, olives"></label>'
-      +'<label>Foods to keep small<input type="text" id="hh-t-limit" value="'+esc(f.limit||"")+'" placeholder="Commas between"></label>'
+      +'<label>Foods to keep occasional<input type="text" id="hh-t-limit" value="'+esc(f.limit||"")+'" placeholder="Commas between"></label>'
       +'<label class="inline"><input type="checkbox" id="hh-t-ok"'+(p&&p.ok?" checked":"")+'> They said it\'s OK to keep their food rules on this device</label>'
       +'<div class="chips"><button class="btn" data-hh-tsave="'+(p?p.id:"")+'">Save</button><button class="btn ghost" data-hh-cancel>Cancel</button></div></section>';
   }
@@ -1770,7 +1771,7 @@ function diagRow(key, name, on, toggleAttr, body){
   return `<details class="dgrow" data-dgkey="${key}" ${DIAG_OPEN.has(key)?"open":""}><summary><input type="checkbox" ${toggleAttr} ${on?"checked":""} aria-label="I have this: ${esc(name)}"><b>${esc(name)}</b><span class="muted dgmore">${DIAG_OPEN.has(key)?"less":"more"}</span></summary><div class="stack" style="gap:6px;margin:8px 0 4px 30px">${body}</div></details>`;
 }
 function renderDiagnoses(){
-  const lv = {avoid:"Avoid", limit:"Limit", ask:"Check first", note:"Note"};
+  const lv = {avoid:"Avoid", limit:"Keep occasional", ask:"Check first", note:"Note"};
   const rows = [...condRows(), ...Object.entries(allDiag()).map(([id,D])=>{ const on = diagOn(id), have = new Set((S.rules.extra||[]).filter(x=>x.diag===id).map(x=>x.dkey));
     const body = `<small class="muted">${esc(D.about)}</small>
       ${on?`<b>Foods it flags</b>${D.rules.map(([k,level,label,word,why])=>`<label class="inline" style="font-weight:400;align-items:flex-start"><input type="checkbox" data-diagrule="${id}:${k}" ${have.has(k)?"checked":""}> <span><b>${esc(label)}</b> <span class="chip ${level==="avoid"?"pending":"dusk"}">${lv[level]}</span><br><small class="muted">${esc(why)}</small></span></label>`).join("")}`
@@ -2487,7 +2488,7 @@ function labFlag(x){
 }
 function renderRules(){
   const R = S.rules;
-  const lv = {avoid:"Avoid", limit:"Limit", ask:"Check first"};
+  const lv = {avoid:"Avoid", limit:"Keep occasional", ask:"Check first"};
   view.innerHTML = `<div class="stack">
   <section class="panel"><h2>My rules</h2>
     <p class="muted" style="margin:0">Small changes you can make yourself. The checklist, the pantry and shopping list, and the meal checker all use these. For big changes, like a new diagnosis, new medicine, or a whole new diet tier, upload your provider's notes in the project chat and Claude will rebuild the plan and these rules.</p>
@@ -2509,15 +2510,15 @@ function renderRules(){
       <div><button class="btn" id="flareStart">Turn on flare-up mode</button></div>`}
     ${S.flare.saved&&Object.keys(S.flare.saved).length?`<small class="muted">Swapped meals go back to your usual week when it ends.</small>`:""}
   </section>
-  <details class="panel"><summary><b>Built-in lists</b> <small class="muted">always on: mold diet, allergies, keep small</small></summary>
+  <details class="panel"><summary><b>Built-in lists</b> <small class="muted">always on: mold diet, allergies, keep occasional</small></summary>
     <p class="muted" style="margin:0">These come with your plan and are checked everywhere: meals, pantry, shopping and the meal checker. To let one through, add it under "Foods that are fine" below.</p>
-    ${[[S.moldOff?"Mold diet (off now; only the ones on other lists still flag)":"Mold diet (Break the Mold, Tier 1): avoid","mold"],...(S.moldTier2?[["Mold diet Tier 2 (on): avoid","t2"]]:[]),["Allergies and your avoid list","other"],["Keep small","small"]].map(([h,k])=>`<p style="margin:0"><b>${h}:</b> ${esc((k==="t2"?MOLD_T2_WORDS.map(x=>x.label.replace(/ \(Tier 2\)$/,"")):BUILTIN_LISTS[k]).join(", "))}</p>`).join("")}
+    ${[[S.moldOff?"Mold diet (off now; only the ones on other lists still flag)":"Mold diet (Break the Mold, Tier 1): avoid","mold"],...(S.moldTier2?[["Mold diet Tier 2 (on): avoid","t2"]]:[]),["Allergies and your avoid list","other"],["Keep occasional","small"]].map(([h,k])=>`<p style="margin:0"><b>${h}:</b> ${esc((k==="t2"?MOLD_T2_WORDS.map(x=>x.label.replace(/ \(Tier 2\)$/,"")):BUILTIN_LISTS[k]).join(", "))}</p>`).join("")}
   </details>
   <section class="panel"><h2>Foods to flag</h2>
-    <p class="muted" style="margin:0">Add something new that bothers you, or something to keep small. Your plan's built-in allergy and mold lists stay as they are.</p>
+    <p class="muted" style="margin:0">Add something new that bothers you, or something to keep occasional. Your plan's built-in allergy and mold lists stay as they are.</p>
     ${(R.extra||[]).some(x=>!x.flare&&!x.tier2)?`<ol class="day">${R.extra.map((x,i)=>x.flare||x.tier2?"":`<li><span class="t"><span class="chip ${x.level==="avoid"?"pending":x.level==="ask"?"dusk":""}">${lv[x.level]||x.level}</span></span><span></span><div class="item"><div class="title">${esc(x.label||x.word)}</div>${x.why?`<div class="detail">${esc(x.why)}</div>`:""}<button class="linkbtn" data-ruledel="extra:${i}">Remove</button></div></li>`).join("")}</ol>`:""}
     <div class="grid2"><label>Food or ingredient<input type="text" id="rx-word" placeholder="e.g. paprika"></label>
-      <label>What to do<select id="rx-level"><option value="avoid">Avoid</option><option value="limit">Limit</option><option value="ask">Check first</option></select></label></div>
+      <label>What to do<select id="rx-level"><option value="avoid">Avoid</option><option value="limit">Keep occasional</option><option value="ask">Check first</option></select></label></div>
     <label>Why (optional)<input type="text" id="rx-why" placeholder="e.g. flared my gut on 10/30"></label>
     <div><button class="btn" id="ruleAddExtra">Add to my list</button></div>
   </section>
