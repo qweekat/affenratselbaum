@@ -166,8 +166,10 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.43.1";
+const APP_VERSION = "1.44.1";
 const CHANGES = [
+  {v:"1.44.1", date:"2026-11-28", items:["Quick no longer shows the \"Deleting this icon deletes your data\" warning. It's still under More, Phone settings, and the backup reminder still appears when a backup is due."]},
+  {v:"1.44.0", date:"2026-11-28", items:["How you feel today is now on Quick and Lite too, the same faces as on Today.","Lite: removed the Pantry button at the bottom, since Pantry is on the bottom bar."]},
   {v:"1.43.1", date:"2026-11-28", items:["Set when you take each one: each supplement is its own folded row showing what it's set to, so you can scroll past to the one you want."]},
   {v:"1.43.0", date:"2026-11-28", items:["\"Set when you take each one\" is now the same folded panel on Today, Quick and Lite. Changes in one show in all three. To remove a supplement or change everything about it, the panel links to More, then Supplements & routine."]},
   {v:"1.42.1", date:"2026-11-28", items:["Lite: \"Add a supplement or powder\" can mark it Only as needed, with a most-per-day limit."]},
@@ -1723,6 +1725,7 @@ function liteWhenSummary(s){ const ws = s.whens||[]; if(!ws.length) return "not 
   return ws.map(a=>liteName(a)).join(", ") + (h ? " · "+((LITE_AFTER.find(v=>v[0]===h)||[0,""])[1]) : ""); }
 document.addEventListener("toggle", e=>{ const d = e.target; if(d && d.dataset && d.dataset.sw){ if(d.open) LITE_ROW_OPEN.add(d.dataset.sw); else LITE_ROW_OPEN.delete(d.dataset.sw); } }, true);
 function liteSumRefresh(sid){ const s = S.supplements.find(x=>x.id===sid), el = document.querySelector(`[data-swsum="${CSS.escape(sid)}"]`); if(s && el) el.textContent = liteWhenSummary(s); }
+function liteFeelHtml(key){ const lg = S.log[key]||{}; return `<section class="panel"><h2>How you feel today</h2>${feelHtml(key, lg)}</section>`; }
 function liteSetWhenHtml(){
   return `<details class="panel" ${LITE_SET_OPEN?"open":""}><summary><b>Set when you take each one</b></summary>
       <small class="muted">Pick the moments for each supplement. "After" waits that long after you tap the moment, for things like psyllium. "Before" a meal or bedtime counts down from the time planned for it in the full app, and moves up if you eat early.</small>
@@ -1780,6 +1783,7 @@ function renderLite(){
     </section>
     <section class="panel"><div class="lrow"><div><b>Water</b><br><small class="muted">${r1w(oz)} of ${esc(goal)} oz</small></div><button class="btn" data-sip="8">+8 oz</button></div></section>
     ${prnHtml(key, lg)}
+    ${liteFeelHtml(key)}
     ${ateListHtml(key, true)}
     ${unset.length?`<details class="panel"><summary><b>Any time today (${unset.length})</b></summary>${unset.map(x=>liteRow(x,key,true)).join("")}</details>`:""}
     ${liteSetWhenHtml()}
@@ -1790,7 +1794,6 @@ function renderLite(){
       <small class="muted">This only works while the app is open on screen. iPhone doesn't let web apps buzz, and the chime follows your ringer switch. If you allow notifications, iPhone also shows one at the top.</small>
     </details>
     ${typeof openOnHtml==="function"?`<div>${openOnHtml("lite")}</div>`:""}
-    <div class="chips" style="gap:8px;justify-content:center">${typeof PHX!=="undefined"?`<a class="btn ghost" href="pantry.html">Pantry</a>`:`<a class="btn ghost" href="/pantry">Pantry</a>`}</div>
   </div>`;
 }
 function liteAddFood(){
@@ -2887,12 +2890,12 @@ function renderQuick(){
   view.innerHTML = `<div class="stack">
     ${QUICK_FLASH?`<div class="next" role="status"><b>${esc(QUICK_FLASH)}</b></div>`:""}
     ${welcomeHtml()}
-    ${STANDALONE?whereHtml():""}
     ${PHX.waterHtml(lg)}
     <section class="panel"><h2>Meals</h2>${meals.length?`<div class="qlist">${meals.map(i=>qRow(i,key,lg)).join("")}</div>`:`<p class="muted" style="margin:0">No meals planned for today.</p>`}${typeof quickMealHtml==="function"?quickMealHtml(key):""}</section>
     <section class="panel"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><h2>Supplements</h2>${dueNow?`<button class="btn" data-qsupps="1">Took all due now (${dueNow})</button>`:""}</div>
       ${supps.length?`<div class="qlist">${supps.map(i=>qRow(i,key,lg)).join("")}</div>`:`<p class="muted" style="margin:0">No supplements on today's list.</p>`}</section>
     ${typeof prnHtml==="function"?prnHtml(key,lg):""}
+    ${typeof liteFeelHtml==="function"?liteFeelHtml(key):""}
     ${typeof liteSetWhenHtml==="function"?liteSetWhenHtml():""}
     ${backupNudge()}
     <div><button class="linkbtn" data-goto="today">See the full day</button></div>
