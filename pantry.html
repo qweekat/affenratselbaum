@@ -101,7 +101,7 @@ textarea { width: 100%; min-height: 160px; resize: vertical; }
 .shop-item input { margin-top: 4px; accent-color: var(--accent); width: 16px; height: 16px; }
 .shop-item .amt { font-size: 0.82rem; color: var(--muted); }
 .shop-item.got .nm { text-decoration: line-through; color: var(--muted); }
-#grocery { position: fixed; inset: 0; z-index: 1000; background: var(--bg); overflow-y: auto; padding: 0 16px calc(40px + env(safe-area-inset-bottom)); }
+#grocery { position: fixed; inset: 0; z-index: 1000; background: var(--bg); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 0 16px calc(40px + env(safe-area-inset-bottom)); }
 #grocery .gbar { position: sticky; top: 0; background: var(--bg); display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: calc(10px + env(safe-area-inset-top)) 0 10px; border-bottom: 1px solid var(--line); z-index: 1; }
 #grocery h3 { margin: 18px 0 6px; }
 .gitem { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 60px; padding: 10px 12px; margin: 6px 0; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); font: inherit; font-size: 1.1rem; text-align: left; color: inherit; cursor: pointer; touch-action: manipulation; }
@@ -1558,6 +1558,7 @@ var HH = (function(){
   }
   function renderGrocery() {
     let el = document.getElementById('grocery');
+    document.documentElement.style.overflow = document.body.style.overflow = groc ? 'hidden' : '';
     if (!groc) { el?.remove(); return; }
     if (!el) { el = document.createElement('div'); el.id = 'grocery'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Grocery mode'); document.body.appendChild(el); }
     const left = groc.filter(r => !r.on).length;
@@ -1584,6 +1585,14 @@ var HH = (function(){
   document.getElementById('btn-grocery').addEventListener('click', openGrocery);
   // all systems you's "Grocery mode" link opens straight into it.
   if (location.hash === '#grocery') setTimeout(() => { history.replaceState(null, '', location.pathname); openGrocery(); }, 400);
+  // Tapping Grocery again while already on this page only changes the #, so open it from here too.
+  window.addEventListener('hashchange', () => { if (location.hash === '#grocery') { history.replaceState(null, '', location.pathname); openGrocery(); } });
+  document.addEventListener('click', e => {
+    const a = e.target.closest && e.target.closest('a[href$="#grocery"]');
+    if (!a || groc) return;
+    const u = new URL(a.href, location.href);
+    if (u.pathname === location.pathname) { e.preventDefault(); openGrocery(); }
+  });
 
   document.getElementById('shop-list').addEventListener('change', e => {
     const id = e.target.dataset.got;
