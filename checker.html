@@ -833,6 +833,24 @@ Dinner: Baked salmon with roasted sweet potato, broccoli, and a squeeze of lemon
   // Non-starchy vegetable servings: 1/2 cup cooked or 1 cup raw leafy greens is one serving (Cardiometabolic guide).
   const VEG_SERV = { zucchini: 2, cucumber: 2, snappeas: 2, lettuce: 2, olives: 0.5 };
   const vegServ = meals => meals.reduce((a, m) => a + m.items.reduce((b, it) => { const fd = it.id ? BY_ID[it.id] : null; return b + (fd && roleOf(fd) === 'veg' && (fd.f || 0) > 0.3 ? it.q * (VEG_SERV[fd.id] || 1) : 0); }, 0), 0);
+  // Sweet or savory: a meal with fruit, chia, yogurt or cream cheese and nothing savory is sweet, and only gets sweet things added.
+  // Savory meals never get fruit or chia. Breakfast stays like your usual: meat or fish, cucumber or greens, no squash or beans.
+  const SWEET_OK = new Set(['raspberries', 'blackberries', 'strawberries', 'blueberries', 'persimmon', 'kiwi', 'cranberries', 'chia', 'flax', 'hemp', 'walnuts', 'pecans', 'hazelnuts', 'yogurt', 'creamcheese', 'mozz', 'oatbran', 'ricebran', 'psyllium', 'inulin', 'stevia', 'pepitas']);
+  const SAVORY_SEEDS = new Set(['pepitas', 'sesame', 'tahini', 'sunflower', 'hemp']);
+  const BREAKFAST_VEG = new Set(['cucumber', 'spinach', 'spinachc', 'lettuce', 'snappeas', 'zucchini']);
+  function mealStyle(meal) {
+    const ids = meal.items.map(i => i.id).filter(Boolean);
+    const savory = ids.some(id => { const fd = BY_ID[id]; if (!fd || SWEET_OK.has(id)) return false; const r = roleOf(fd); return ['protein', 'bean', 'veg', 'starch'].includes(r); });
+    const sweet = ids.some(id => SWEET_OK.has(id) && !['mozz', 'pepitas', 'hemp'].includes(id));
+    return sweet && !savory ? 'sweet' : 'savory';
+  }
+  function fitsStyle(meal, id) {
+    const fd = BY_ID[id], role = roleOf(fd), st = mealStyle(meal), bfast = /breakfast/i.test(meal.name);
+    if (st === 'sweet') return SWEET_OK.has(id);
+    if (role === 'fruit' || (role === 'seed' && !SAVORY_SEEDS.has(id)) || ['yogurt', 'creamcheese'].includes(id)) return false;
+    if (bfast) return role === 'protein' || (role === 'veg' && BREAKFAST_VEG.has(id)) || SAVORY_SEEDS.has(id);
+    return true;
+  }
   function renderDay() {
     document.getElementById('week').value = state.week;
     const target = R.ramp[(+state.week || 4) - 1];
@@ -980,13 +998,14 @@ Dinner: Baked salmon with roasted sweet potato, broccoli, and a squeeze of lemon
   function fixDay() {
     const have = pantryFoods();
     if (!have.size) return { msg: 'Tick what you have on the Pantry page first, then try again.', changes: [] };
+    if (!state.meals.some(m => m.items.length)) return { msg: 'Add a few foods to your meals first (or load the sample day), then fix the day.', changes: [] };
     const target = R.ramp[(+state.week || 4) - 1];
     const before = JSON.parse(JSON.stringify(state.meals));
     const changes = [];
     const usable = id => { const fd = BY_ID[id]; return fd && (!fd.s || fd.s === 'ok' || fd.s === 'note'); };
     const dayT = () => state.meals.map(mealTotals).reduce((a, t) => { for (const k of ['fiber', 'B', 'N']) a[k] += t[k]; return a; }, { fiber: 0, B: 0, N: 0 });
     const fitsMeal = mi => { const t = mealTotals(state.meals[mi]); return t.gl < R.glHigh && t.F <= R.oilTspPerMeal && (R.carbsPerMeal == null || Math.round(t.carbs) <= R.carbsPerMeal); };
-    const fitsDay = () => { const d = dayT(); return d.B <= R.beansPerDay + 1e-9 && d.N <= R.nutsSeedsTbsp + 1e-9 && d.fiber <= target + 5; };
+    const fitsDay = () => { const d = dayT(); return d.B <= R.beansPerDay + 1e-9 && d.N <= R.nutsSeedsTbsp + 1e-9; };
     const tryChange = (mi, apply, undo) => { apply(); if (fitsMeal(mi) && fitsDay()) return true; undo(); return false; };
     const nameOf = id => BY_ID[id].name;
     // 1. Swap foods that break your rules, or that aren't in your pantry.
@@ -999,12 +1018,12 @@ Dinner: Baked salmon with roasted sweet potato, broccoli, and a squeeze of lemon
         if (!bad && !missing) continue;
         if (role === 'staple') { if (bad) { meal.items.splice(ii, 1); changes.push(`${meal.name}: took out ${nameOf(it.id)} (it breaks your rules).`); } continue; }
         const why = bad ? 'breaks your rules' : "isn't in your pantry";
-        const subs = [...have].filter(id => id !== it.id && usable(id) && roleOf(BY_ID[id]) === role && !meal.items.some(x => x.id === id))
+        const subs = [...have].filter(id => id !== it.id && usable(id) && roleOf(BY_ID[id]) === role && !meal.items.some(x => x.id === id) && (SWEET_OK.has(it.id) ? SWEET_OK.has(id) : !SWEET_OK.has(id) || id === 'mozz'))
           .sort((a, b) => (BY_ID[b].f || 0) - (BY_ID[a].f || 0));
         let done = false;
         for (const s of subs) {
           const old = meal.items[ii];
-          if (tryChange(mi, () => { meal.items[ii] = { id: s, q: old.q }; }, () => { meal.items[ii] = old; })) { changes.push(`${meal.name}: swapped ${nameOf(old.id)} for ${nameOf(s)} (${nameOf(old.id).toLowerCase()} ${why}).`); done = true; break; }
+          if (tryChange(mi, () => { meal.items[ii] = { id: s, q: ['starch', 'fruit', 'bean'].includes(role) ? Math.min(old.q, 1) : old.q }; }, () => { meal.items[ii] = old; })) { changes.push(`${meal.name}: swapped ${nameOf(old.id)} for ${nameOf(s)} (${nameOf(old.id).toLowerCase()} ${why}).`); done = true; break; }
         }
         if (!done) { if (bad) { meal.items.splice(ii, 1); changes.push(`${meal.name}: took out ${nameOf(it.id)} (it ${why}, and nothing like it is in your pantry).`); }
           else changes.push(`${meal.name}: kept ${nameOf(it.id)}, but it isn't in your pantry. Add it to your grocery list, or swap it yourself.`); }
@@ -1014,7 +1033,7 @@ Dinner: Baked salmon with roasted sweet potato, broccoli, and a squeeze of lemon
     state.meals.forEach((meal, mi) => {
       const t = mealTotals(meal);
       if (t.avail > 15 && !t.P && !t.B) {
-        const p = [...have].find(id => usable(id) && roleOf(BY_ID[id]) === 'protein');
+        const p = [...have].find(id => usable(id) && roleOf(BY_ID[id]) === 'protein' && fitsStyle(meal, id));
         if (p) { meal.items.push({ id: p, q: 1 }); changes.push(`${meal.name}: added ${nameOf(p)} so the carbs come with protein.`); }
       }
     });
@@ -1023,11 +1042,12 @@ Dinner: Baked salmon with roasted sweet potato, broccoli, and a squeeze of lemon
       const protIds = [...have].filter(id => usable(id) && ['protein', 'bean'].includes(roleOf(BY_ID[id]))).sort((a, b) => (BY_ID[b].pg || 0) - (BY_ID[a].pg || 0));
       for (let n = 0; n < 6; n++) {
         const tot = state.meals.reduce((a, m) => a + mealTotals(m).prot, 0); if (tot >= R.proteinPerDay * 0.95) break;
-        const order = state.meals.map((m, mi) => [mi, mealTotals(m).prot]).filter(([mi]) => state.meals[mi].items.length).sort((a, b) => a[1] - b[1]);
+        const order = state.meals.map((m, mi) => [mi, mealTotals(m).prot + (mealStyle(m) === 'sweet' ? 100 : 0)]).filter(([mi]) => state.meals[mi].items.length).sort((a, b) => a[1] - b[1]);
         let added = false;
         for (const [mi] of order) { const meal = state.meals[mi];
-          for (const id of protIds) { const ex = meal.items.find(x => x.id === id), step = 0.5;
-            if (ex && ex.q >= 1.5) continue;
+          const mine = protIds.filter(id => meal.items.some(x => x.id === id && roleOf(BY_ID[id]) === 'protein'));
+          for (const id of (mine.length ? mine : protIds)) { const ex = meal.items.find(x => x.id === id), step = 0.5;
+            if ((ex && ex.q >= 1.5) || !fitsStyle(meal, id)) continue;
             if (tryChange(mi, () => { if (ex) ex.q += step; else meal.items.push({ id, q: step }); }, () => { if (ex) ex.q -= step; else meal.items.pop(); })) {
               changes.push(`${meal.name}: ${ex ? 'more' : 'added'} ${nameOf(id)} (½ × ${BY_ID[id].unit}, protein).`); added = true; break; } }
           if (added) break; }
@@ -1037,7 +1057,8 @@ Dinner: Baked salmon with roasted sweet potato, broccoli, and a squeeze of lemon
     // 3. Non-starchy vegetables: every lunch and dinner gets some, then top up to your daily servings.
     const vegIds = [...have].filter(id => usable(id) && roleOf(BY_ID[id]) === 'veg' && (BY_ID[id].f || 0) > 0.3).sort((a, b) => (BY_ID[b].f || 0) - (BY_ID[a].f || 0));
     const addVeg = mi => { const meal = state.meals[mi];
-      for (const id of vegIds) { const ex = meal.items.find(x => x.id === id); if (ex && ex.q >= 2) continue;
+      if (mealStyle(meal) === 'sweet' || !meal.items.length) return false;
+      for (const id of vegIds) { const ex = meal.items.find(x => x.id === id); if ((ex && ex.q >= 2) || !fitsStyle(meal, id)) continue;
         if (tryChange(mi, () => { if (ex) ex.q += 1; else meal.items.push({ id, q: 1 }); }, () => { if (ex) ex.q -= 1; else meal.items.pop(); })) {
           changes.push(`${meal.name}: ${ex ? 'more' : 'added'} ${nameOf(id)} (1 × ${BY_ID[id].unit}, vegetables).`); return true; } }
       return false; };
@@ -1050,9 +1071,10 @@ Dinner: Baked salmon with roasted sweet potato, broccoli, and a squeeze of lemon
     for (let n = 0; n < 30 && dayT().fiber < target - 0.5; n++) {
       let best = null;
       state.meals.forEach((meal, mi) => {
+        if (!meal.items.length) return;
         for (const id of have) {
           const fd = BY_ID[id], role = roleOf(fd);
-          if (!usable(id) || NO_ADD.has(id) || ['protein', 'oil', 'staple', 'extra'].includes(role) || (fd.f || 0) < 0.5 || !mealOK(meal.name, role)) continue;
+          if (!usable(id) || NO_ADD.has(id) || ['protein', 'oil', 'staple', 'extra'].includes(role) || (fd.f || 0) < 0.5 || !mealOK(meal.name, role) || !fitsStyle(meal, id)) continue;
           const step = role === 'seed' || role === 'bean' ? 0.5 : role === 'veg' ? 1 : 0.5;
           const ex = meal.items.find(x => x.id === id), cap = role === 'veg' ? 3 : role === 'seed' ? 2 : 1.5;
           if (ex && ex.q + step > cap) continue;
@@ -1082,9 +1104,13 @@ Dinner: Baked salmon with roasted sweet potato, broccoli, and a squeeze of lemon
   let FIX_UNDO = null;
   document.getElementById('day-fix').onclick = () => {
     const r = fixDay(); FIX_UNDO = r.before || null; save(); renderDay();
-    const merged = [];
-    for (const c of r.changes) { const m = /^(.*): (more|added) (.*) \((.*) × (.*), \+([\d.]+) g fiber\)\.$/.exec(c); const last = merged[merged.length - 1];
-      if (m && last && last.k === m[1] + m[3]) { last.n += 1; last.g += +m[6]; last.t = `${m[1]}: ${last.verb} ${m[3]} (+${fmt(last.g)} g fiber).`; } else merged.push(m ? { k: m[1] + m[3], verb: m[2], n: 1, g: +m[6], t: c } : { t: c }); }
+    // One line per food per meal: "Breakfast: added Cream cheese (protein)" instead of three small steps.
+    const merged = [], seen = new Map();
+    for (const c of r.changes) { const m = /^(.*?): (more|added) (.*?) \((.*)\)\.$/.exec(c);
+      if (!m) { merged.push({ t: c }); continue; }
+      const k = m[1] + '|' + m[3], why = /fiber/.test(m[4]) ? 'fiber' : /protein/.test(m[4]) ? 'protein' : 'vegetables';
+      if (seen.has(k)) { const x = seen.get(k); x.why.add(why); x.t = `${m[1]}: ${x.verb} ${m[3]} (for ${[...x.why].join(' and ')}).`; continue; }
+      const x = { verb: m[2], why: new Set([why]), t: `${m[1]}: ${m[2]} ${m[3]} (for ${why}).` }; seen.set(k, x); merged.push(x); }
     document.getElementById('day-fixout').innerHTML = `<div class="note" style="border-color:var(--ok)"><b>${esc(r.msg)}</b>${merged.length ? `<ul style="margin:6px 0 0 18px;padding:0">${merged.map(x => `<li>${esc(x.t)}</li>`).join('')}</ul>` : ''}${FIX_UNDO ? '<div style="margin-top:8px"><button class="btn ghost" id="day-fixundo">Undo</button></div>' : ''}</div>`;
   };
   document.getElementById('day-fixout').addEventListener('click', e => { if (e.target.id === 'day-fixundo' && FIX_UNDO) { state.meals = FIX_UNDO; FIX_UNDO = null; save(); renderDay(); document.getElementById('day-fixout').innerHTML = ''; } });

@@ -1454,11 +1454,14 @@ var HH = (function(){
   const B_PROT = ['chicken', 'bison', 'lamb', 'sablefish', 'trout', 'salmoncan', 'sardines', 'm_chickenstew', 'm_bison', 'm_lambstew', 'm_shredded', 'm_patties', 'chickpeas', 'blackbeans', 'm_beans', 'edamame'];
   const B_VEG = ['butternut', 'acorn', 'piepumpkin', 'beets', 'leeks', 'chard', 'spinach', 'zucchini', 'cucumber', 'snappeas', 'asparagus', 'artichoke', 'm_roastveg', 'pumpkincan'];
   const B_BASE = ['m_quinoa', 'm_buckwheat', 'quinoa', 'buckwheat', 'pacha', 'sweetpotato', 'm_roastveg', 'm_beans', 'chickpeas', 'blackbeans'];
-  const B_FLAV = ['lime', 'cilantro', 'basil', 'tahini', 'feta', 'mozz', 'yogurt', 'ginger', 'garlic', 'oliveoil', 'walnuts'];
+  const B_FLAV = ['lime', 'cilantro', 'basil', 'tahini', 'feta', 'ginger', 'garlic', 'oliveoil'];
+  // Breakfast stays like your usual: meat or fish, cucumber (or a few greens) with lime, and Pacha toast.
+  const B_BFAST = { prot: ['m_patties', 'm_shredded', 'm_bison', 'chicken', 'bison', 'salmoncan', 'sardines', 'trout'], veg: ['cucumber', 'spinach', 'snappeas'], base: ['pacha'], flav: ['lime'] };
   function buildPools() {
     const fits = id => worst(itemHits(id)) !== 'avoid';
     const ok = ids => ids.filter(id => ITEM[id] && has(id) && fits(id));
     const mine = c => state.custom.filter(x => (x.c || 'other') === c && state.pantry[x.id] && fits(x.id)).map(x => x.id);
+    if (BUILD.slot === 'breakfast') return { prot: ok(B_BFAST.prot), veg: ok(B_BFAST.veg), base: ok(B_BFAST.base), flav: ok(B_BFAST.flav), bfast: 1 };
     return { prot: [...ok(B_PROT), ...mine('meat')], veg: [...ok(B_VEG), ...mine('produce')], base: ok(B_BASE), flav: ok(B_FLAV) };
   }
   function buildCombos() {
@@ -1467,7 +1470,7 @@ var HH = (function(){
     const take = (arr, not) => { const a = arr.filter(id => !not.includes(id)); return a.length ? a[rnd(a.length)] : null; };
     for (let i = 0; i < 24 && out.length < 3; i++) {
       const p = take(P.prot, []); if (!p) break;
-      const v1 = take(P.veg, [p]), v2 = take(P.veg, [p, v1]), b = take(P.base, [p, v1, v2]), f = take(P.flav, []);
+      const v1 = take(P.veg, [p]), v2 = P.bfast ? null : take(P.veg, [p, v1]), b = take(P.base, [p, v1, v2]), f = take(P.flav, []);
       const ids = [p, v1, v2, b, f].filter(Boolean), key = [...ids].sort().join();
       if (seen.has(key)) continue; seen.add(key); out.push(ids);
     }
