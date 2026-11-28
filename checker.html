@@ -752,6 +752,11 @@ Dinner: Baked salmon with roasted sweet potato, broccoli, and a squeeze of lemon
     ['dandeliontea', 'Roasted dandelion root tea', '1 cup', 0, 0, null, {}],
   ].map(([id, name, unit, c, f, gi, o]) => ({ id, name, unit, c, f, gi, ...o }));
   const BY_ID = Object.fromEntries(FOODS.map(x => [x.id, x]));
+  // Your own rules (My rules, flare-up, Tier 2) also apply to the foods in Build a day. Fine words clear a flag.
+  { const rank = l => ['avoid', 'ask', 'limit', 'note'].indexOf(l) < 0 ? 9 : ['avoid', 'ask', 'limit', 'note'].indexOf(l);
+    for (const fd of FOODS) for (const r of [...USER_OK, ...USER_EXTRA]) { r.re.lastIndex = 0; if (!r.re.test(fd.name)) continue; r.re.lastIndex = 0;
+      if (r.level === 'ok') { fd.s = 'ok'; fd.w = ''; } else if (rank(r.level) < rank(fd.s)) { fd.s = r.level; fd.w = r.label + ': ' + r.why; }
+      break; } }
 
   const MEAL_NAMES = ['Breakfast', 'Lunch', 'Snack', 'Dinner'];
   const blankDay = () => MEAL_NAMES.map(n => ({ name: n, items: [] }));
