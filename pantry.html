@@ -825,7 +825,7 @@ var HH = (function(){
     ['quinoa', 'Quinoa (dry)', 'pantry', 0], ['buckwheat', 'Buckwheat groats (dry)', 'pantry', 0], ['broth', 'Bonafide or Pacific chicken broth', 'pantry', 0, 'broth stock'],
     ['chia', 'Chia seeds', 'pantry', 0], ['psyllium', 'Psyllium husk', 'pantry', 0], ['tahini', 'Tahini', 'pantry', 0], ['walnuts', 'Walnuts', 'pantry', 0],
     ['edamame', 'Frozen shelled edamame', 'pantry', 0], ['chickpeaflour', 'Chickpea flour', 'pantry', 0],
-    ['buckwheatflour', 'Buckwheat flour', 'pantry', 0], ['sesame', 'Sesame seeds', 'pantry', 0], ['sunflower', 'Raw sunflower seeds', 'pantry', 0], ['pepitas', 'Raw pumpkin seeds', 'pantry', 0, 'pepitas'], ['cassavaflour', 'Cassava flour', 'pantry', 0], ['parsley', 'Parsley', 'produce', 0], ['beefcheek', 'Beef cheek', 'meat', 0],
+    ['buckwheatflour', 'Buckwheat flour', 'pantry', 0], ['sesame', 'Sesame seeds', 'pantry', 0], ['sunflower', 'Raw sunflower seeds', 'pantry', 0], ['pepitas', 'Raw pumpkin seeds', 'pantry', 0, 'pepitas'], ['cassavaflour', 'Cassava flour', 'pantry', 0], ['flax', 'Ground flaxseed', 'pantry', 0, 'flaxseed'], ['bakingpowder', 'Baking powder (aluminum-free)', 'spice', 0, '', '', 1], ['pineneedles', 'Fresh pine needles (a safe kind)', 'produce', 0], ['parsley', 'Parsley', 'produce', 0], ['beefcheek', 'Beef cheek', 'meat', 0],
     ['m_meatballs', 'Sesame ginger meatballs', 'cooked', 0, 'meatballs', 'r_meatballs'], ['m_barbacoa', 'Beef cheek barbacoa', 'cooked', 0, 'barbacoa', 'r_barbacoa'], ['bakingsoda', 'Baking soda', 'spice', 0, '', '', 1],
     ['pacha', 'Pacha sprouted buckwheat bread', 'dairy', 0, 'bread toast'], ['creamcheese', 'Cream cheese', 'dairy', 0], ['mozz', 'Fresh mozzarella', 'dairy', 0, 'mozzarella'],
     ['feta', 'Fresh sheep feta', 'dairy', 0], ['yogurt', 'Plain whole yogurt', 'dairy', 0],
@@ -887,13 +887,52 @@ var HH = (function(){
     { id: 'bx_cassavabread', n: 'Rosemary cassava bread', site: BP, src: 'https://bakeitpaleo.com/rosemary-cassava-bread/', yields: 'one 8 x 4 in loaf', t: 'baking',
       ings: ['220 g cassava flour (1 1/2 cups)', '44 g arrowroot flour (1/3 cup)', '1/2 tbsp rosemary', '1 tsp baking powder', '1/2 tsp baking soda', '3/4 tsp salt', '5 large eggs', '1/4 cup olive oil', '1/2 tbsp apple cider vinegar', '1/4 cup water, up to 3/4 cup'],
       steps: 'Mix the dry and wet things separately, then together. Bake in a lined 8 x 4 in pan at 350 °F about 35 min. Cool on a rack and keep it in the fridge.',
-      notes: 'Your notes on the page: sage and thyme in place of rosemary; arrowroot + 2/3 tbsp; baking powder 3/4 tsp + 1/8; baking soda 1/4 tsp + 1/8; a 5 to 1 cassava to arrowroot ratio worked out in the margin.' },
+      bake: { temp: 350, min: 35, bp: 1, soda: 0.5, liq: 0.5 },
+      notes: 'Your notes on the page (high-altitude changes): 4 tbsp more flour split at the recipe\'s 5 to 1 ratio, so cassava + 3 1/3 tbsp and arrowroot + 2/3 tbsp; baking powder 3/4 + 1/8 tsp; baking soda 1/4 + 1/8 tsp; sage and thyme in place of rosemary.' },
     { id: 'bx_crackers', n: 'Rosemary cassava flour crackers', site: BP, src: 'https://bakeitpaleo.com/salted-rosemary-crackers/', yields: '3 to 4 dozen', t: 'snack', adapted: ['s_crackers'],
       ings: ['1/4 cup raw sunflower seeds', '1/4 cup raw pumpkin seeds', '1/2 cup cassava flour (63 g)', '2 tsp rosemary', '1/2 tsp sea salt', '1/4 cup water', '1 tsp olive oil', 'flaked sea salt (optional)'],
       steps: 'Grind the seeds fine, blend in the flour, salt and rosemary, then the water and oil. Roll 1/8 in thick between parchment, salt, cut 1 in squares, and bake at 350 °F 15 min, flip, 5 to 10 min more.' },
     { id: 'bx_bagels', n: 'Paleo air fryer bagels', site: BP, src: 'https://bakeitpaleo.com/paleo-air-fryer-bagels/', yields: '4 mini bagels', t: 'baking',
       ings: ['1/2 cup tapioca flour (61 g)', '1/3 cup cassava flour (52 g)', '1/2 cup almond flour (45 g)', '2 tsp poppy seeds (optional)', '1/2 tsp baking soda', '1/4 tsp salt', '2 tbsp avocado oil', '1 tbsp maple syrup', '1 tsp apple cider vinegar', '4 to 5 tbsp water'],
+      bake: { soda: 0.5 },
       steps: 'Mix the dry things, add the wet ones, and knead into a dough. Shape 4 bagels, boil 1 min a side, then air fry until golden. (The second page was too blurry to read the time and temperature.)' },
+    { id: 'bx_spbread', n: 'Savory sweet potato bread', site: BP, src: 'https://bakeitpaleo.com/savory-sweet-potato-bread/', yields: 'one 8 x 4 in loaf', t: 'baking', adapted: ['k_spbread'],
+      ings: ['300 g steamed sweet potato (about 1 1/3 cups mashed)', '3 large eggs', '1/4 cup olive oil', '1 cup cassava flour (150 g)', '1 tbsp fresh thyme', '1 tsp baking soda', '1/2 tsp salt', '1/2 cup water'],
+      bake: { temp: 350, min: 60, soda: 1, liq: 0.5 },
+      steps: 'Steam and cool the sweet potato. Blend it with the eggs and oil, then the flour, thyme, soda and salt, then the water. Bake in a lined 8 x 4 in pan at 350 °F for 60 min and cool before slicing.',
+      notes: 'Your notes on the page: 22 g ground flax + 103 g water in place of the eggs; olive oil 58 g; thyme 2 g dried; baking soda 6 g; salt 2 g; water 131 g.' },
+    { id: 'bx_squashbread', n: 'Butternut squash bread', site: BP, src: 'https://bakeitpaleo.com/rosemary-butternut-squash-bread/', yields: 'one 8 x 4 in loaf', t: 'baking',
+      ings: ['1 cup pureed squash (235 g)', '5 large eggs', '1/3 cup tahini', '3/4 cup cassava flour (100 g)', '1/3 cup ground flax seed (34 g)', '2 tsp paleo baking powder', '2 tbsp dried rosemary', '1/2 tsp garlic powder', '1/2 tsp onion powder', '1/2 tsp salt'],
+      bake: { temp: 350, min: 45, bp: 2 },
+      steps: 'Whisk the squash, eggs and tahini, stir in everything else, and bake in a lined 8 x 4 in pan at 350 °F for 45 to 50 min. Cool 10 min in the pan, then on a rack. Keep in the fridge.' },
+    { id: 'bx_bbmuffins', n: 'Blueberry cassava flour muffins', site: BP, src: 'https://bakeitpaleo.com/blueberry-cassava-flour-muffins/', yields: '9 muffins', t: 'baking',
+      ings: ['150 g cassava flour (1 cup + 3 tbsp)', '1 tsp paleo baking powder', '1/2 tsp baking soda', '1/4 tsp salt', '3 large eggs', '1/4 cup melted coconut oil', '1/4 cup warm water', '3 tbsp maple syrup', '1 tsp vanilla extract', '3/4 to 1 cup fresh blueberries'],
+      bake: { temp: 350, min: 18, bp: 1, soda: 0.5, liq: 0.5, sugar: 0.19 },
+      steps: 'Whisk the dry things, stir in the wet ones, fold in the berries, and let the batter thicken 5 min. Bake in lined cups at 350 °F for 18 to 20 min, a little underdone. Keep in the fridge.' },
+    { id: 'bx_bwmuffins', n: 'Vegan buckwheat muffins', site: BP, src: 'https://bakeitpaleo.com/vegan-buckwheat-muffins/', yields: '9 muffins', t: 'baking',
+      ings: ['1 cup buckwheat flour (150 g)', '1/4 cup coconut flour (28 g)', '1/2 tsp baking soda', '1/4 tsp salt', '3/4 cup almond milk', '1/2 cup almond milk yogurt', '2 tbsp maple syrup', '1 tsp vanilla extract', '1/4 to 1/3 cup dark chocolate chips, chopped'],
+      bake: { temp: 350, min: 22, soda: 0.5, liq: 1.25, sugar: 0.125 },
+      steps: 'Mix the dry things, whisk in the wet ones, fold in the chips, and bake in 9 lined cups at 350 °F for 22 to 25 min, a little underdone. The page says any plant milk and yogurt work.' },
+    { id: 'bx_pumpkinmuffins', n: 'Paleo pumpkin protein muffins', site: BP, src: 'https://bakeitpaleo.com/low-sugar-pumpkin-protein-muffins/', yields: '10 muffins', t: 'baking',
+      ings: ['1/2 cup pumpkin puree', '3 large eggs', '1/2 cup water (or almond milk)', '1 tsp vanilla extract', '1/2 cup cassava flour (68 g)', '1/2 cup pea protein powder (50 g)', '1/4 cup monk fruit sweetener (or any granulated sweetener)', '1 tsp pumpkin pie spice', '1/2 tsp baking soda', '1/4 tsp salt'],
+      bake: { temp: 350, min: 24, soda: 0.5, liq: 0.5, sugar: 0.25 },
+      steps: 'Whisk the wet things, add the dry ones, and pour about 1/4 cup into each of 10 lined cups. Bake at 350 °F for 24 min. Keep in the fridge.' },
+    { id: 'bx_flatbread', n: 'Buckwheat flatbread (your note)', site: 'your handwritten note', src: '', yields: '', t: 'baking', adapted: ['k_flatbread'],
+      ings: ['1 cup buckwheat flour', '2 tsp baking powder', '1/2 cup warm water', 'salt'],
+      bake: { bp: 2, liq: 0.5 },
+      steps: 'No steps written down; see your version for a simple way to cook it.' },
+    { id: 'bx_pinetrout', n: 'Pine needle trout', site: 'alive magazine, Dec 2025', src: 'https://www.alive.com/', yields: 'serves 2', t: 'dinner', adapted: ['d_pinetrout'],
+      ings: ['8 oz baby potatoes', '2 steelhead trout fillets, 8 oz each', 'kosher salt and black pepper', '2 tbsp unsalted butter', '2 tbsp avocado oil', '2 handfuls freshly harvested pine needles', '3/4 cup dry white wine', '1/2 cup low-sodium vegetable broth or water', '2 garlic cloves, chopped', '1 large bunch kale, torn'],
+      steps: 'Par-cook the potatoes. Brown the seasoned trout on a bed of pine needles in butter and oil, about 2 min a side. Add potatoes, wine and broth, cover and steam 3 to 4 min, then garlic and kale until wilted. Strain the pan sauce over the fish. The page warns that ponderosa, lodgepole, yew, hemlock and cypress needles are toxic.' },
+    { id: 'bx_citrussalad', n: 'Citrus salad with rosemary and juniper syrup', site: 'alive magazine, Dec 2025', src: 'https://www.alive.com/', yields: 'serves 6', t: 'snack',
+      ings: ['1/4 cup maple syrup', '3 tbsp orange juice', '2 fresh rosemary sprigs', '4 dried juniper berries, crushed', '1 ripe persimmon', '1 green kiwi', '1 ruby grapefruit', '2 or 3 clementines', '1 or 2 Bosc or Anjou pears', '1/2 cup pomegranate arils', '1 lime, zested and juiced', '2 tbsp pumpkin seeds'],
+      steps: 'Simmer the maple, juice, rosemary and juniper, steep 10 min and strain. Arrange the sliced fruit, add lime zest and juice, drizzle a third of the syrup, and top with pumpkin seeds.' },
+    { id: 'bx_thymepasta', n: 'Lemony thyme pasta', site: 'alive magazine, Dec 2025', src: 'https://www.alive.com/', yields: 'serves 4', t: 'dinner',
+      ings: ['8 oz whole wheat pasta', '1 tbsp avocado oil', '2 shallots, diced', '2 garlic cloves, minced', '2 tbsp chopped fresh thyme', '3 cups frozen corn kernels', '1/2 tsp fine sea salt', '1/2 cup oat or cashew milk', '2 tbsp nutritional yeast', '1 lemon, zested and juiced', 'black pepper'],
+      steps: 'Soften shallots, garlic and thyme in the oil, add the corn and cook 4 min. Blend with the milk, nutritional yeast and lemon into a sauce, then toss with the cooked pasta and a little pasta water.' },
+    { id: 'bx_fudge', n: 'Chocolate, lavender and tahini fudge', site: 'alive magazine, Dec 2025', src: 'https://www.alive.com/', yields: '24 squares', t: 'evening',
+      ings: ['1/4 cup refined coconut oil', '2 tsp finely ground culinary lavender', '1/2 cup + 1 tbsp tahini', '2 tbsp maple syrup', '1/4 cup raw cacao powder', '1/8 tsp sea salt (optional)', 'cacao nibs, lavender buds and sesame seeds to garnish (optional)'],
+      steps: 'Warm the oil with the lavender, steep 10 min and strain. Stir in 1/2 cup tahini, maple, cacao and salt, pour into a lined loaf pan, drizzle the last tahini and garnish. Freeze at least 2 hours and slice into 24.' },
     { id: 'bx_gfapancakes', n: 'Gluten-free and vegan fluffy pancakes', site: GFA, src: 'https://glutenfreealice.com/', yields: '6 large pancakes', t: 'breakfast',
       ings: ['300 g gluten-free self-raising flour', '2 tsp baking powder', 'pinch of sea salt', '4 tbsp caster sugar', '1/2 tsp vanilla extract', '390 ml almond milk (or another milk alternative)', 'oil or dairy-free butter for frying'],
       steps: 'Mix the dry things, whisk in the vanilla and milk to a thick batter. Ladle into a hot oiled pan, flip when bubbles form, and cook 2 min more.' },
@@ -901,8 +940,34 @@ var HH = (function(){
       ings: ['350 ml dairy-free milk', '275 g gluten-free self-raising flour', '1 tbsp easy-bake yeast', '1/2 tsp bicarbonate of soda', '2 tsp caster sugar', 'pinch of salt', 'oil for frying'],
       steps: 'Warm the milk to about 39 °C, add the yeast and sugar and wait until frothy. Whisk in the flour, soda and salt, cover and rest 90 min. Thin with a little warm water, then cook about 2.5 tbsp in oiled rings 5 to 7 min and flip for 1 to 2 min.' },
   ];
+  // ---------- High-altitude baking ----------
+  // From Colorado State University Extension, "High Altitude Baking" (fact sheet 9.300), and King Arthur Baking's high-altitude guide.
+  // Leavening, sugar and liquid change by altitude band; flour adds 1 tbsp at 3,500 ft and 1 more per 1,500 ft; oven 15 to 25 °F hotter and done sooner.
+  const ALT_SRC = 'Colorado State University Extension (High Altitude Baking, 9.300) and King Arthur Baking (high-altitude baking guide). Start with the smaller change.';
+  function frac(x) {
+    const e = Math.round(x * 8) / 8, w = Math.floor(e), r = Math.round((e - w) * 8);
+    const f = { 0: '', 1: '1/8', 2: '1/4', 3: '3/8', 4: '1/2', 5: '5/8', 6: '3/4', 7: '7/8' }[r];
+    return w ? (f ? `${w} ${f}` : `${w}`) : (f || '0');
+  }
+  function altTips(b) {
+    const alt = +state.altitude || 0;
+    if (!b || alt < 3000) return [];
+    const band = alt >= 7000 ? 2 : alt >= 5000 ? 1 : 0, out = [];
+    const cut = [0.125, 0.1875, 0.25][band];
+    if (b.bp) out.push(`Baking powder: ${frac(b.bp)} tsp → about ${frac(b.bp * (1 - cut))} tsp.`);
+    if (b.soda) out.push(`Baking soda: ${frac(b.soda)} tsp → about ${frac(b.soda * (1 - cut))} tsp.`);
+    if (alt >= 3500 && (b.temp || b.bp || b.soda)) { const t = Math.round(1 + (alt - 3500) / 1500); out.push(`Flour: add about ${t} tbsp more.`); }
+    if (b.liq) { const [lo, hi] = [[1, 2], [2, 4], [3, 4]][band]; const l1 = Math.max(1, Math.round(lo * b.liq)), l2 = Math.max(1, Math.round(hi * b.liq)); out.push(`Liquid: add ${l1 === l2 ? 'about ' + l1 : l1 + ' to ' + l2} tbsp more.`); }
+    if (b.sugar) { const [lo, hi] = [[0, 1], [0, 2], [1, 3]][band]; out.push(`Sweetener: use ${lo ? lo + ' to ' : 'up to '}${hi} tbsp less per cup.`); }
+    if (b.temp) { const lo = Math.max(1, Math.round(b.min / 30 * 5)), hi = Math.max(2, Math.round(b.min / 30 * 8)); out.push(`Oven: ${b.temp + 15} to ${b.temp + 25} °F, and start checking at about ${b.min - hi} min (${lo} to ${hi} min sooner).`); }
+    return out;
+  }
+  function altHtml(b) {
+    const t = altTips(b);
+    return t.length ? `<details class="small"><summary>At ${Number(state.altitude).toLocaleString()} ft</summary><ul>${t.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="muted">From ${esc(ALT_SRC)}</p></details>` : '';
+  }
   const BOX_TYPE = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snack', evening: 'Treat', baking: 'Baking and breads' };
-  const TYPES = [['breakfast', 'Breakfast'], ['lunch', 'Lunch'], ['dinner', 'Dinner'], ['snack', 'Snack'], ['evening', 'Evening treat'], ['batch', 'Batch cooking']];
+  const TYPES = [['breakfast', 'Breakfast'], ['lunch', 'Lunch'], ['dinner', 'Dinner'], ['snack', 'Snack'], ['evening', 'Evening treat'], ['baking', 'Breads and baking'], ['batch', 'Batch cooking']];
   const TYPE_NAME = Object.fromEntries(TYPES);
   const RECIPES = [
     // Batch bases (from the Weekly Batch-Cook Routine)
@@ -1020,6 +1085,18 @@ var HH = (function(){
     { id: 's_crackers', n: 'Herb seed crackers', t: 'snack', makes: 'oven · 35 min · 3 to 4 dozen',
       ings: [['sunflower', '1/4 cup'], ['pepitas', '1/4 cup'], ['cassavaflour', '1/2 cup'], [['thyme', 'sage'], '2 tsp'], ['salt', '1/2 tsp'], ['oliveoil', '1 tsp']],
       steps: 'Grind the seeds fine in a blender or spice grinder. Blend in the flour, salt and thyme or sage (in place of rosemary), then 1/4 cup water and the oil. Roll 1/8 in thick between two sheets of parchment, sprinkle with salt, cut 1 in squares, and bake at 350 °F for 15 min, flip, 5 to 10 min more. A handful is a snack; add cucumber or a little cheese. Idea from Bake It Paleo, bakeitpaleo.com/salted-rosemary-crackers.' },
+    { id: 'd_pinetrout', n: 'Pine needle trout with greens', t: 'dinner', makes: 'one pan · 25 min', shared: 1, his: 'potatoes',
+      ings: [[['trout', 'sablefish'], '2 fillets, 3 to 4 oz each'], [['pineneedles', 'thyme'], '2 handfuls of needles, or a few thyme sprigs'], ['oliveoil', '1 tbsp'], [['broth', 'm_broth'], '1/2 cup'], ['garlic', '2 cloves'], [['chard', 'spinach'], '1 bunch, torn'], ['lime', '1/2', 'opt'], ['potatoes', '8 oz baby potatoes', 'his']],
+      plate: [['salmon', 1], ['spinachc', 1], ['oliveoil', 1], ['garlic', 1]],
+      steps: 'Boil his potatoes until just tender. Heat the oil in a skillet on high, spread the needles in one layer, lay the salted fish on top and brown about 2 min a side. Add the broth (in place of wine and vegetable broth) and the potatoes, cover and steam 3 to 4 min. Add garlic and chard (in place of kale), cover 2 to 4 min more until the fish flakes. Strain the pan juices over the fish. Use only pine you are sure of: the magazine lists ponderosa, lodgepole, yew, hemlock and cypress as ones to avoid. Thyme works if you are unsure. Idea from alive magazine, December 2025.' },
+    { id: 'k_spbread', n: 'Savory sweet potato bread (your flax version)', t: 'baking', makes: '8 x 4 in loaf · 1 hour 20 min',
+      ings: [['sweetpotato', '300 g steamed (about 1 1/3 cups mashed)'], ['flax', '22 g ground + 103 g water (for the 3 eggs)'], ['oliveoil', '58 g (1/4 cup)'], ['cassavaflour', '150 g (1 cup)'], ['thyme', '2 g dried'], ['bakingsoda', '6 g (1 tsp)'], ['salt', '2 g']],
+      bake: { temp: 350, min: 60, soda: 1, liq: 0.55 },
+      steps: 'Steam the sweet potato cubes until tender and cool. Blend with the flax mix and oil, then the flour, thyme, soda and salt, then about 131 g water until smooth. Bake in a lined 8 x 4 in pan at 350 °F about 60 min, cool 15 min in the pan, then on a rack. Your amounts, from your notes on the Bake It Paleo page.' },
+    { id: 'k_flatbread', n: 'Buckwheat flatbread', t: 'baking', makes: 'stovetop · 15 min',
+      ings: [['buckwheatflour', '1 cup'], ['bakingpowder', '2 tsp'], ['salt', 'pinch'], ['oliveoil', 'a little for the pan', 'opt']],
+      bake: { bp: 2, liq: 0.5 },
+      steps: 'Stir the flour, baking powder and salt with 1/2 cup warm water into a soft dough. Press or roll thin and cook in a dry or lightly oiled pan a few minutes a side. From your handwritten note.' },
     { id: 'd_sptoast', n: 'Sweet potato toast with chicken and greens', t: 'dinner', makes: 'tiny oven · 25 min', shared: 1, his: 'potatoes',
       ings: [['sweetpotato', '1 small'], ['oliveoil', '1 tsp'], [['m_shredded', 'chicken'], '4 oz'], ['spinach', 'handful'], ['lime', '1/2'], ['cilantro', 'handful', 'opt'], ['potatoes', '1 to 2', 'his']],
       plate: [['sweetpotato', 1], ['oliveoil', 0.5], ['chicken', 1], ['spinach', 1], ['lime', 1], ['cilantro', 1]],
@@ -1027,6 +1104,7 @@ var HH = (function(){
     { id: 'd_bwpancakes', n: 'Buckwheat berry pancakes with patties', t: 'dinner', makes: 'stovetop · 20 min · 8 pancakes',
       ings: [['buckwheatflour', '1 cup + 2 tbsp'], ['psyllium', '1 tsp'], ['bakingsoda', '1/2 tsp'], ['salt', '1/4 tsp'], ['yogurt', '1/2 cup'], ['stevia', 'to taste'], ['raspberries', '1/3 cup'], ['oliveoil', 'for the pan'], ['m_patties', '2 patties']],
       plate: [['buckwheat', 1.5], ['yogurt', 0.25], ['raspberries', 0.5], ['bison', 1], ['oliveoil', 0.5]],
+      bake: { soda: 0.5, liq: 1.2 },
       steps: 'Mix the flours, soda and salt. Stir in about 2/3 cup water, the yogurt and stevia to a thick batter, then fold in the berries (in place of maple syrup, vanilla and chocolate chips; extra buckwheat flour and psyllium stand in for the coconut flour). Cook 1/4 cup per pancake in a lightly oiled covered pan on medium, flip once. Two pancakes is one serving, with patties on the side for protein; the rest freeze. Adapted from Bake It Paleo\'s fluffy buckwheat pancakes.' },
     { id: 'd_thermossoup', n: 'Thermos chicken squash soup', t: 'dinner', makes: 'fuel saver · 10 min boil', shared: 1, his: 'rice',
       ings: [['chicken', '8 oz'], ['butternut', '1 cup cubed'], ['leeks', '1'], ['ginger', '1 tsp grated'], [['broth', 'm_broth'], '3 cups'], ['spinach', 'handful'], ['rice', '1 cup cooked', 'his']],
@@ -1510,6 +1588,7 @@ var HH = (function(){
       ${buyList.length ? `<p class="need">Buy: ${buyList.join(', ')}</p>` : ''}
       ${soft.length ? `<p class="small muted">Check you have: ${soft.map(id => esc(ITEM[id].n)).join(', ')}</p>` : ''}
       ${r.his ? `<p class="small muted">He adds ${esc(r.his)}.</p>` : ''}
+      ${altHtml(r.bake)}
       ${r.shared || r.t === 'batch' ? HH.tableHtml(hhText(r), HHH, { title: 'At the table' }) : ''}
       <details><summary>Ingredients and steps</summary><ul>${ingList}</ul>${r.steps ? `<p class="small" style="margin-top:6px">${esc(r.steps)}</p>` : ''}</details>
       <div class="row">
@@ -1608,6 +1687,7 @@ var HH = (function(){
       ${lines || '<p class="pill ok">Fits your food rules as written.</p>'}
       ${ad.length ? `<p class="need">Your version: ${ad.map(id => `<b>${esc(RECIPE[id].n)}</b>`).join(', ')} (in Meals)</p>` : ''}
       ${b.notes ? `<p class="small">${esc(b.notes)}</p>` : ''}
+      ${altHtml(b.bake)}
       <details><summary>Ingredients and steps as written</summary><ul>${b.ings.map(l => `<li>${esc(l)}</li>`).join('')}</ul><p class="small" style="margin-top:6px">${esc(b.steps)}</p></details>
       <div class="row"><button class="btn sm" data-myver="box:${b.id}">Make my version</button></div>
     </article>`;
@@ -1615,10 +1695,13 @@ var HH = (function(){
   function renderBox() {
     const fits = BOX.filter(b => worst(scan(b.ings.join('\n'))) !== 'avoid');
     const not = BOX.filter(b => !fits.includes(b));
-    document.getElementById('meal-groups').innerHTML = `<p class="small muted">Recipes kept as written, for other people or for after the mold diet. "Make my version" opens one in Add my own meal, where you can swap things and save it as yours.</p>`
+    document.getElementById('meal-groups').innerHTML = `<p class="row small"><label>Your altitude <input type="number" id="alt-ft" inputmode="numeric" min="0" step="100" style="width:7em" value="${esc(state.altitude || '')}" placeholder="feet"> ft</label><span class="muted">Baked recipes then show high-altitude changes.</span></p><p class="small muted">Recipes kept as written, for other people or for after the mold diet. "Make my version" opens one in Add my own meal, where you can swap things and save it as yours.</p>`
       + [['Fits as written', fits], ['Needs changes for you', not]].filter(g => g[1].length).map(([h, xs]) =>
         `<div class="section-h"><h2>${h}</h2><span class="small muted">${xs.length}</span></div><div class="grid">${xs.map(boxCard).join('')}</div>`).join('');
   }
+ document.getElementById('meal-groups').addEventListener('change', e => {
+    if (e.target.id === 'alt-ft') { state.altitude = Math.max(0, +e.target.value || 0) || null; save(); renderMeals(); }
+  });
   // Opens a recipe in "Add my own meal" so you can change it and save it as yours.
   function openMyVersion(key) {
     let title, type, ings, steps, editId = null;
