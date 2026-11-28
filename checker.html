@@ -241,7 +241,7 @@ footer a, .lede a { color: var(--accent); }
   // level: avoid | ask | limit | note | ok (ok consumes the words so later rules skip them)
   // ---------- Your rules, set on all systems you's "My rules" page. Built-in values fill anything missing. ----------
   const USER_RULES = (() => { try { const h = JSON.parse(localStorage.getItem('dh-me-v1') || 'null'); return h && h.rules && typeof h.rules === 'object' ? h.rules : null; } catch (e) { return null; } })();
-  const DEFAULTS = { carbsPerDay: null, carbsPerMeal: null, glLow: 10, glHigh: 20, fiberGoal: 30, ramp: [15, 20, 25, 30], beansPerDay: 1, nutsSeedsTbsp: 2, oilTspPerMeal: 2, spacingMin: 120, vegPerDay: 5 };
+  const DEFAULTS = { carbsPerDay: null, carbsPerMeal: null, glLow: 10, glHigh: 20, fiberGoal: 30, ramp: [15, 20, 25, 30], beansPerDay: 1, nutsSeedsTbsp: 2, oilTspPerMeal: 2, spacingMin: 120, vegPerDay: 5, proteinPerDay: null };
   const R = { ...DEFAULTS };
   if (USER_RULES) for (const k of Object.keys(DEFAULTS)) {
     const v = USER_RULES[k];
@@ -755,6 +755,14 @@ Dinner: Baked salmon with roasted sweet potato, broccoli, and a squeeze of lemon
     ['datesyrup', 'Date syrup', '1 tsp', 5.3, 0, 50, { s: 'limit', w: 'Keep rare.', est: 1 }],
     ['dandeliontea', 'Roasted dandelion root tea', '1 cup', 0, 0, null, {}],
   ].map(([id, name, unit, c, f, gi, o]) => ({ id, name, unit, c, f, gi, ...o }));
+  // Protein grams per unit above, rounded estimates from USDA FoodData Central (cooked weights for meat and grains).
+  const PROTEIN_G = { sablefish: 15, salmon: 25, sardines: 23, cod: 20, tuna: 25, chicken: 35, beef: 28, bison: 26, lamb: 28, tofu: 10, mozz: 6, creamcheese: 2, feta: 4,
+    yogurt: 4.5, chickpeas: 7, blackbeans: 7.5, anasazi: 7, edamame: 9, chickpeaflour: 10, quinoa: 4, buckwheat: 2.8, brownrice: 2.5, wildrice: 3.3, millet: 3, amaranth: 4.7,
+    oats: 5, oatbran: 1, ricebran: 1, sweetpotato: 2, butternut: 0.9, acorn: 1, pumpkin: 1.3, peas: 4, beets: 1.4, zucchini: 1.5, spinach: 0.9, spinachc: 2.7, asparagus: 2.2,
+    artichoke: 2, okra: 1.5, cucumber: 0.7, snappeas: 2.8, lettuce: 1, dandelion: 1.5, onion: 0.8, jicama: 0.5, tomato: 0.8, olives: 0.2, raspberries: 1.5, blackberries: 2,
+    strawberries: 1, blueberries: 1.1, persimmon: 1, kiwi: 1.6, banana: 1.3, grapefruit: 0.8, cranberries: 0.2, chia: 1.7, flax: 1.3, pepitas: 2.5, sunflower: 1.7, hemp: 3.2,
+    sesame: 1.6, tahini: 2.6, walnuts: 1.1, pecans: 0.7, hazelnuts: 1.1, garlic: 0.2 };
+  for (const fd of FOODS) fd.pg = PROTEIN_G[fd.id] || 0;
   const BY_ID = Object.fromEntries(FOODS.map(x => [x.id, x]));
   // Your own rules (My rules, flare-up, Tier 2) also apply to the foods in Build a day. Fine words clear a flag.
   { const rank = l => ['avoid', 'ask', 'limit', 'note'].indexOf(l) < 0 ? 9 : ['avoid', 'ask', 'limit', 'note'].indexOf(l);
@@ -778,7 +786,7 @@ Dinner: Baked salmon with roasted sweet potato, broccoli, and a squeeze of lemon
     const hits = scan(it.name || '');
     const lvl = worstLevel(hits);
     const h = hits.find(x => x.rule.level === lvl);
-    return { name: it.name, unit: 'serving', c: +it.c || 0, f: +it.f || 0, gi: it.gi === '' || it.gi == null ? undefined : +it.gi, custom: true,
+    return { name: it.name, unit: 'serving', pg: +it.pg || 0, c: +it.c || 0, f: +it.f || 0, gi: it.gi === '' || it.gi == null ? undefined : +it.gi, custom: true,
              s: lvl || 'ok', w: h ? h.rule.label + ': ' + h.rule.why : '' };
   }
   function itemNums(it) {
@@ -787,15 +795,15 @@ Dinner: Baked salmon with roasted sweet potato, broccoli, and a squeeze of lemon
     let gl = 0, unknown = false;
     if (fd.gi === undefined) { if (avail > 2) unknown = true; }
     else if (fd.gi != null) gl = fd.gi * avail / 100;
-    return { fd, q, carbs: fd.c * q, fiber: fd.f * q, avail, gl, unknown,
+    return { fd, q, carbs: fd.c * q, fiber: fd.f * q, prot: (fd.pg || 0) * q, avail, gl, unknown,
              P: (fd.P || 0) * q, B: (fd.B || 0) * q, N: (fd.N || 0) * q, F: (fd.F || 0) * q };
   }
   function mealTotals(meal) {
-    const t = { carbs: 0, fiber: 0, avail: 0, gl: 0, unknown: false, est: false, P: 0, B: 0, N: 0, F: 0, rows: [] };
+    const t = { carbs: 0, fiber: 0, prot: 0, avail: 0, gl: 0, unknown: false, est: false, P: 0, B: 0, N: 0, F: 0, rows: [] };
     for (const it of meal.items) {
       const n = itemNums(it);
       t.rows.push(n);
-      for (const k of ['carbs', 'fiber', 'avail', 'gl', 'P', 'B', 'N', 'F']) t[k] += n[k];
+      for (const k of ['carbs', 'fiber', 'prot', 'avail', 'gl', 'P', 'B', 'N', 'F']) t[k] += n[k];
       if (n.unknown) t.unknown = true;
       if (n.fd.est && n.gl > 0) t.est = true;
     }
@@ -829,13 +837,14 @@ Dinner: Baked salmon with roasted sweet potato, broccoli, and a squeeze of lemon
     document.getElementById('week').value = state.week;
     const target = R.ramp[(+state.week || 4) - 1];
     const totals = state.meals.map(mealTotals);
-    const day = totals.reduce((a, t) => { for (const k of ['fiber', 'gl', 'B', 'N', 'F', 'carbs']) a[k] += t[k]; a.flags += t.flags.filter(f => f[0] !== 'note').length; return a; }, { fiber: 0, gl: 0, B: 0, N: 0, F: 0, carbs: 0, flags: 0 });
+    const day = totals.reduce((a, t) => { for (const k of ['fiber', 'gl', 'B', 'N', 'F', 'carbs', 'prot']) a[k] += t[k]; a.flags += t.flags.filter(f => f[0] !== 'note').length; return a; }, { fiber: 0, gl: 0, B: 0, N: 0, F: 0, carbs: 0, prot: 0, flags: 0 });
     const pct = Math.min(100, day.fiber / target * 100);
     const S = document.getElementById('day-summary');
     S.innerHTML = `
       <div class="stat${day.fiber < target * 0.85 ? ' warn' : ''}"><span class="k">Fiber</span><span class="v">${fmt(day.fiber, 0)} <small>of ${target} g</small></span><div class="bar"><i style="width:${pct}%"></i></div></div>
       <div class="stat${day.B > R.beansPerDay ? ' warn' : ''}"><span class="k">Bean servings</span><span class="v">${fmt(day.B)} <small>of ${fmt(R.beansPerDay)}</small></span><span class="small muted">Beans, chickpeas, edamame, tofu</span></div>
       <div class="stat${day.N > R.nutsSeedsTbsp ? ' warn' : ''}"><span class="k">Nuts and seeds</span><span class="v">${fmt(day.N)} <small>of ${fmt(R.nutsSeedsTbsp)} tbsp</small></span><span class="small muted">Chia and flax count</span></div>
+      <div class="stat${R.proteinPerDay != null && day.prot < R.proteinPerDay * 0.9 ? ' warn' : ''}"><span class="k">Protein</span><span class="v">~${fmt(day.prot, 0)} <small>${R.proteinPerDay != null ? `of ${fmt(R.proteinPerDay, 0)} g` : 'g (no goal set)'}</small></span><span class="small muted">${state.meals.filter(m => m.items.length).map(m => `${esc(m.name)} ${fmt(mealTotals(m).prot, 0)}`).join(' · ')}</span></div>
       <div class="stat${vegServ(state.meals) < R.vegPerDay ? ' warn' : ''}"><span class="k">Non-starchy veg</span><span class="v">${fmt(vegServ(state.meals))} <small>of ${fmt(R.vegPerDay)} servings</small></span><span class="small muted">½ cup cooked or 1 cup raw leafy</span></div>
       <div class="stat"><span class="k">Glycemic load</span><span class="v">${fmt(day.gl, 0)} <small>for the day</small></span><span class="small muted">Per-meal bands below</span></div>
       ${R.carbsPerDay != null ? `<div class="stat${Math.round(day.carbs) > R.carbsPerDay ? ' warn' : ''}"><span class="k">Total carbs</span><span class="v">${fmt(day.carbs, 0)} <small>of ${fmt(R.carbsPerDay, 0)} g</small></span><span class="small muted">Your daily target</span></div>` : ''}`;
@@ -881,6 +890,7 @@ Dinner: Baked salmon with roasted sweet potato, broccoli, and a squeeze of lemon
           <div class="chips">
             <span class="pill plain">${fmt(t.fiber)} g fiber</span>
             <span class="pill plain">${fmt(t.avail)} g carbs</span>
+            <span class="pill plain">~${fmt(t.prot, 0)} g protein</span>
             ${meal.items.length ? `<span class="pill ${bl}">GL ${fmt(t.gl, 0)} ${bn}${t.est ? ' (est.)' : ''}</span>` : ''}
           </div></div>
         ${meal.items.length ? `<div class="items">${rows}</div>` : '<p class="muted small">Nothing here yet. Search below to add a food.</p>'}
@@ -1008,6 +1018,22 @@ Dinner: Baked salmon with roasted sweet potato, broccoli, and a squeeze of lemon
         if (p) { meal.items.push({ id: p, q: 1 }); changes.push(`${meal.name}: added ${nameOf(p)} so the carbs come with protein.`); }
       }
     });
+    // 2b. Protein goal (only when you've set one): add a portion from the pantry to the meal with the least.
+    if (R.proteinPerDay != null) {
+      const protIds = [...have].filter(id => usable(id) && ['protein', 'bean'].includes(roleOf(BY_ID[id]))).sort((a, b) => (BY_ID[b].pg || 0) - (BY_ID[a].pg || 0));
+      for (let n = 0; n < 6; n++) {
+        const tot = state.meals.reduce((a, m) => a + mealTotals(m).prot, 0); if (tot >= R.proteinPerDay * 0.95) break;
+        const order = state.meals.map((m, mi) => [mi, mealTotals(m).prot]).filter(([mi]) => state.meals[mi].items.length).sort((a, b) => a[1] - b[1]);
+        let added = false;
+        for (const [mi] of order) { const meal = state.meals[mi];
+          for (const id of protIds) { const ex = meal.items.find(x => x.id === id), step = 0.5;
+            if (ex && ex.q >= 1.5) continue;
+            if (tryChange(mi, () => { if (ex) ex.q += step; else meal.items.push({ id, q: step }); }, () => { if (ex) ex.q -= step; else meal.items.pop(); })) {
+              changes.push(`${meal.name}: ${ex ? 'more' : 'added'} ${nameOf(id)} (½ × ${BY_ID[id].unit}, protein).`); added = true; break; } }
+          if (added) break; }
+        if (!added) break;
+      }
+    }
     // 3. Non-starchy vegetables: every lunch and dinner gets some, then top up to your daily servings.
     const vegIds = [...have].filter(id => usable(id) && roleOf(BY_ID[id]) === 'veg' && (BY_ID[id].f || 0) > 0.3).sort((a, b) => (BY_ID[b].f || 0) - (BY_ID[a].f || 0));
     const addVeg = mi => { const meal = state.meals[mi];
@@ -1047,9 +1073,10 @@ Dinner: Baked salmon with roasted sweet potato, broccoli, and a squeeze of lemon
       changes.push(`${meal.name}: ${best.ex ? 'more' : 'added'} ${nameOf(best.id)} (${qtyText(best.step)} × ${BY_ID[best.id].unit}, +${fmt(best.gain)} g fiber).`);
     }
     const d = dayT();
-    const v = vegServ(state.meals);
+    const v = vegServ(state.meals), pr = state.meals.reduce((a, m) => a + mealTotals(m).prot, 0);
     const msg = (d.fiber >= target - 0.5 ? `Fiber is at ${fmt(d.fiber, 0)} of ${target} g` : `Fiber got to ${fmt(d.fiber, 0)} of ${target} g (your pantry ran out of fiber foods that fit your limits)`)
-      + (v >= R.vegPerDay ? `, and vegetables at ${fmt(v)} of ${fmt(R.vegPerDay)} servings.` : `. Vegetables got to ${fmt(v)} of ${fmt(R.vegPerDay)} servings: tick more vegetables in your pantry or add them to your list.`);
+      + (v >= R.vegPerDay ? `, and vegetables at ${fmt(v)} of ${fmt(R.vegPerDay)} servings.` : `. Vegetables got to ${fmt(v)} of ${fmt(R.vegPerDay)} servings: tick more vegetables in your pantry or add them to your list.`)
+      + (R.proteinPerDay != null ? ` Protein ~${fmt(pr, 0)} of ${fmt(R.proteinPerDay, 0)} g.` : ` Protein ~${fmt(pr, 0)} g (set a goal in My rules once your provider gives one).`);
     return { msg, changes, before };
   }
   let FIX_UNDO = null;

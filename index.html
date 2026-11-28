@@ -166,8 +166,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.49.1";
+const APP_VERSION = "1.50.0";
 const CHANGES = [
+  {v:"1.50.0", date:"2026-11-28", items:["Meal checker > Build and score a day: protein in grams for each meal and the day (estimates). Set a protein goal in My rules once your provider gives one, and Fix this day tops protein up too."]},
   {v:"1.49.1", date:"2026-11-28", items:["My rules: new Watch fat switch. Untick it and butter, ghee and sablefish stop being flagged, and the oil cap per meal is lifted."]},
   {v:"1.49.0", date:"2026-11-28", items:["Meal checker > Build and score a day: \"Fix this day from my pantry\" swaps out foods that break your rules or that you don't have, adds protein to carbs, then adds vegetables and fiber from your pantry inside your limits. Undo puts it back.","New goal: non-starchy vegetable servings a day (My rules, starts at 5)."]},
   {v:"1.48.4", date:"2026-11-28", items:["Tier 2: lime is marked \"check first\", and the lime question is on your doctor list."]},
@@ -975,7 +976,7 @@ function defaultTodo(){ return []; }
 
 function defaultRules(){
   return {carbsPerDay:null, carbsPerMeal:null, glLow:10, glHigh:20, fiberGoal:30, ramp:[13,20,25,30],
-    beansPerDay:1, nutsSeedsTbsp:2, oilTspPerMeal:2, spacingMin:120, vegPerDay:5,
+    beansPerDay:1, nutsSeedsTbsp:2, oilTspPerMeal:2, spacingMin:120, vegPerDay:5, proteinPerDay:null,
     extra:[], ok:[{word:"cilantro|coriander", label:"Cilantro and coriander"}]};
 }
 const RULE_FIELDS = [
@@ -985,6 +986,7 @@ const RULE_FIELDS = [
   ["beansPerDay","Bean servings","1/2-cup servings a day",""],
   ["nutsSeedsTbsp","Nuts and seeds","tbsp a day","Chia and flax count."],
   ["oilTspPerMeal","Added oil","tsp a meal, at most",""],
+  ["proteinPerDay","Protein goal","g a day","Leave blank until your provider gives you a number (it's on your doctor list)."],
   ["vegPerDay","Non-starchy vegetables","servings a day","1/2 cup cooked or 1 cup raw leafy is one serving. The Cardiometabolic guide says up to 9."],
   ["spacingMin","Binder spacing","minutes from meds and supplements","Psyllium and other binders."],
   ["glLow","Low glycemic load","per meal, at or under",""],
