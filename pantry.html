@@ -1557,8 +1557,19 @@ var HH = (function(){
       nd.cook.forEach(b => cook.add(b));
       if (r.t === 'batch') cook.add(r.id);
     }
+    // Foods the meal checker's "Fix this day" put on your list.
+    for (const [c, x] of Object.entries(state.extra || {})) {
+      const id = extraId(c);
+      if (state.pantry[id]) continue;
+      if (!buy.has(id)) buy.set(id, new Map());
+      buy.get(id).set('fixed day', { amt: x.amt || '', n: 1 });
+    }
     return { buy, his, cook };
   }
+  const extraId = c => { const x = (state.extra || {})[c] || {}; return [c, ...(x.alt || [])].find(i => ITEM[i]) || c; };
+  const itemName = id => ITEM[id]?.n || Object.entries(state.extra || {}).find(([c]) => extraId(c) === id)?.[1].n || id;
+  // Bought or cleared: take it off the extra list.
+  function dropExtra(id) { for (const c of Object.keys(state.extra || {})) if (extraId(c) === id) delete state.extra[c]; }
   function renderPlan() {
     document.getElementById('days').value = state.days;
     const entries = planEntries().sort((a, b) => TYPES.findIndex(t => t[0] === RECIPE[a[0]].t) - TYPES.findIndex(t => t[0] === RECIPE[b[0]].t));
@@ -1596,8 +1607,8 @@ var HH = (function(){
       const ids = [...buy.keys()].filter(id => (ITEM[id]?.c || 'other') === cid);
       if (!ids.length) continue;
       out.push(`<div class="shop-group"><h3>${esc(cname)}</h3>${ids.map(id => {
-        const amts = [...buy.get(id).entries()].map(([from, x]) => `${x.amt}${x.n > 1 ? ' ×' + x.n : ''} (${from})`).join('; ');
-        return `<label class="shop-item ${state.got[id] ? 'got' : ''}"><input type="checkbox" data-got="${id}" ${state.got[id] ? 'checked' : ''}><span><span class="nm">${esc(ITEM[id]?.n || id)}</span>${localNow(ITEM[id]) ? ' <span class="pill ok">local now</span>' : ''}<br><span class="amt">${esc(amts)}</span></span></label>`;
+        const amts = [...buy.get(id).entries()].map(([from, x]) => `${x.amt ? x.amt + (x.n > 1 ? ' ×' + x.n : '') + ' ' : ''}(${from})`).join('; ');
+        return `<label class="shop-item ${state.got[id] ? 'got' : ''}"><input type="checkbox" data-got="${id}" ${state.got[id] ? 'checked' : ''}><span><span class="nm">${esc(itemName(id))}</span>${localNow(ITEM[id]) ? ' <span class="pill ok">local now</span>' : ''}<br><span class="amt">${esc(amts)}</span></span></label>`;
       }).join('')}</div>`);
     }
     if (his.size) out.push(`<div class="shop-group"><h3>For him</h3>${[...his.keys()].map(id =>
@@ -1617,7 +1628,7 @@ var HH = (function(){
     const { buy, his } = shopping();
     const rows = [];
     for (const [cid, cname] of CATS) for (const id of buy.keys()) if ((ITEM[id]?.c || 'other') === cid)
-      rows.push({ id, cat: cname, n: ITEM[id]?.n || id, a: [...buy.get(id).values()].map(x => x.amt + (x.n > 1 ? ' ×' + x.n : '')).join('; ') });
+      rows.push({ id, cat: cname, n: itemName(id), a: [...buy.get(id).values()].map(x => x.amt + (x.n > 1 ? ' ×' + x.n : '')).join('; ') });
     for (const id of his.keys()) rows.push({ id, cat: 'For him', n: ITEM[id]?.n || id, a: '' });
     if (!rows.length) { toast('Nothing to buy yet'); return; }
     // Keep the list as it was when the trip started, so ticked items stay on screen.
@@ -1648,7 +1659,7 @@ var HH = (function(){
     if (b.dataset.gdone) { groc = null; renderGrocery(); try { wake?.release(); } catch (_) {} wake = null; render(); return; }
     const r = groc.find(x => x.id === b.dataset.gid);
     r.on = !r.on;
-    if (r.on) { state.pantry[r.id] = 1; state.got[r.id] = 1; } else { delete state.pantry[r.id]; delete state.got[r.id]; }
+    if (r.on) { state.pantry[r.id] = 1; state.got[r.id] = 1; dropExtra(r.id); } else { delete state.pantry[r.id]; delete state.got[r.id]; }
     save(); renderGrocery();
   });
   document.getElementById('btn-grocery').addEventListener('click', openGrocery);
@@ -1671,11 +1682,11 @@ var HH = (function(){
     save();
   });
   document.getElementById('days').addEventListener('change', e => { state.days = Math.min(14, Math.max(1, +e.target.value || 7)); save(); renderPlan(); });
-  document.getElementById('btn-clear-plan').addEventListener('click', () => { state.plan = {}; state.got = {}; save(); render(); });
+  document.getElementById('btn-clear-plan').addEventListener('click', () => { state.plan = {}; state.got = {}; state.extra = {}; save(); render(); });
   document.getElementById('btn-bought').addEventListener('click', () => {
     const ids = Object.keys(state.got);
     if (!ids.length) { toast('Tick items as you buy them first'); return; }
-    ids.forEach(id => state.pantry[id] = 1);
+    ids.forEach(id => { state.pantry[id] = 1; dropExtra(id); });
     state.got = {}; save(); render(); toast(`Moved ${ids.length} item${ids.length > 1 ? 's' : ''} into your pantry`);
   });
 

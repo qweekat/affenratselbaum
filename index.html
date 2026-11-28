@@ -166,8 +166,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.50.2";
+const APP_VERSION = "1.51.0";
 const CHANGES = [
+  {v:"1.51.0", date:"2026-11-28", items:["Meal checker: new \"Fix with any food\" button uses any food that fits your rules (your pantry first) and lists what to buy, with one tap to add them to your grocery list.","Snacks stay light: no added meat or cheese, a heavy snack gets trimmed and some cucumber, snap peas or greens.","New rule: protein per meal (30 g to start), so protein is spread out instead of piled on."]},
   {v:"1.50.2", date:"2026-11-28", items:["Fix this day: cheese is capped at about 2 portions a day, meat or fish comes first for protein, and no food is added to more than 2 meals."]},
   {v:"1.50.1", date:"2026-11-28", items:["Fix this day and Build a meal keep sweet and savory apart: no vegetables in a berry and chia breakfast, no fruit or chia in a savory meal. Breakfasts stay like your usual (meat or fish, cucumber or greens, lime, Pacha toast)."]},
   {v:"1.50.0", date:"2026-11-28", items:["Meal checker > Build and score a day: protein in grams for each meal and the day (estimates). Set a protein goal in My rules once your provider gives one, and Fix this day tops protein up too."]},
@@ -906,7 +907,7 @@ function flareAffected(){
 
 const MOLD_T2_WHY = "Break the Mold Tier 2 (you turned this on).";
 const MOLD_T2_WORDS = [
-  {word:"fruit|fruits|apple|apples|banana|bananas|berry|berries|raspberries|blackberries|blueberries|strawberries|kiwi|kiwis|persimmon|persimmons|orange|oranges|mango|mangoes|pear|pears|cherries|melon|grapefruit|plum|plums|apricot|apricots", label:"All fruit (Tier 2)", level:"avoid"},
+  {word:"fruit|fruits|apple|apples|banana|bananas|berry|berries|raspberries|blackberries|blueberries|strawberries|kiwi|kiwis|persimmon|persimmons|orange|oranges|mango|mangoes|pear|pears|cherries|melon|grapefruit|grapefruits|cranberry|cranberries|cherry|peach|peaches|pineapple|grape|grapes|plum|plums|apricot|apricots", label:"All fruit (Tier 2)", level:"avoid"},
   {word:"sweet potato|sweet potatoes|yam|yams|butternut|acorn squash|winter squash|kabocha|delicata|pumpkin|beet|beets|green peas|english peas|parsnip|parsnips|plantain|plantains", label:"Starchy vegetables (Tier 2)", level:"avoid"},
   {word:"quinoa|buckwheat|groats|kasha|rice|oat|oats|oatmeal|millet|amaranth|sorghum|teff|grain|grains|bread|toast|pasta|flour|crackers|cereal", label:"All grains, quinoa and buckwheat included (Tier 2)", level:"avoid"},
   {word:"fermented|kimchi|sauerkraut|miso|tempeh|natto|kefir", label:"Fermented foods (Tier 2)", level:"avoid"},
@@ -978,7 +979,7 @@ function defaultTodo(){ return []; }
 
 function defaultRules(){
   return {carbsPerDay:null, carbsPerMeal:null, glLow:10, glHigh:20, fiberGoal:30, ramp:[13,20,25,30],
-    beansPerDay:1, nutsSeedsTbsp:2, oilTspPerMeal:2, spacingMin:120, vegPerDay:5, proteinPerDay:null,
+    beansPerDay:1, nutsSeedsTbsp:2, oilTspPerMeal:2, spacingMin:120, vegPerDay:5, proteinPerDay:null, proteinPerMeal:30,
     extra:[], ok:[{word:"cilantro|coriander", label:"Cilantro and coriander"}]};
 }
 const RULE_FIELDS = [
@@ -989,6 +990,7 @@ const RULE_FIELDS = [
   ["nutsSeedsTbsp","Nuts and seeds","tbsp a day","Chia and flax count."],
   ["oilTspPerMeal","Added oil","tsp a meal, at most",""],
   ["proteinPerDay","Protein goal","g a day","Leave blank until your provider gives you a number (it's on your doctor list)."],
+  ["proteinPerMeal","Protein per meal","g at most","Fix this day won't add protein past this in one meal, so it's spread through the day. Lower it if big protein meals don't sit well."],
   ["vegPerDay","Non-starchy vegetables","servings a day","1/2 cup cooked or 1 cup raw leafy is one serving. The Cardiometabolic guide says up to 9."],
   ["spacingMin","Binder spacing","minutes from meds and supplements","Psyllium and other binders."],
   ["glLow","Low glycemic load","per meal, at or under",""],
