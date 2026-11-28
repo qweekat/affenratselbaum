@@ -166,8 +166,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.44.3";
+const APP_VERSION = "1.44.4";
 const CHANGES = [
+  {v:"1.44.4", date:"2026-11-28", items:["The backup reminder (when your last backup is 2 or more days old) now shows on Lite and Today too, not just Quick."]},
   {v:"1.44.3", date:"2026-11-28", items:["Lite: slimmer water box with smaller buttons."]},
   {v:"1.44.2", date:"2026-11-28", items:["Lite: water looks and works like Quick (bar, your cup sizes, undo), and How you feel today sits right under it."]},
   {v:"1.44.1", date:"2026-11-28", items:["Quick no longer shows the \"Deleting this icon deletes your data\" warning. It's still under More, Phone settings, and the backup reminder still appears when a backup is due."]},
@@ -1474,6 +1475,7 @@ function renderDay(offset){
     <small class="muted">This week: ${esc(f.adds)}. Stop raising fiber if bloating or cramping gets worse.</small>
     <small class="muted">This week: ${esc(f.adds)}. Stop raising fiber if bloating or cramping gets worse.</small>
   </details>`;
+  if(offset===0 && typeof backupNudge==="function") h += backupNudge();
   if(offset<=0) h += (offset===0?nudgeHtml():"") + `<div class="stack" style="gap:4px"><div><button class="btn" data-liteeat="1" data-day="${key}">Log what I ate</button></div>${ateListHtml(key)}</div>`;
   if(flareOn(d)) h += `<div class="warnbox"><b>Flare-up mode through ${esc(DAYS_LONG[parseYmd(S.flare.until).getDay()])} ${esc(S.flare.until.slice(5).replace("-","/"))}.</b> No nuts, seeds, chia, flax, beans, chickpeas, edamame, soy, legume noodles, chocolate or oats. Keep quinoa and buckwheat small. Lean on ${LYSINE_FOODS}. <button class="linkbtn" data-goflare="1">Change or end it</button></div>`;
   else if(offset===0) h += `<div><button class="linkbtn" data-goflare="1">Need a food break? Turn off some foods for a while</button></div>`;
@@ -1778,6 +1780,7 @@ function renderLite(){
       ${ev.closed?"":`<button class="btn ghost" data-liteclosed="1">Done eating for today</button>`}
       ${ev.bed?"":`<button class="btn ghost" data-liteev="bed">Going to bed</button>`}
     </div>${evLine?`<div class="chips" style="gap:6px;margin-top:8px">${evLine}</div>`:""}</section>
+    ${typeof backupNudge==="function"?backupNudge():""}
     <section class="panel"><h2>${dueNow.length?"Take now":"Nothing due right now"}</h2>
       ${dueNow.map(x=>liteRow(x,key,true)).join("")}
       ${soon.length?`<h3 style="margin:8px 0 0">Coming up</h3>${soon.map(x=>liteRow(x,key,false)).join("")}`:""}
