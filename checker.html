@@ -1005,7 +1005,12 @@ Dinner: Baked salmon with roasted sweet potato, broccoli, and a squeeze of lemon
     const usable = id => { const fd = BY_ID[id]; return fd && (!fd.s || fd.s === 'ok' || fd.s === 'note'); };
     const dayT = () => state.meals.map(mealTotals).reduce((a, t) => { for (const k of ['fiber', 'B', 'N']) a[k] += t[k]; return a; }, { fiber: 0, B: 0, N: 0 });
     const fitsMeal = mi => { const t = mealTotals(state.meals[mi]); return t.gl < R.glHigh && t.F <= R.oilTspPerMeal && (R.carbsPerMeal == null || Math.round(t.carbs) <= R.carbsPerMeal); };
-    const fitsDay = () => { const d = dayT(); return d.B <= R.beansPerDay + 1e-9 && d.N <= R.nutsSeedsTbsp + 1e-9; };
+    // Variety: cheese adds up to 2 portions a day at most, and no food goes into more than 2 meals.
+    const CHEESE = new Set(['mozz', 'feta', 'creamcheese']);
+    const cheeseQ = () => state.meals.reduce((a, m) => a + m.items.filter(i => CHEESE.has(i.id)).reduce((b, i) => b + i.q, 0), 0);
+    const cheeseCap = Math.max(2, cheeseQ());
+    const inMeals = id => state.meals.filter(m => m.items.some(i => i.id === id)).length;
+    const fitsDay = () => { const d = dayT(); return d.B <= R.beansPerDay + 1e-9 && d.N <= R.nutsSeedsTbsp + 1e-9 && cheeseQ() <= cheeseCap + 1e-9 && state.meals.every(m => !m.items.some(i => i.id && inMeals(i.id) > 2 && !STAPLE.has(i.id) && !before.some((b, bi) => b.items.some(x => x.id === i.id) && state.meals[bi] === m))); };
     const tryChange = (mi, apply, undo) => { apply(); if (fitsMeal(mi) && fitsDay()) return true; undo(); return false; };
     const nameOf = id => BY_ID[id].name;
     // 1. Swap foods that break your rules, or that aren't in your pantry.
@@ -1033,7 +1038,8 @@ Dinner: Baked salmon with roasted sweet potato, broccoli, and a squeeze of lemon
     state.meals.forEach((meal, mi) => {
       const t = mealTotals(meal);
       if (t.avail > 15 && !t.P && !t.B) {
-        const p = [...have].find(id => usable(id) && roleOf(BY_ID[id]) === 'protein' && fitsStyle(meal, id));
+        const pc = [...have].filter(id => usable(id) && roleOf(BY_ID[id]) === 'protein' && fitsStyle(meal, id) && inMeals(id) < 2);
+        const p = pc.find(id => !CHEESE.has(id)) || (cheeseQ() < cheeseCap ? pc[0] : null);
         if (p) { meal.items.push({ id: p, q: 1 }); changes.push(`${meal.name}: added ${nameOf(p)} so the carbs come with protein.`); }
       }
     });
@@ -1045,8 +1051,9 @@ Dinner: Baked salmon with roasted sweet potato, broccoli, and a squeeze of lemon
         const order = state.meals.map((m, mi) => [mi, mealTotals(m).prot + (mealStyle(m) === 'sweet' ? 100 : 0)]).filter(([mi]) => state.meals[mi].items.length).sort((a, b) => a[1] - b[1]);
         let added = false;
         for (const [mi] of order) { const meal = state.meals[mi];
-          const mine = protIds.filter(id => meal.items.some(x => x.id === id && roleOf(BY_ID[id]) === 'protein'));
-          for (const id of (mine.length ? mine : protIds)) { const ex = meal.items.find(x => x.id === id), step = 0.5;
+          const mine = protIds.filter(id => !CHEESE.has(id) && meal.items.some(x => x.id === id && roleOf(BY_ID[id]) === 'protein'));
+          const fresh = [...protIds.filter(id => !CHEESE.has(id)), ...protIds.filter(id => CHEESE.has(id))];
+          for (const id of (mine.length ? mine : fresh)) { const ex = meal.items.find(x => x.id === id), step = 0.5;
             if ((ex && ex.q >= 1.5) || !fitsStyle(meal, id)) continue;
             if (tryChange(mi, () => { if (ex) ex.q += step; else meal.items.push({ id, q: step }); }, () => { if (ex) ex.q -= step; else meal.items.pop(); })) {
               changes.push(`${meal.name}: ${ex ? 'more' : 'added'} ${nameOf(id)} (½ × ${BY_ID[id].unit}, protein).`); added = true; break; } }

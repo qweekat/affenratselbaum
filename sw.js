@@ -1,6 +1,6 @@
 /* Keeps all systems you working with no signal. App pages come from the phone's copy first and refresh in the background;
    fonts and the label reader are kept after their first download. Version changes with every build. */
-const CACHE = "dh-phone-e55d4f8366";
+const CACHE = "dh-phone-8fa0c98e7c";
 const FILES = ["./", "index.html", "pantry.html", "checker.html", "manifest.webmanifest", "icon-180.png", "icon-512.png", "qrcode.js"];
 self.addEventListener("install", e=>{ e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES.map(f=>new Request(f,{cache:"reload"})))).then(()=>self.skipWaiting())); });
 self.addEventListener("activate", e=>{ e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())); });
