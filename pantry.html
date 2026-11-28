@@ -1388,6 +1388,15 @@ var HH = (function(){
     seen = seen || new Set(); if (seen.has(r.id)) return ''; seen.add(r.id);
     return r.n + ' ' + r.ings.filter(e => e[2] !== 'his').map(e => idsOf(e).map(id => { const it = ITEM[id], b = RECIPE[id] || (it && it.make && RECIPE[it.make]); return (it ? it.n : '') + ' ' + (b ? hhText(b, seen) : ''); }).join(' ')).join(' ');
   }
+  // Which of your food rules a meal trips, and why, so "Doesn't fit" isn't a mystery.
+  function ruleLines(r) {
+    const { hits } = recipeHits(r), by = new Map();
+    for (const h of hits) { if (h.rule.level === 'note') continue; const k = h.rule.label; if (!by.has(k)) by.set(k, { lvl: h.rule.level, why: h.rule.why, words: new Set() }); by.get(k).words.add(h.word.toLowerCase()); }
+    if (!by.size) return '';
+    const name = { avoid: "Doesn't fit", ask: 'Check', limit: 'Limit' };
+    return [...by].sort((a, b) => ORDER.indexOf(a[1].lvl) - ORDER.indexOf(b[1].lvl)).map(([label, x]) =>
+      `<p class="need small"><span class="pill ${x.lvl === 'avoid' ? 'avoid' : 'limit'}">${name[x.lvl] || x.lvl}</span> <b>${esc(label)}</b> (${esc([...x.words].join(', '))})${x.why ? `. <span class="muted">${esc(x.why)}</span>` : ''}</p>`).join('');
+  }
   function mealCard(r) {
     const nd = needs(r);
     const hard = hardBuy(nd), nBuy = hard.length;
@@ -1423,6 +1432,7 @@ var HH = (function(){
       <div class="row">${pills.join('')}</div>
       <div class="bar" aria-label="${haveN} of ${counts.length} ingredients in stock"><i style="width:${pct}%"></i></div>
       ${!nBuy && !nd.cook.size ? '<p class="need"><b>You have everything.</b></p>' : ''}
+      ${ruleLines(r)}
       ${cookList.length ? `<p class="need">Cook first: ${cookList.join(', ')}</p>` : ''}
       ${buyList.length ? `<p class="need">Buy: ${buyList.join(', ')}</p>` : ''}
       ${soft.length ? `<p class="small muted">Check you have: ${soft.map(id => esc(ITEM[id].n)).join(', ')}</p>` : ''}
@@ -1447,7 +1457,7 @@ var HH = (function(){
       ['Ready after a batch cook', scored.filter(x => x.buy === 0 && x.cook > 0)],
       ['Missing 1 or 2 things', scored.filter(x => x.buy > 0 && x.buy <= 2)],
       ['Missing more', scored.filter(x => x.buy > 2)],
-      ["Doesn't fit your food rules", all.filter(x => x.off)],
+      ["Doesn't fit your food rules (each card says why; change rules under More > My rules)", all.filter(x => x.off)],
     ];
     document.getElementById('meal-groups').innerHTML = groups.filter(g => g[1].length).map(([h, xs]) =>
       `<div class="section-h"><h2>${h}</h2><span class="small muted">${xs.length}</span></div><div class="grid">${xs.map(x => mealCard(x.r)).join('')}</div>`
