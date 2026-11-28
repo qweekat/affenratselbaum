@@ -166,8 +166,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.42.0";
+const APP_VERSION = "1.42.1";
 const CHANGES = [
+  {v:"1.42.1", date:"2026-11-28", items:["Lite: \"Add a supplement or powder\" can mark it Only as needed, with a most-per-day limit."]},
   {v:"1.42.0", date:"2026-11-28", items:["Lite: supplements can be set for 30 min or 1 h before a meal or bedtime. Lite counts down from that meal's planned time and shows it under Coming up, then Take now (with the banner and chime if the app is open)."]},
   {v:"1.41.1", date:"2026-11-27", items:["More > Phone settings (was Phone shortcuts): Start page has both \"open on Quick\" and \"open on Lite\", the same boxes as on those pages. In the home-screen app, the Shortcuts links are greyed out since they only work in Safari."]},
   {v:"1.41.0", date:"2026-11-27", items:["Fill in past days: on Today, tap \"‹ Day before\" to go back (up to 60 days). Tick the checklist, add water, log meals and as-needed doses for that day. \"Back to today\" returns."]},
@@ -1765,6 +1766,8 @@ function renderLite(){
         <small class="muted">For something you take every day, like a fiber powder with lunch. Add it here, then tick when you take it.</small>
         <label>Name<input type="text" id="lite-sname" placeholder="e.g. Fiber powder"></label>
         <label>How much<input type="text" id="lite-sdose" placeholder="e.g. 1 scoop in water"></label>
+        <label style="display:flex;gap:8px;align-items:center;font-weight:400"><input type="checkbox" id="lite-sprn"> Only as needed (no reminders, log it with Took it)</label>
+        <label class="inline" style="font-weight:400">Most a day, if there's a limit <input type="number" id="lite-smax" min="0" max="12" style="width:5em" placeholder="none"></label>
         <div><button class="btn" data-liteaddsupp="1">Add it</button></div></div>
     </details>
     <details class="panel"><summary><b>Alerts while the app is open</b></summary>
@@ -1808,7 +1811,9 @@ function liteClick(t){
   if(t.dataset.alerttest){ alertNow("Test alert", "This is how a due item looks"); return true; }
   if(t.dataset.liteaddsupp){ const g = id=>((document.getElementById(id)||{}).value||"").trim(), name = g("lite-sname");
     if(!name){ toast("Type a name first"); return true; }
-    S.supplements.push({id:"s"+Date.now(), name, dose:g("lite-sdose"), times:"", how:"", binder:false, active:true, pending:false, notes:"", where:"home", whens:[]});
+    const prn = !!(document.getElementById("lite-sprn")||{}).checked, mx = Number(g("lite-smax"))||0;
+    S.supplements.push(Object.assign({id:"s"+Date.now(), name, dose:g("lite-sdose"), times:"", how:"", binder:false, active:true, pending:false, notes:"", where:"home", whens:[]}, prn?{asNeeded:true, maxPerDay:mx||""}:{}));
+    if(prn){ save(); render(); toast("Added. Tap Took it under As needed when you take it."); return true; }
     LITE_SET_OPEN = true; save(); render(); LITE_SET_OPEN = false;
     const row = [...document.querySelectorAll("[data-litewhen]")].pop(); if(row) row.scrollIntoView({block:"center"});
     toast("Added. Now tick when you take it."); return true; }
