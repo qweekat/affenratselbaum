@@ -48,7 +48,7 @@ a{color:var(--juniper);font-weight:700}
 [hidden]{display:none !important}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{font-size:.85rem;padding:2px 10px;border-radius:999px;background:var(--juniper-soft);color:var(--juniper);font-weight:700}
-.lrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0}.lbig{display:grid;gap:10px}.lbig .btn{font-size:1.15rem;padding:14px}.lpick{text-align:left;padding:10px 12px;border:1px solid var(--line,#ddd);border-radius:10px;background:none;font:inherit;color:inherit}.lpick.on{border-color:var(--juniper,#2f6b57);background:var(--juniper-soft,#e6f0ec)}
+.lite .sips,.lite .wbtns{gap:6px}.lite .sip,.lite .wbtns .btn{padding:5px 12px;min-height:34px;font-size:.95rem}.lite .wbar{height:8px}.lite .wtotal{font-size:1.05rem}.lite section.panel h2+span{font-size:.95rem}.lrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0}.lbig{display:grid;gap:10px}.lbig .btn{font-size:1.15rem;padding:14px}.lpick{text-align:left;padding:10px 12px;border:1px solid var(--line,#ddd);border-radius:10px;background:none;font:inherit;color:inherit}.lpick.on{border-color:var(--juniper,#2f6b57);background:var(--juniper-soft,#e6f0ec)}
 .dgrow{border-top:1px solid var(--line,#ddd);padding:10px 0}.dgrow:first-child{border-top:0}.dgrow>summary{display:flex;gap:10px;align-items:center;cursor:pointer;list-style:none}.dgrow>summary::-webkit-details-marker{display:none}.dgrow .dgmore{margin-left:auto;font-size:.85rem}.dgrow>summary input{flex-shrink:0}
 .chip.pending{background:var(--warn-soft);color:var(--warn)}
 .chip.dusk{background:var(--dusk-soft);color:var(--dusk)}
@@ -166,8 +166,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.44.2";
+const APP_VERSION = "1.44.3";
 const CHANGES = [
+  {v:"1.44.3", date:"2026-11-28", items:["Lite: slimmer water box with smaller buttons."]},
   {v:"1.44.2", date:"2026-11-28", items:["Lite: water looks and works like Quick (bar, your cup sizes, undo), and How you feel today sits right under it."]},
   {v:"1.44.1", date:"2026-11-28", items:["Quick no longer shows the \"Deleting this icon deletes your data\" warning. It's still under More, Phone settings, and the backup reminder still appears when a backup is due."]},
   {v:"1.44.0", date:"2026-11-28", items:["How you feel today is now on Quick and Lite too, the same faces as on Today.","Lite: removed the Pantry button at the bottom, since Pantry is on the bottom bar."]},
