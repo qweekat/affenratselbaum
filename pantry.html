@@ -333,6 +333,8 @@ async function readLabelOnPhone(blob, el){
     if (k === 'ramp') { if (Array.isArray(v) && v.length === 4 && v.every(x => +x > 0)) R.ramp = v.map(Number); }
     else if (v != null && v !== '' && !isNaN(+v)) R[k] = +v;
   }
+  // Watch fat turned off on My rules: no cap on added oil.
+  if (USER_RULES && USER_RULES.watchFat === false) R.oilTspPerMeal = 99;
   // A rule word is plain text with "|" between alternatives, matched whole-word and case-insensitive.
   const userPat = w => String(w || '').split('|').map(x => x.trim()).filter(Boolean).map(x => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+')).join('|');
   const userRule = (level, x) => { const p = userPat(x && x.word); return p ? { level, re: new RegExp('(?<![\\p{L}\\p{N}])(?:' + p + ')(?![\\p{L}\\p{N}])', 'giu'), label: x.label || x.word, why: x.why || 'From your rules.' } : null; };

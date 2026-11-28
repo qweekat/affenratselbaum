@@ -166,8 +166,9 @@ table.rep th{color:var(--muted);font-weight:700}
 "use strict";
 const LS_KEY = "dh-me-v1";
 
-const APP_VERSION = "1.49.0";
+const APP_VERSION = "1.49.1";
 const CHANGES = [
+  {v:"1.49.1", date:"2026-11-28", items:["My rules: new Watch fat switch. Untick it and butter, ghee and sablefish stop being flagged, and the oil cap per meal is lifted."]},
   {v:"1.49.0", date:"2026-11-28", items:["Meal checker > Build and score a day: \"Fix this day from my pantry\" swaps out foods that break your rules or that you don't have, adds protein to carbs, then adds vegetables and fiber from your pantry inside your limits. Undo puts it back.","New goal: non-starchy vegetable servings a day (My rules, starts at 5)."]},
   {v:"1.48.4", date:"2026-11-28", items:["Tier 2: lime is marked \"check first\", and the lime question is on your doctor list."]},
   {v:"1.48.3", date:"2026-11-28", items:["Meal checker picks up rule changes (like Tier 2) as soon as you come back to it.","Build and score a day now flags foods from your own rules, flare-up mode and Tier 2, not just the built-in lists."]},
@@ -929,6 +930,14 @@ const MOLD_ONLY_OK = [
   {word:"aged cheese|parmesan|cheddar|gouda|manchego|pecorino", label:"Aged cheese"}, {word:"peanut|peanuts|peanut butter", label:"Peanuts"},
   {word:"kombucha|cider", label:"Fermented drinks"}, {word:"sourdough", label:"Sourdough"}
 ];
+
+const GB_OK = [{word:"butter|ghee", label:"Butter and ghee"}, {word:"sablefish|black cod", label:"Sablefish"}];
+function setWatchFat(on){
+  S.rules.ok = (S.rules.ok||[]).filter(x=>!x.gb);
+  if(!on) S.rules.ok = S.rules.ok.concat(GB_OK.map(x=>Object.assign({}, x, {gb:true})));
+  S.rules.watchFat = !!on;
+  logRule("Watch fat "+(on?"on":"off"));
+}
 function setMoldDiet(on){
   S.rules.ok = (S.rules.ok||[]).filter(x=>!x.moldOff);
   if(!on){ S.rules.ok = S.rules.ok.concat(MOLD_ONLY_OK.map(x=>Object.assign({}, x, {moldOff:true}))); if(S.moldTier2) setMoldTier2(false); }
@@ -2512,6 +2521,9 @@ function renderRules(){
     <h3>Fiber ramp (g a day)</h3>
     <div class="grid2">${[0,1,2,3].map(i=>`<label>Week ${i+1}${i===3?" and on":""}<input type="number" min="0" id="ramp-${i}" data-ramp="${i}" value="${esc(R.ramp[i])}"></label>`).join("")}</div>
   </section>
+  <section class="panel" id="gbPanel"><h2>Watch fat</h2>
+    <label style="display:flex;gap:8px;align-items:flex-start;font-weight:400"><input type="checkbox" data-gbon="1" ${S.rules.watchFat===false?"":"checked"}> <span><b>Keep fat low</b><br><small class="muted">On: butter and ghee are flagged, sablefish is kept to one portion, and added oil is capped per meal. Untick if your provider says you don't need to.</small></span></label>
+  </section>
   <section class="panel" id="moldPanel"><h2>Mold diet</h2>
     <label style="display:flex;gap:8px;align-items:flex-start;font-weight:400"><input type="checkbox" data-moldon="1" ${S.moldOff?"":"checked"}> <span><b>I'm on the mold diet (Break the Mold Tier 1)</b><br><small class="muted">Untick when you're done. Yeast, corn, potatoes, pickles, vinegar, grapes, dried fruit, aged cheese, peanuts, kombucha and cider stop being flagged. Sweets, juice, alcohol, black tea, mushrooms and cantaloupe stay flagged, since they're on your other lists too (blood sugar, liver, allergies).</small></span></label>
     ${S.moldOff?"":`<label style="display:flex;gap:8px;align-items:flex-start;font-weight:400"><input type="checkbox" data-moldtier2="1" ${S.moldTier2?"checked":""}> <span><b>Also follow Tier 2</b><br><small class="muted">Avoids all fruit, starchy vegetables (sweet potato, squash, pumpkin, beets), all grains (quinoa and buckwheat too), fermented foods, shelled nuts, vinegar or sugar condiments, and soured milk (yogurt is fine). This cuts most of your fiber foods, so psyllium and chia matter more. Lime is marked "check first" until your provider answers (the question is on your doctor list).</small></span></label>`}
@@ -2540,7 +2552,7 @@ function renderRules(){
   </section>
   <section class="panel"><h2>Foods that are fine</h2>
     <p class="muted" style="margin:0">Things you know you tolerate. These are never flagged, even if a built-in rule would catch them.</p>
-    ${(R.ok||[]).some(x=>!x.moldOff)?`<div class="chips">${R.ok.map((x,i)=>x.moldOff?"":`<span class="chip">${esc(x.label||x.word)} <button class="linkbtn" style="padding:0 0 0 6px" data-ruledel="ok:${i}" aria-label="Remove ${esc(x.label||x.word)}">✕</button></span>`).join("")}</div>`:""}
+    ${(R.ok||[]).some(x=>!x.moldOff&&!x.gb)?`<div class="chips">${R.ok.map((x,i)=>x.moldOff||x.gb?"":`<span class="chip">${esc(x.label||x.word)} <button class="linkbtn" style="padding:0 0 0 6px" data-ruledel="ok:${i}" aria-label="Remove ${esc(x.label||x.word)}">✕</button></span>`).join("")}</div>`:""}
     <div class="grid2"><label>Food<input type="text" id="rk-word" placeholder="e.g. lion's mane"></label></div>
     <div><button class="btn ghost" id="ruleAddOk">Add as fine</button></div>
   </section>
@@ -2729,6 +2741,7 @@ view.addEventListener("change",e=>{
     for(const f of ["ids","text"]) if(o[f] && !Object.keys(o[f]).length) delete o[f];
     if(!Object.keys(o).length) delete D[t.dataset.day];
     save(); render(); toast("Saved"); return; }
+  if(t.dataset.gbon){ setWatchFat(t.checked); save(); render(); toast(t.checked?"Watch fat on":"Watch fat off"); return; }
   if(t.dataset.moldon){ setMoldDiet(t.checked); save(); render(); toast(t.checked?"Mold diet on":"Mold diet off"); return; }
   if(t.dataset.moldtier2){ setMoldTier2(t.checked); save(); render(); toast(t.checked?"Tier 2 is on":"Back to Tier 1 only"); return; }
   if(t.dataset.flareuntil){ if(t.value){ S.flare.until=t.value; for(const x of S.rules.extra) if(x.flare) x.why="High in arginine. Flare-up mode through "+t.value.slice(5).replace("-","/")+"."; logRule("Flare-up mode now through "+t.value); save(); } return; }
