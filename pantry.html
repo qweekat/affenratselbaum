@@ -1677,14 +1677,15 @@ var HH = (function(){
   // Fill the days: favor meals you can make with the fewest purchases, vary them, one bean serving a day.
   document.getElementById('btn-fill').addEventListener('click', () => {
     const days = Math.max(1, +state.days || 7);
-    const plan = {};
+    const plan = {}, none = [];
     let beans = 0;
     const score = r => { const nd = needs(r); return hardBuy(nd).length + nd.cook.size * 0.3; };
     const beanOf = r => r.plate ? plateNums(r.plate).beans : 0;
     // Dinners first, since lunch can pick up a bean serving if dinner didn't.
     for (const [type, perRecipe] of [['breakfast', days], ['dinner', 2], ['lunch', 2], ['snack', 2], ['evening', days]]) {
       const typed = Object.values(RECIPE).filter(r => r.t === type), fits = typed.filter(r => recipeHits(r).lvl !== 'avoid');
-      const pool = fits.length ? fits : typed;
+      const pool = fits;
+      if (typed.length && !fits.length) none.push(TYPE_NAME[type] || type);
       for (let d = 0; d < days && pool.length; d++) {
         const ranked = pool.map(r => {
           const used = plan[r.id] || 0;
@@ -1698,7 +1699,7 @@ var HH = (function(){
       }
     }
     state.plan = plan; state.got = {}; save(); render();
-    toast(`Planned ${days} days`);
+    toast(none.length ? `Planned ${days} days. No ${(none.length > 1 ? none.slice(0, -1).join(', ') + ' or ' + none[none.length - 1] : none[0]).toLowerCase()} fits your rules, so none was added. Try Build a meal.` : `Planned ${days} days`);
   });
 
   // all systems you week: all systems you app (same origin) stores the week's meals by day and the next cook session.
@@ -2109,6 +2110,13 @@ var HH = (function(){
   }
   showTab(state.tab);
   queueReady();
+  // A phone can bring this page back from memory after you change your rules elsewhere. Reload so they apply.
+  const HELPER_RULES_KEY = 'dh-me-v1';
+  const RULES_AT_LOAD = JSON.stringify(USER_RULES);
+  const rulesNow = () => { try { const h = JSON.parse(localStorage.getItem(HELPER_RULES_KEY) || 'null'); return JSON.stringify(h && h.rules && typeof h.rules === 'object' ? h.rules : null); } catch (e) { return RULES_AT_LOAD; } };
+  const recheckRules = () => { if (rulesNow() !== RULES_AT_LOAD) location.reload(); };
+  window.addEventListener('pageshow', e => { if (e.persisted) recheckRules(); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && !(document.getElementById('grocery') && !document.getElementById('grocery').hidden)) recheckRules(); });
 })();
 </script>
 <script>
