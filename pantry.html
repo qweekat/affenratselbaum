@@ -183,9 +183,10 @@ footer { color: var(--muted); font-size: 0.85rem; display: flex; flex-direction:
           <label for="days">Days</label>
           <input type="number" id="days" min="1" max="14" value="7" style="width: 5em">
           <button class="btn primary" id="btn-fill">Fill these days from my pantry</button>
+          <button class="btn" id="btn-fillany">Fill from any meal</button>
           <button class="btn" id="btn-helper" hidden>Use my week from all systems you</button>
         </div>
-        <p class="small muted">Fill picks a breakfast, lunch, dinner, snack and evening treat for each day, favoring what you already have. It keeps to your bean servings per day.</p>
+        <p class="small muted">Fill picks a breakfast, lunch, dinner, snack and evening treat for each day, favoring what you already have. Fill from any meal ignores your pantry and mixes in every meal that fits your rules, and the shopping list shows what to buy. Both keep to your bean servings per day.</p>
         <div id="plan-stats" class="row"></div>
         <div id="plan-list"></div>
       </div>
@@ -2126,14 +2127,16 @@ var HH = (function(){
   });
 
   // Fill the days: favor meals you can make with the fewest purchases, vary them, one bean serving a day.
-  document.getElementById('btn-fill').addEventListener('click', () => {
+  // Fill from any meal: same rules, but pantry doesn't count, so meals are spread out for variety.
+  function fillDays(any) {
     const days = Math.max(1, +state.days || 7);
     const plan = {}, none = [];
     let beans = 0;
-    const score = r => { const nd = needs(r); return hardBuy(nd).length + nd.cook.size * 0.3; };
+    const jit = {}; for (const r of Object.values(RECIPE)) jit[r.id] = Math.random() * 0.5;
+    const score = r => { if (any) return jit[r.id]; const nd = needs(r); return hardBuy(nd).length + nd.cook.size * 0.3; };
     const beanOf = r => r.plate ? plateNums(r.plate).beans : 0;
     // Dinners first, since lunch can pick up a bean serving if dinner didn't.
-    for (const [type, perRecipe] of [['breakfast', days], ['dinner', 2], ['lunch', 2], ['snack', 2], ['evening', days]]) {
+    for (const [type, perRecipe] of [['breakfast', days], ['dinner', any ? 1 : 2], ['lunch', any ? 1 : 2], ['snack', any ? 1 : 2], ['evening', days]]) {
       const typed = Object.values(RECIPE).filter(r => r.t === type), fits = typed.filter(r => recipeHits(r).lvl !== 'avoid');
       const pool = fits;
       if (typed.length && !fits.length) none.push(TYPE_NAME[type] || type);
@@ -2150,8 +2153,10 @@ var HH = (function(){
       }
     }
     state.plan = plan; state.got = {}; save(); render();
-    toast(none.length ? `Planned ${days} days. No ${(none.length > 1 ? none.slice(0, -1).join(', ') + ' or ' + none[none.length - 1] : none[0]).toLowerCase()} fits your rules, so none was added. Try Build a meal.` : `Planned ${days} days`);
-  });
+    toast(none.length ? `Planned ${days} days. No ${(none.length > 1 ? none.slice(0, -1).join(', ') + ' or ' + none[none.length - 1] : none[0]).toLowerCase()} fits your rules, so none was added. Try Build a meal.` : `Planned ${days} days${any ? ' from any meal. Your shopping list has what to buy' : ''}`);
+  }
+  document.getElementById('btn-fill').addEventListener('click', () => fillDays(false));
+  document.getElementById('btn-fillany').addEventListener('click', () => fillDays(true));
 
   // all systems you week: all systems you app (same origin) stores the week's meals by day and the next cook session.
   const HELPER_KEY = 'dh-me-v1';
